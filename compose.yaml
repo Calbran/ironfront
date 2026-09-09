@@ -1,0 +1,10 @@
+services:
+  warfare:
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - warfare-data:/data
+    restart: unless-stopped
+volumes:
+  warfare-data:

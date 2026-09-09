@@ -1,0 +1,600 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-09T07:00:51.477933+00:00",
+  "title": "Design System: Ironfront",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Accent",
+        "tonalRamp": [
+          "oklch(15.00% 0.0391 173.33)",
+          "oklch(26.43% 0.0391 173.33)",
+          "oklch(37.86% 0.0391 173.33)",
+          "oklch(49.29% 0.0391 173.33)",
+          "oklch(60.71% 0.0391 173.33)",
+          "oklch(72.14% 0.0391 173.33)",
+          "oklch(83.57% 0.0391 173.33)",
+          "oklch(95.00% 0.0391 173.33)"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Accent Hover",
+        "tonalRamp": [
+          "oklch(15.00% 0.0473 163.62)",
+          "oklch(26.43% 0.0473 163.62)",
+          "oklch(37.86% 0.0473 163.62)",
+          "oklch(49.29% 0.0473 163.62)",
+          "oklch(60.71% 0.0473 163.62)",
+          "oklch(72.14% 0.0473 163.62)",
+          "oklch(83.57% 0.0473 163.62)",
+          "oklch(95.00% 0.0473 163.62)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.0311 202.25)",
+          "oklch(26.43% 0.0311 202.25)",
+          "oklch(37.86% 0.0311 202.25)",
+          "oklch(49.29% 0.0311 202.25)",
+          "oklch(60.71% 0.0311 202.25)",
+          "oklch(72.14% 0.0311 202.25)",
+          "oklch(83.57% 0.0311 202.25)",
+          "oklch(95.00% 0.0311 202.25)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "tonalRamp": [
+          "oklch(15.00% 0.0236 173.17)",
+          "oklch(26.43% 0.0236 173.17)",
+          "oklch(37.86% 0.0236 173.17)",
+          "oklch(49.29% 0.0236 173.17)",
+          "oklch(60.71% 0.0236 173.17)",
+          "oklch(72.14% 0.0236 173.17)",
+          "oklch(83.57% 0.0236 173.17)",
+          "oklch(95.00% 0.0236 173.17)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "tonalRamp": [
+          "oklch(15.00% 0.0165 91.56)",
+          "oklch(26.43% 0.0165 91.56)",
+          "oklch(37.86% 0.0165 91.56)",
+          "oklch(49.29% 0.0165 91.56)",
+          "oklch(60.71% 0.0165 91.56)",
+          "oklch(72.14% 0.0165 91.56)",
+          "oklch(83.57% 0.0165 91.56)",
+          "oklch(95.00% 0.0165 91.56)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "tonalRamp": [
+          "oklch(15.00% 0.0221 115.50)",
+          "oklch(26.43% 0.0221 115.50)",
+          "oklch(37.86% 0.0221 115.50)",
+          "oklch(49.29% 0.0221 115.50)",
+          "oklch(60.71% 0.0221 115.50)",
+          "oklch(72.14% 0.0221 115.50)",
+          "oklch(83.57% 0.0221 115.50)",
+          "oklch(95.00% 0.0221 115.50)"
+        ]
+      },
+      "sea": {
+        "role": "neutral",
+        "displayName": "Sea",
+        "tonalRamp": [
+          "oklch(15.00% 0.0384 217.37)",
+          "oklch(26.43% 0.0384 217.37)",
+          "oklch(37.86% 0.0384 217.37)",
+          "oklch(49.29% 0.0384 217.37)",
+          "oklch(60.71% 0.0384 217.37)",
+          "oklch(72.14% 0.0384 217.37)",
+          "oklch(83.57% 0.0384 217.37)",
+          "oklch(95.00% 0.0384 217.37)"
+        ]
+      },
+      "masthead": {
+        "role": "neutral",
+        "displayName": "Masthead",
+        "tonalRamp": [
+          "oklch(15.00% 0.0328 215.22)",
+          "oklch(26.43% 0.0328 215.22)",
+          "oklch(37.86% 0.0328 215.22)",
+          "oklch(49.29% 0.0328 215.22)",
+          "oklch(60.71% 0.0328 215.22)",
+          "oklch(72.14% 0.0328 215.22)",
+          "oklch(83.57% 0.0328 215.22)",
+          "oklch(95.00% 0.0328 215.22)"
+        ]
+      },
+      "button-text": {
+        "role": "neutral",
+        "displayName": "Button Text",
+        "tonalRamp": [
+          "oklch(15.00% 0.0282 95.90)",
+          "oklch(26.43% 0.0282 95.90)",
+          "oklch(37.86% 0.0282 95.90)",
+          "oklch(49.29% 0.0282 95.90)",
+          "oklch(60.71% 0.0282 95.90)",
+          "oklch(72.14% 0.0282 95.90)",
+          "oklch(83.57% 0.0282 95.90)",
+          "oklch(95.00% 0.0282 95.90)"
+        ]
+      },
+      "button-border": {
+        "role": "neutral",
+        "displayName": "Button Border",
+        "tonalRamp": [
+          "oklch(15.00% 0.0255 135.72)",
+          "oklch(26.43% 0.0255 135.72)",
+          "oklch(37.86% 0.0255 135.72)",
+          "oklch(49.29% 0.0255 135.72)",
+          "oklch(60.71% 0.0255 135.72)",
+          "oklch(72.14% 0.0255 135.72)",
+          "oklch(83.57% 0.0255 135.72)",
+          "oklch(95.00% 0.0255 135.72)"
+        ]
+      },
+      "button-hover": {
+        "role": "neutral",
+        "displayName": "Button Hover",
+        "tonalRamp": [
+          "oklch(15.00% 0.0212 124.69)",
+          "oklch(26.43% 0.0212 124.69)",
+          "oklch(37.86% 0.0212 124.69)",
+          "oklch(49.29% 0.0212 124.69)",
+          "oklch(60.71% 0.0212 124.69)",
+          "oklch(72.14% 0.0212 124.69)",
+          "oklch(83.57% 0.0212 124.69)",
+          "oklch(95.00% 0.0212 124.69)"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field",
+        "tonalRamp": [
+          "oklch(15.00% 0.0134 97.44)",
+          "oklch(26.43% 0.0134 97.44)",
+          "oklch(37.86% 0.0134 97.44)",
+          "oklch(49.29% 0.0134 97.44)",
+          "oklch(60.71% 0.0134 97.44)",
+          "oklch(72.14% 0.0134 97.44)",
+          "oklch(83.57% 0.0134 97.44)",
+          "oklch(95.00% 0.0134 97.44)"
+        ]
+      },
+      "field-ink": {
+        "role": "neutral",
+        "displayName": "Field Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.0360 170.17)",
+          "oklch(26.43% 0.0360 170.17)",
+          "oklch(37.86% 0.0360 170.17)",
+          "oklch(49.29% 0.0360 170.17)",
+          "oklch(60.71% 0.0360 170.17)",
+          "oklch(72.14% 0.0360 170.17)",
+          "oklch(83.57% 0.0360 170.17)",
+          "oklch(95.00% 0.0360 170.17)"
+        ]
+      },
+      "field-border": {
+        "role": "neutral",
+        "displayName": "Field Border",
+        "tonalRamp": [
+          "oklch(15.00% 0.0307 132.65)",
+          "oklch(26.43% 0.0307 132.65)",
+          "oklch(37.86% 0.0307 132.65)",
+          "oklch(49.29% 0.0307 132.65)",
+          "oklch(60.71% 0.0307 132.65)",
+          "oklch(72.14% 0.0307 132.65)",
+          "oklch(83.57% 0.0307 132.65)",
+          "oklch(95.00% 0.0307 132.65)"
+        ]
+      },
+      "focus": {
+        "role": "neutral",
+        "displayName": "Focus",
+        "tonalRamp": [
+          "oklch(15.00% 0.1058 80.70)",
+          "oklch(26.43% 0.1058 80.70)",
+          "oklch(37.86% 0.1058 80.70)",
+          "oklch(49.29% 0.1058 80.70)",
+          "oklch(60.71% 0.1058 80.70)",
+          "oklch(72.14% 0.1058 80.70)",
+          "oklch(83.57% 0.1058 80.70)",
+          "oklch(95.00% 0.1058 80.70)"
+        ]
+      },
+      "field-focus": {
+        "role": "neutral",
+        "displayName": "Field Focus",
+        "tonalRamp": [
+          "oklch(15.00% 0.0658 124.53)",
+          "oklch(26.43% 0.0658 124.53)",
+          "oklch(37.86% 0.0658 124.53)",
+          "oklch(49.29% 0.0658 124.53)",
+          "oklch(60.71% 0.0658 124.53)",
+          "oklch(72.14% 0.0658 124.53)",
+          "oklch(83.57% 0.0658 124.53)",
+          "oklch(95.00% 0.0658 124.53)"
+        ]
+      },
+      "selected-faction": {
+        "role": "neutral",
+        "displayName": "Selected Faction",
+        "tonalRamp": [
+          "oklch(15.00% 0.0227 126.25)",
+          "oklch(26.43% 0.0227 126.25)",
+          "oklch(37.86% 0.0227 126.25)",
+          "oklch(49.29% 0.0227 126.25)",
+          "oklch(60.71% 0.0227 126.25)",
+          "oklch(72.14% 0.0227 126.25)",
+          "oklch(83.57% 0.0227 126.25)",
+          "oklch(95.00% 0.0227 126.25)"
+        ]
+      },
+      "selected-border": {
+        "role": "neutral",
+        "displayName": "Selected Border",
+        "tonalRamp": [
+          "oklch(15.00% 0.0416 135.98)",
+          "oklch(26.43% 0.0416 135.98)",
+          "oklch(37.86% 0.0416 135.98)",
+          "oklch(49.29% 0.0416 135.98)",
+          "oklch(60.71% 0.0416 135.98)",
+          "oklch(72.14% 0.0416 135.98)",
+          "oklch(83.57% 0.0416 135.98)",
+          "oklch(95.00% 0.0416 135.98)"
+        ]
+      },
+      "active-tab": {
+        "role": "neutral",
+        "displayName": "Active Tab",
+        "tonalRamp": [
+          "oklch(15.00% 0.0514 163.49)",
+          "oklch(26.43% 0.0514 163.49)",
+          "oklch(37.86% 0.0514 163.49)",
+          "oklch(49.29% 0.0514 163.49)",
+          "oklch(60.71% 0.0514 163.49)",
+          "oklch(72.14% 0.0514 163.49)",
+          "oklch(83.57% 0.0514 163.49)",
+          "oklch(95.00% 0.0514 163.49)"
+        ]
+      },
+      "neutral-land": {
+        "role": "neutral",
+        "displayName": "Neutral Land",
+        "tonalRamp": [
+          "oklch(15.00% 0.0254 133.53)",
+          "oklch(26.43% 0.0254 133.53)",
+          "oklch(37.86% 0.0254 133.53)",
+          "oklch(49.29% 0.0254 133.53)",
+          "oklch(60.71% 0.0254 133.53)",
+          "oklch(72.14% 0.0254 133.53)",
+          "oklch(83.57% 0.0254 133.53)",
+          "oklch(95.00% 0.0254 133.53)"
+        ]
+      },
+      "front": {
+        "role": "secondary",
+        "displayName": "National front gold"
+      },
+      "selected-region": {
+        "role": "secondary",
+        "displayName": "Selected territory"
+      },
+      "objective": {
+        "role": "secondary",
+        "displayName": "Planned route gold"
+      },
+      "counter": {
+        "role": "secondary",
+        "displayName": "Army counter"
+      },
+      "error-surface": {
+        "role": "neutral",
+        "displayName": "Error Surface",
+        "tonalRamp": [
+          "oklch(15.00% 0.0340 48.32)",
+          "oklch(26.43% 0.0340 48.32)",
+          "oklch(37.86% 0.0340 48.32)",
+          "oklch(49.29% 0.0340 48.32)",
+          "oklch(60.71% 0.0340 48.32)",
+          "oklch(72.14% 0.0340 48.32)",
+          "oklch(83.57% 0.0340 48.32)",
+          "oklch(95.00% 0.0340 48.32)"
+        ]
+      },
+      "error-ink": {
+        "role": "neutral",
+        "displayName": "Error Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.0879 36.35)",
+          "oklch(26.43% 0.0879 36.35)",
+          "oklch(37.86% 0.0879 36.35)",
+          "oklch(49.29% 0.0879 36.35)",
+          "oklch(60.71% 0.0879 36.35)",
+          "oklch(72.14% 0.0879 36.35)",
+          "oklch(83.57% 0.0879 36.35)",
+          "oklch(95.00% 0.0879 36.35)"
+        ]
+      },
+      "nation-1": {
+        "role": "secondary",
+        "displayName": "Nation 1",
+        "tonalRamp": [
+          "oklch(15.00% 0.0711 245.27)",
+          "oklch(26.43% 0.0711 245.27)",
+          "oklch(37.86% 0.0711 245.27)",
+          "oklch(49.29% 0.0711 245.27)",
+          "oklch(60.71% 0.0711 245.27)",
+          "oklch(72.14% 0.0711 245.27)",
+          "oklch(83.57% 0.0711 245.27)",
+          "oklch(95.00% 0.0711 245.27)"
+        ]
+      },
+      "nation-2": {
+        "role": "secondary",
+        "displayName": "Nation 2",
+        "tonalRamp": [
+          "oklch(15.00% 0.0989 31.65)",
+          "oklch(26.43% 0.0989 31.65)",
+          "oklch(37.86% 0.0989 31.65)",
+          "oklch(49.29% 0.0989 31.65)",
+          "oklch(60.71% 0.0989 31.65)",
+          "oklch(72.14% 0.0989 31.65)",
+          "oklch(83.57% 0.0989 31.65)",
+          "oklch(95.00% 0.0989 31.65)"
+        ]
+      },
+      "nation-3": {
+        "role": "secondary",
+        "displayName": "Nation 3",
+        "tonalRamp": [
+          "oklch(15.00% 0.0565 174.02)",
+          "oklch(26.43% 0.0565 174.02)",
+          "oklch(37.86% 0.0565 174.02)",
+          "oklch(49.29% 0.0565 174.02)",
+          "oklch(60.71% 0.0565 174.02)",
+          "oklch(72.14% 0.0565 174.02)",
+          "oklch(83.57% 0.0565 174.02)",
+          "oklch(95.00% 0.0565 174.02)"
+        ]
+      },
+      "nation-4": {
+        "role": "secondary",
+        "displayName": "Nation 4",
+        "tonalRamp": [
+          "oklch(15.00% 0.0982 91.74)",
+          "oklch(26.43% 0.0982 91.74)",
+          "oklch(37.86% 0.0982 91.74)",
+          "oklch(49.29% 0.0982 91.74)",
+          "oklch(60.71% 0.0982 91.74)",
+          "oklch(72.14% 0.0982 91.74)",
+          "oklch(83.57% 0.0982 91.74)",
+          "oklch(95.00% 0.0982 91.74)"
+        ]
+      },
+      "nation-5": {
+        "role": "secondary",
+        "displayName": "Nation 5",
+        "tonalRamp": [
+          "oklch(15.00% 0.0638 311.14)",
+          "oklch(26.43% 0.0638 311.14)",
+          "oklch(37.86% 0.0638 311.14)",
+          "oklch(49.29% 0.0638 311.14)",
+          "oklch(60.71% 0.0638 311.14)",
+          "oklch(72.14% 0.0638 311.14)",
+          "oklch(83.57% 0.0638 311.14)",
+          "oklch(95.00% 0.0638 311.14)"
+        ]
+      },
+      "nation-6": {
+        "role": "secondary",
+        "displayName": "Nation 6",
+        "tonalRamp": [
+          "oklch(15.00% 0.0888 57.82)",
+          "oklch(26.43% 0.0888 57.82)",
+          "oklch(37.86% 0.0888 57.82)",
+          "oklch(49.29% 0.0888 57.82)",
+          "oklch(60.71% 0.0888 57.82)",
+          "oklch(72.14% 0.0888 57.82)",
+          "oklch(83.57% 0.0888 57.82)",
+          "oklch(95.00% 0.0888 57.82)"
+        ]
+      },
+      "nation-7": {
+        "role": "secondary",
+        "displayName": "Nation 7",
+        "tonalRamp": [
+          "oklch(15.00% 0.0937 127.91)",
+          "oklch(26.43% 0.0937 127.91)",
+          "oklch(37.86% 0.0937 127.91)",
+          "oklch(49.29% 0.0937 127.91)",
+          "oklch(60.71% 0.0937 127.91)",
+          "oklch(72.14% 0.0937 127.91)",
+          "oklch(83.57% 0.0937 127.91)",
+          "oklch(95.00% 0.0937 127.91)"
+        ]
+      },
+      "nation-8": {
+        "role": "secondary",
+        "displayName": "Nation 8",
+        "tonalRamp": [
+          "oklch(15.00% 0.0475 222.02)",
+          "oklch(26.43% 0.0475 222.02)",
+          "oklch(37.86% 0.0475 222.02)",
+          "oklch(49.29% 0.0475 222.02)",
+          "oklch(60.71% 0.0475 222.02)",
+          "oklch(72.14% 0.0475 222.02)",
+          "oklch(83.57% 0.0475 222.02)",
+          "oklch(95.00% 0.0475 222.02)"
+        ]
+      },
+      "counter-selected": {
+        "role": "secondary",
+        "displayName": "Selected army counter"
+      },
+      "defense-sector": {
+        "role": "secondary",
+        "displayName": "Defense sector cream"
+      },
+      "province-boundary": {
+        "role": "secondary",
+        "displayName": "Province boundary green"
+      },
+      "mountain-selection": {
+        "role": "secondary",
+        "displayName": "Mountain selection"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Lobby display",
+        "purpose": "Self-hosted condensed introduction heading; mobile overrides in stylesheet."
+      },
+      "map-label": {
+        "displayName": "Cartographic label",
+        "purpose": "Arial territory names at 11 screen pixels, selected at 13, collision culled; detail appears from 230% zoom and updates after camera gestures settle."
+      }
+    },
+    "shadows": [
+      {
+        "name": "context-panel",
+        "value": "0 12px 32px #071a2426",
+        "purpose": "Separate the single paper context panel from the full-screen moving map."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-hover",
+        "value": "background 0.16s ease-out",
+        "purpose": "Button background state change; disabled under prefers-reduced-motion."
+      },
+      {
+        "name": "map-detail-settle",
+        "value": "180ms idle",
+        "purpose": "Transform cached map scene during camera gestures; normalize labels, counters, and border detail after the gesture settles. Fit refreshes without this delay."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide",
+        "value": "1500px"
+      },
+      {
+        "name": "compact-desktop",
+        "value": "1100px"
+      },
+      {
+        "name": "tablet",
+        "value": "800px"
+      },
+      {
+        "name": "phone",
+        "value": "560px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Committed campaign action.",
+      "html": "<button class=\"ds-primary\">Advance to Northreach \u2192</button>",
+      "css": ".ds-primary{font-family:\"Avenir Next\",Avenir,\"Segoe UI\",sans-serif;font-size:12px;border:1px solid #aeb9a9;border-radius:3px;cursor:pointer;transition:background .16s ease-out;background:var(--accent,#304e45);border-color:var(--accent,#304e45);color:#f4efda;padding:13px 15px}.ds-primary:hover:not(:disabled){background:#436555}.ds-primary:disabled{opacity:.48;cursor:not-allowed}.ds-primary:focus-visible,.ds-secondary:focus-visible,.ds-tabs button:focus-visible,.ds-disclosure summary:focus-visible{outline:3px solid #a27a2c;outline-offset:3px;} @media(prefers-reduced-motion:reduce){button{transition:none!important;}}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting standing order.",
+      "html": "<button class=\"ds-secondary\">Recover</button>",
+      "css": ".ds-secondary{font-family:\"Avenir Next\",Avenir,\"Segoe UI\",sans-serif;font-size:12px;border:1px solid #aeb9a9;border-radius:3px;cursor:pointer;transition:background .16s ease-out;background:transparent;color:var(--ink,#223b3d);padding:10px 13px}.ds-secondary:hover:not(:disabled){background:#d9dfd0}.ds-secondary:disabled{opacity:.48;cursor:not-allowed}.ds-primary:focus-visible,.ds-secondary:focus-visible,.ds-tabs button:focus-visible,.ds-disclosure summary:focus-visible{outline:3px solid #a27a2c;outline-offset:3px;} @media(prefers-reduced-motion:reduce){button{transition:none!important;}}"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Labeled campaign entry.",
+      "html": "<label class=\"ds-label\">Campaign name<input class=\"ds-input\" value=\"Meridian\"></label>",
+      "css": ".ds-label{font-family:\"Avenir Next\",Avenir,\"Segoe UI\",sans-serif;font-size:11px;color:#526356;display:block}.ds-input{font-family:\"Avenir Next\",Avenir,\"Segoe UI\",sans-serif;display:block;width:100%;margin-top:8px;padding:10px 11px;border:1px solid #b4c0ac;background:#f7f5eb;color:#243e35;border-radius:3px;caret-color:var(--accent,#304e45)}.ds-input:focus{outline:2px solid #7c8c60;outline-offset:2px}"
+    },
+    {
+      "name": "Panel tabs",
+      "kind": "nav",
+      "refersTo": "tabs",
+      "description": "Shared ruled tab treatment; campaign tabs stick to the top of the left context panel.",
+      "html": "<nav class=\"ds-tabs\"><button class=\"ds-active\">Orders</button><button>Dispatches</button></nav>",
+      "css": ".ds-tabs{display:flex;border-bottom:1px solid var(--line,#c8cbbb);padding:0 22px;gap:23px}.ds-tabs button{font-family:\"Avenir Next\",Avenir,\"Segoe UI\",sans-serif;font-size:12px;border:1px solid #aeb9a9;border-radius:3px;cursor:pointer;transition:background .16s ease-out;background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;padding:19px 0 14px;color:var(--muted,#596b65)}.ds-tabs .ds-active{border-bottom-color:#365b4a;color:var(--ink,#223b3d);font-weight:600}.ds-tabs button:hover{background:#d9dfd0}.ds-primary:focus-visible,.ds-secondary:focus-visible,.ds-tabs button:focus-visible,.ds-disclosure summary:focus-visible{outline:3px solid #a27a2c;outline-offset:3px;} @media(prefers-reduced-motion:reduce){button{transition:none!important;}}.ds-tabs{position:sticky;top:0;background:var(--paper,#eeeade);gap:21px;padding:0 44px 0 20px;}"
+    },
+    {
+      "name": "Selected faction row",
+      "kind": "custom",
+      "refersTo": "faction-selected",
+      "description": "Native radio choice on pale green paper.",
+      "html": "<label class=\"ds-faction\"><input type=\"radio\" checked name=\"ds-faction\"><span><strong>Selected faction</strong><small>Military tradition and campaign specialty</small></span></label>",
+      "css": ".ds-faction{font-family:\"Avenir Next\",Avenir,\"Segoe UI\",sans-serif;display:flex;align-items:center;gap:12px;padding:12px 10px;background:#dce3d3;border:1px solid #a3b59b;cursor:pointer;color:#526356}.ds-faction input{width:14px;margin:0;accent-color:#365b4a}.ds-faction input:focus{outline:2px solid #7c8c60;outline-offset:2px}.ds-faction strong{font-size:12px;font-weight:600;color:#243c32}.ds-faction small{display:block;font-size:11px;margin-top:4px}"
+    },
+    {
+      "name": "Campaign context panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "One closable, scrollable paper overlay for campaign information and controls; persists on phones.",
+      "html": "<section class=\"ds-panel\"><button class=\"ds-close\" aria-label=\"Close panel\" onclick=\"this.parentElement.hidden=true\">\u00d7</button><div class=\"ds-panel-tabs\"><strong>Nation</strong><span>Command</span></div><div class=\"ds-panel-body\"><div class=\"ds-resource\"><span>Industry</span><strong>140<small>+8 / hour</small></strong></div></div></section>",
+      "css": ".ds-panel{position:relative;font-family:\"Avenir Next\",Avenir,\"Segoe UI\",sans-serif;background:var(--paper,#eeeade);color:var(--ink,#223b3d);width:320px;max-width:100%;max-height:420px;overflow-y:auto;overscroll-behavior:contain;border:1px solid #9baa96;border-radius:4px;box-shadow:0 12px 32px #071a2426}.ds-panel[hidden]{display:none}.ds-panel-tabs{position:sticky;top:0;display:flex;gap:21px;padding:19px 44px 14px 20px;background:var(--paper,#eeeade);border-bottom:1px solid var(--line,#c8cbbb);font-size:12px}.ds-panel-tabs strong{color:var(--ink,#223b3d);border-bottom:2px solid #365b4a}.ds-panel-tabs span{color:var(--muted,#596b65)}.ds-close{position:absolute;right:7px;top:9px;z-index:3;font-size:21px;padding:4px 8px;border:0;background:transparent;color:var(--ink,#223b3d);cursor:pointer}.ds-close:hover{background:#d9dfd0}.ds-close:focus-visible{outline:3px solid #a27a2c;outline-offset:3px}.ds-panel-body{padding:24px 22px}.ds-resource{display:flex;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line,#c8cbbb);font-size:12px}.ds-resource strong{text-align:right;font-size:25px;font-weight:400;line-height:1;font-variant-numeric:tabular-nums}.ds-resource small{display:block;font-size:11px;color:var(--muted,#596b65);margin-top:6px}@media(max-width:800px){.ds-panel{width:290px}}"
+    },
+    {
+      "name": "Earlier campaign notice",
+      "kind": "custom",
+      "description": "Inline notice for original or earlier dense saved maps; opens session controls before returning to the lobby.",
+      "html": "<section class=\"ds-legacy\"><strong>Earlier map \u00b7 384 territories</strong><p>This saved campaign uses an earlier territory layout. Create a new campaign for the revised continent. Your current map will stay intact.</p><button>Save session &amp; open lobby</button></section>",
+      "css": ".ds-legacy{font-family:\"Avenir Next\",Avenir,\"Segoe UI\",sans-serif;background:var(--paper,#eeeade);color:var(--ink,#223b3d);padding:18px 20px;border-bottom:1px solid #9baa96;font-size:14px}.ds-legacy p{font-size:12px;line-height:1.6;margin:8px 0 12px}.ds-legacy button{font:inherit;width:100%;border:1px solid #aeb9a9;background:transparent;color:inherit;padding:10px 13px;border-radius:3px;cursor:pointer;transition:background .16s ease-out}.ds-legacy button:hover{background:#d9dfd0}.ds-legacy button:focus-visible{outline:3px solid #a27a2c;outline-offset:3px}@media(prefers-reduced-motion:reduce){.ds-legacy button{transition:none}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Operational Map",
+    "overview": "The implemented world is a military planning map: deep petrol water, pale paper controls, quiet green actions, procedurally shaded terrain with translucent ownership, and rectangular army counters. Condensed headings give the interface a practical printed character; fine rules organize dense information inside one closable left context panel over the full-screen campaign map.\n\nThe accepted direction combines Cold War military silhouettes, Victorian identity, and steampunk engineering. This early proof expresses that direction through typography, an outlined shield mark, shaded cartographic relief, and restrained material colors. Distinctive faction costumes, vehicles, machinery, and illustrations remain future art direction; the terrain raster is generated at runtime from world data in a local canvas, with no external image assets. Ironfront is the approved game name; faction names remain provisional.",
+    "keyCharacteristics": [
+      "A persistent map is the central visual instrument.",
+      "One paper context panel overlays the full-screen petrol campaign map.",
+      "Condensed headings and compact system-font data stay distinct.",
+      "Relief, geography, and state carry meaning before decoration."
+    ],
+    "rules": [
+      {
+        "name": "The Ownership Rule",
+        "body": "Nation colors communicate ownership consistently across map and UI; they are not faction art palettes.",
+        "section": "colors"
+      },
+      {
+        "name": "Semantic overlay palette",
+        "body": "Defense-sector cream, province-boundary green, national-front gold, and route gold are intentional semantic overlays; preserve their distinct roles.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do keep ownership swatches consistent between territories, counters, and standings.",
+      "Do preserve visible keyboard focus and the region selector alongside the canvas.",
+      "Do use self-hosted Barlow Condensed for headings and system fonts for control text.",
+      "Do cull overlapping map labels, keep province names on land, and preserve three-digit army-strength fit.",
+      "Do keep future faction artwork distinct from the implemented cartographic identity."
+    ],
+    "donts": [
+      "Don't interpret nation seat colors as permanent faction branding.",
+      "Don't hide land standings on small screens; keep them in the left context panel.",
+      "Don't describe the runtime terrain raster as external faction artwork or add ornamental machinery as if already established.",
+      "Don't turn the context panel's flat ruled groups into separate elevated cards."
+    ]
+  }
+}
