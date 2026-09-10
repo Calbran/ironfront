@@ -23,3 +23,5 @@ The user accepted the reference scene as sufficient for now and requested scalin
 The user authorized live campaign integration and a 30-minute real-server soak, followed by refining one generated region toward the crafted-miniature reference. The experiment now offers an opt-in live renderer while retaining Pixi as default. Generated landscape refinement remains preview-only; it does not change authoritative terrain or cover. Expansion across the continent and final asset quality remain provisional.
 
 The user approved a terrain-aware riverside town and a review of generator ordering/efficiency. One experimental town now plans connected streets and street-facing lots from existing routes and terrain constraints. Ordering, model dimensions and town tuning remain provisional; continuous slope handling and campaign-wide adoption are not yet implemented.
+
+The user subsequently accepted the current town visually as a working baseline. Broader settlement patterns and regional-road integration are proposed next steps, not yet authorized implementation; see the town-generation audit.

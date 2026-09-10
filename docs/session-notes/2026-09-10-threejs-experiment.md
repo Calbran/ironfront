@@ -29,3 +29,7 @@ User identified remaining town-road ribbons crossing the river after building re
 ## Terrain-aware town and generator review
 
 Reviewed authoritative geography and preview dependencies. Implemented a pure bounded town planner in game-core, reordered preview regional roads before town layouts, shared presentation river paths, and placed fields before final scenery clearance. Removed repeated global river scans from legacy building repair. Added planner invariants and repeat-seed four/eight-seat timing audits. See town-generation-audit.md for measured costs and remaining slope/planning limitations.
+
+## Documentation follow-up
+
+Verified implementation, test and performance records after the user asked whether everything was documented. Recorded the user’s acceptance of the current baseline and the proposed next steps separately from authorized work in the town-generation audit and decision 029.

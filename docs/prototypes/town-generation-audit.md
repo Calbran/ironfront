@@ -48,3 +48,16 @@ The planner currently uses land boundaries, rivers and mountain obstacles. It do
 All repeated content hashes matched. The eight-seat field pass was 881 ms; routing 522 ms; final scenery clearance 342 ms. Those are the next measured optimization candidates if larger worlds require it. See [raw stage measurements](town-generation-results.json). These totals include generation, not browser asset loading, scene construction or long-running simulation.
 
 Final validation: 108 tests passed, TypeScript and production build passed, and the browser verified selection, strategy, renderer switching, phone width and alternate-seed regeneration. The short final live campaign check passed selection, authoritative/rendered movement, attack, strategy and Pixi/Three round trip without page errors. The planned town's five-second local sample stayed near 60 FPS (p95 18.7 ms; no sampled frames above 33.4 ms). Vite still reports its existing large-bundle advisory.
+
+## Baseline review and proposed next steps
+
+The user reviewed the implemented town and said it looks good. Keep the current experiment as the accepted working baseline; this is not approval to replace the production renderer or a claim that visual tuning is final.
+
+The following continuation was proposed, but has not yet been authorized for implementation:
+
+1. Extend the planner to riverside, farming and industrial settlement patterns, with density based on settlement size.
+2. Integrate regional roads with town entrances, intersections and bridge approaches.
+3. Expand the shared building kit with cottages, row houses and warehouses, plus controlled roof, height and facade variants.
+4. Add door paths, courtyards, walls, fences and work yards.
+
+The recommended first increment combines settlement patterns with regional-road integration. Before broad adoption, check several seeds for disconnected streets, overlapping lots and unsuitable terrain, then repeat large-world rendering measurements. Continuous-slope handling, full Pixi interaction parity and real minimum-device validation remain separate outstanding work.
