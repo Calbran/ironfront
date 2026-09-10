@@ -19,3 +19,5 @@ The user requested restoration of Pixi interactions. The experiment now supports
 The user approved building one crafted-miniature reference scene before extending the art across the generated world. `/reference-preview.html` implements that bounded summer/winter study. Its final art quality and adoption into campaign generation remain subject to review; see the scene notes for limitations.
 
 The user accepted the reference scene as sufficient for now and requested scaling/performance work before further art detail. Implemented shared building/tree assets, spatial instance chunks, zoom-based detail and synthetic whole-world benchmarks. No minimum hardware or campaign-performance guarantee has been accepted.
+
+The user authorized live campaign integration and a 30-minute real-server soak, followed by refining one generated region toward the crafted-miniature reference. The experiment now offers an opt-in live renderer while retaining Pixi as default. Generated landscape refinement remains preview-only; it does not change authoritative terrain or cover. Expansion across the continent and final asset quality remain provisional.

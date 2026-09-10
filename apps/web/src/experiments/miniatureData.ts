@@ -13,6 +13,7 @@ export interface MiniatureData {
   cities: StudyCity[];
   scenery: ScenerySprite[];
   roads: CityRoad[];
+  fields?: import("../../../../packages/game-core/src/landscape").FieldParcel[];
   generatedMs: number;
 }
 export function initialCity(data: MiniatureData): StudyCity | undefined {

@@ -1,5 +1,11 @@
 # Changelog
 
+## Experimental branch — live Three.js and generated landscape
+
+- Added an opt-in live map adapter using existing authoritative snapshots and command callbacks, with Pixi retained as default.
+- Added a repeatable real-server soak with movement/attack checks, recurring orders, camera transitions and resource sampling.
+- Added a bounded generated-region landscape study with terrain shaping, worn ground, riverbank scatter, real field parcels, fences and bridge decks; summer/winter and baseline comparison remain available.
+
 ## 2026-09-10 — Infantry rendering and performance prototype
 
 - Added a standalone map-overlay infantry preview with small low-poly models, independent squad motion and firing cadence, instanced geometry, and shared cached animation.

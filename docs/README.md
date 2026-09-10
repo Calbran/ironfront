@@ -65,3 +65,6 @@ Mobile infantry model and accepted six-person transport direction: [027: steam j
 - [Crafted miniature art scene](prototypes/crafted-miniature-scene.md) — summer/winter reference diorama, branch only.
 
 - [Full-world miniature performance]( prototypes/world-performance.md) — chunked kit rendering and synthetic workload measurements.
+
+- [Live campaign integration and soak](prototypes/live-campaign-performance.md).
+- [Generated-region landscape study](prototypes/generated-landscape.md).

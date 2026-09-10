@@ -9,7 +9,7 @@ import {
   type Faction,
   type Command,
 } from "../../../packages/game-core/src/index";
-import { MapView } from "./ContinentalMap";
+import { MapView } from "./experiments/LiveCampaignMap";
 type View = { world: World; owner: number; host: boolean };
 function Mark() {
   return (

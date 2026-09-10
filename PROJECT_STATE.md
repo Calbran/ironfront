@@ -1,5 +1,11 @@
 # Project State
 
+## Live campaign adapter and generated landscape — experimental branch
+
+The regular game can opt into Three.js with `?renderer=three`; Pixi remains the default. Existing server snapshots drive live squad models and existing commands handle selection, movement and attacks. Full Pixi interaction parity remains unfinished. See [live integration and soak methodology](docs/prototypes/live-campaign-performance.md).
+
+The generated preview now offers **Visit refined region**: one actual river-adjacent settlement region with sculpted ground, wear, grain, bank rocks, vegetation, field furrows, fences and bridge decks. It is a bounded art study, not a continent-wide or live terrain replacement. See [landscape notes](docs/prototypes/generated-landscape.md).
+
 ## Full-world miniature stress test — experimental branch
 
 The Three.js world preview now shares the art scene’s building/tree kit, with chunked instancing, zoom-dependent detail, tactical shadows and bounded offscreen chunk retention. A stress panel and repeatable browser runner measure distributed/concentrated synthetic troop loads, pan/zoom scales and winter. This remains a rendering test, not live campaign or minimum-device validation. See [performance methodology and results](docs/prototypes/world-performance.md).

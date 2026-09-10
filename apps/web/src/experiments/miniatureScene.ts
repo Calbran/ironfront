@@ -1,3 +1,6 @@
+import {generatedLandscape} from './generatedLandscape';
+import {liveUnits,type LiveCallbacks} from './liveUnits';
+import type {World} from '../../../../packages/game-core/src/index';
 import {worldDetail} from './worldDetail';
 import * as T from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -10,7 +13,7 @@ import { initialCity, WORLD_TO_MODEL as S, type MiniatureData, type StudyCity } 
 
 export interface StudySettings { strategy: boolean; textures: boolean; snow: boolean; sprites: boolean; borders: boolean; motion: boolean; shadows: boolean }
 export interface StudyStats { residentChunks?:number; visibleSoldiers?:number; mode?:string; fps: number; calls: number; triangles: number; trees: number; buildings: number; view: string }
-export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect: (id: number) => void, onStats: (s: StudyStats) => void, onError: (text: string) => void, onArmies: (ids: number[]) => void) {
+export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect: (id: number) => void, onStats: (s: StudyStats) => void, onError: (text: string) => void, onArmies: (ids: number[]) => void, live?:LiveCallbacks) {
   const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
@@ -74,12 +77,13 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
   for (const r of data.world.regions) terrain(geometries.rings[r.id], grounds[r.terrain], 0, r.id);
   for (const patch of data.world.geography?.terrainPatches ?? []) { const mesh=terrain(patch.contours, grounds[patch.terrain], 0.012); if(mesh)mesh.userData.detailPatch=true; }
   for (const island of data.world.geography?.islands ?? []) terrain([island], grounds.plains, 0);
+  const landscapeStudy=live?null:generatedLandscape(scene,data,terrainMeshes);
   const borderGroup = new T.Group(); scene.add(borderGroup); borderGroup.visible = false;
   for (const r of data.world.regions) {
     const color = r.owner === null ? 0xc9c7a2 : new T.Color(data.world.nations[r.owner].color).getHex();
     for (const ring of geometries.rings[r.id]) {
       const geo = new T.BufferGeometry().setFromPoints([...ring, ring[0]].map(p => new T.Vector3(p[0]*S, 0.075, p[1]*S)));
-      borderGroup.add(new T.Line(geo, new T.LineBasicMaterial({ color, transparent: true, opacity: 0.65 })));
+      borderGroup.add(new T.Line(geo, new T.LineBasicMaterial({ color, transparent: true, opacity: 0.65 })));borderGroup.children[borderGroup.children.length-1].userData.region=r.id;
     }
   }
   let selection: T.Object3D | null = null;
@@ -180,7 +184,7 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
   };
   const overlay=document.createElement("div");overlay.className="force-overlay";host.append(overlay);
   const selectedArmies=new Set<number>(),owner=data.world.vision?.owner??0;
-  function selectArmies(ids:number[],additive=false){if(!additive)selectedArmies.clear();for(const id of ids)if(forces.some(f=>f.army.id===id&&f.army.owner===owner))selectedArmies.add(id);onArmies([...selectedArmies]);}
+  function selectArmies(ids:number[],additive=false){if(!additive)selectedArmies.clear();for(const id of ids)if(data.world.armies.some(a=>a.id===id&&a.owner===owner))selectedArmies.add(id);onArmies([...selectedArmies]);}
   const markers=forces.map(f=>{
     const button=document.createElement("button");button.className="force-marker";button.textContent=f.army.squadKind==="motorized"?"▰":"⚑";
     button.title=`${data.world.nations[f.army.owner].name} · Army ${f.army.id} · ${f.army.squadKind??"infantry"}`;
@@ -188,19 +192,25 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
     button.addEventListener("pointerdown",e=>e.stopPropagation());button.onclick=e=>{selectArmies([f.army.id],e.shiftKey);};overlay.append(button);return {f,button};
   });
   const nationLabels: {element:HTMLElement,x:number,z:number}[]=[];
+  let ownershipKey='';
+  function refreshLabels(){const key=data.world.regions.map(r=>r.owner).join(',');if(key===ownershipKey)return;ownershipKey=key;nationLabels.forEach(l=>l.element.remove());nationLabels.length=0;
   const remaining=new Set(data.world.regions.filter(r=>r.owner!==null).map(r=>r.id));
   while(remaining.size){const first=remaining.values().next().value!;remaining.delete(first);const component=[data.world.regions[first]];
     for(let i=0;i<component.length;i++)for(const id of component[i].neighbors)if(remaining.has(id)&&data.world.regions[id].owner===component[0].owner){remaining.delete(id);component.push(data.world.regions[id]);}
     const anchor=component.reduce((a,b)=>a.area>b.area?a:b),element=document.createElement("span");element.className="nation-label";element.textContent=data.world.nations[anchor.owner!].name;overlay.append(element);nationLabels.push({element,x:anchor.x*S,z:anchor.y*S});
   }
+  }
+  refreshLabels();
   const projection=new T.Vector3();
   function screenPoint(x:number,z:number){projection.set(x,.5,z).project(camera);return {x:(projection.x+1)*host.clientWidth/2,y:(1-projection.y)*host.clientHeight/2,visible:projection.z>=-1&&projection.z<=1&&Math.abs(projection.x)<=1&&Math.abs(projection.y)<=1};}
   function updateOverlay(){for(const {f,button} of markers){const p=screenPoint(f.x,f.z);button.hidden=settings.strategy||!p.visible;button.style.left=`${p.x}px`;button.style.top=`${p.y-18}px`;button.setAttribute("aria-pressed",String(selectedArmies.has(f.army.id)));}
     for(const label of nationLabels){const p=screenPoint(label.x,label.z);label.element.hidden=!settings.strategy||!p.visible;label.element.style.left=`${p.x}px`;label.element.style.top=`${p.y}px`;}
   }
+  const fogGroup=new T.Group();scene.add(fogGroup);const fogMat=new T.MeshBasicMaterial({color:0x15272b,transparent:true,opacity:.44,depthWrite:false});
+  const fogMeshes=live?terrainMeshes.map(source=>{const m=new T.Mesh(source.geometry,fogMat);m.position.y=.25;m.userData.region=source.userData.region;fogGroup.add(m);return m;}):[];
   const originalGrounds=new Map(terrainMeshes.map(mesh=>[mesh,mesh.material]));
   const politicalMats=new Map(data.world.regions.map(r=>[r.id,new T.MeshBasicMaterial({color:r.owner===null?0x969e8a:data.world.nations[r.owner].color})]));
-  const detailed=worldDetail(scene,data);let fullDetail=false;
+  const detailed=worldDetail(scene,data);const liveLayer=live?liveUnits(scene,host,data.world,live):undefined;let fullDetail=false;
   const target=new T.Vector3();
   function focus(x:number,z:number,span:number){
     target.set(x,0,z);controls.target.copy(target);camera.position.copy(target).add(new T.Vector3(5000,5000,5000));
@@ -231,10 +241,12 @@ renderer.shadowMap.enabled=settings.shadows;
   const onMove=(e:PointerEvent)=>{if(!selecting||e.pointerId!==pointerId)return;const rect=host.getBoundingClientRect();marquee.hidden=false;Object.assign(marquee.style,{left:`${Math.min(down.x,e.clientX)-rect.left}px`,top:`${Math.min(down.y,e.clientY)-rect.top}px`,width:`${Math.abs(e.clientX-down.x)}px`,height:`${Math.abs(e.clientY-down.y)}px`});};
   const onUp=(e:PointerEvent)=>{const wasSelecting=selecting;selecting=false;marquee.hidden=true;if(renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.releasePointerCapture(e.pointerId);if(e.type==="pointercancel")return;
     const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y)>5,rect=renderer.domElement.getBoundingClientRect();
-    if(wasSelecting&&moved){if(!settings.strategy){const ids=forces.filter(f=>{const p=screenPoint(f.x,f.z);return f.army.owner===owner&&p.visible&&p.x>=Math.min(down.x,e.clientX)-rect.left&&p.x<=Math.max(down.x,e.clientX)-rect.left&&p.y>=Math.min(down.y,e.clientY)-rect.top&&p.y<=Math.max(down.y,e.clientY)-rect.top;}).map(f=>f.army.id);selectArmies(ids,e.shiftKey);}return;}
-    if(e.button!==0||moved)return;
-    if(!settings.strategy){const hit=forces.find(f=>{const p=screenPoint(f.x,f.z);return p.visible&&Math.hypot(p.x-(e.clientX-rect.left),p.y-(e.clientY-rect.top))<14;});if(hit){selectArmies([hit.army.id],e.shiftKey);return;}}
-    pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(terrainMeshes,false)[0];if(hit){const id=hit.object.userData.region as number;select(id);onSelect(id);}
+    if(wasSelecting&&moved){if(!settings.strategy){const ids=liveLayer?liveLayer.box(Math.min(down.x,e.clientX)-rect.left,Math.min(down.y,e.clientY)-rect.top,Math.max(down.x,e.clientX)-rect.left,Math.max(down.y,e.clientY)-rect.top,camera):forces.filter(f=>{const p=screenPoint(f.x,f.z);return f.army.owner===owner&&p.visible&&p.x>=Math.min(down.x,e.clientX)-rect.left&&p.x<=Math.max(down.x,e.clientX)-rect.left&&p.y>=Math.min(down.y,e.clientY)-rect.top&&p.y<=Math.max(down.y,e.clientY)-rect.top;}).map(f=>f.army.id);selectArmies(ids,e.shiftKey);}return;}
+    if(moved)return;
+    if(liveLayer){const squad=liveLayer.hit(e.clientX-rect.left,e.clientY-rect.top,camera);if(squad){if(e.button===2&&squad.owner!==data.world.vision?.owner){live?.onAttackTarget?.(squad.id);return;}if(e.button===0&&squad.owner===data.world.vision?.owner){live?.onSelectSquad?.(squad.id,e.shiftKey);return;}}if(e.button===2){pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(terrainMeshes,false)[0];if(hit)live?.onLocalPoint?.(hit.point.x/S,hit.point.z/S,e.shiftKey);return;}}
+    if(e.button!==0)return;
+    if(!settings.strategy&&!liveLayer){const hit=forces.find(f=>{const p=screenPoint(f.x,f.z);return p.visible&&Math.hypot(p.x-(e.clientX-rect.left),p.y-(e.clientY-rect.top))<14;});if(hit){selectArmies([hit.army.id],e.shiftKey);return;}}
+    pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(terrainMeshes,false)[0];if(hit){if(live?.onMapTap?.(hit.point.x/S,hit.point.z/S))return;const id=hit.object.userData.region as number;select(id);onSelect(id);}
   };
   const keys=new Set<string>();
   const editable=()=>document.activeElement?.matches("input,select,textarea,[contenteditable=true]");
@@ -252,12 +264,14 @@ renderer.shadowMap.enabled=settings.shadows;
     const lod=detailed.update(camera,settings.snow,settings.strategy,fullDetail,now,controls.target,settings.sprites);
     if(!settings.strategy){modelBuildings.visible=lod==='regional'&&!settings.sprites;spriteBuildings.visible=settings.sprites&&lod!=='continent';treeGroups.forEach(g=>g.visible=lod==='regional');ribbons.forEach(m=>m.visible=lod!=='continent');rockMesh.visible=lod!=='continent';}
     renderer.shadowMap.enabled=settings.shadows&&!settings.strategy&&(lod==='tactical'||lod==='full');
+    landscapeStudy?.update(camera,settings.snow,settings.strategy,land);
+    if(liveLayer){troopMeshes.forEach(m=>m.visible=false);vehicles.forEach(m=>m.visible=false);markers.forEach(({button})=>button.hidden=true);liveLayer.render(camera,settings.strategy,now);}
     renderer.render(scene,camera);frames++;
     if(sample){sample.frames.push(now-sample.last);sample.last=now;sample.peakVisibleSoldiers=Math.max(sample.peakVisibleSoldiers,detailed.stats().visibleSoldiers);sample.calls=Math.max(sample.calls,renderer.info.render.calls);sample.triangles=Math.max(sample.triangles,renderer.info.render.triangles);if(now>=sample.end){const current=sample;sample=undefined;const sorted=current.frames.slice(1).sort((a,b)=>a-b);const q=(p:number)=>sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))]??0;current.resolve({p50:q(.5),p95:q(.95),p99:q(.99),over33:sorted.filter(t=>t>33.4).length,frames:sorted.length,maxCalls:current.calls,maxTriangles:current.triangles,peakVisibleSoldiers:current.peakVisibleSoldiers,...detailed.stats(),...memory()});}}
 
     if(now-sampleAt>1200){onStats({...detailed.stats(),fps:Math.round(frames*1000/(now-sampleAt)),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,trees:trees.length,buildings:count,view:camera.zoom<.3?"Continent":camera.zoom>2?"Ground":"Regional"});sampleAt=now;frames=0;}
   }else{sampleAt=now;frames=0;}raf=requestAnimationFrame(render);};render();
-  return {view,chooseCity,configure,select,selectArmies,setLoad:detailed.setLoad,setFullDetail(value:boolean){fullDetail=value;},pan(dx:number,dz:number){camera.position.x+=dx;camera.position.z+=dz;controls.target.x+=dx;controls.target.z+=dz;},benchmark(ms=4000){if(sample)throw Error('Benchmark already running');return new Promise(resolve=>{sample={frames:[],last:performance.now(),end:performance.now()+ms,calls:0,triangles:0,peakVisibleSoldiers:0,resolve};});},focusArmy(id:number){const f=forces.find(f=>f.army.id===id);if(f)focus(f.x,f.z,28);},dispose(){disposed=true;sample?.resolve({cancelled:true});sample=undefined;detailed.dispose();cancelAnimationFrame(raf);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointerup",onUp);
+  return {view,chooseCity,configure,select,selectArmies,refineRegion(){if(landscapeStudy){landscapeStudy.setEnabled(true);chooseCity(landscapeStudy.city.feature.id);}},landscapeStats:()=>landscapeStudy?.stats,setLandscape(enabled:boolean){landscapeStudy?.setEnabled(enabled);},focusRegion(id:number){const r=data.world.regions[id];if(r)focus(r.x*S,r.y*S,85);},project(x:number,y:number){const p=screenPoint(x*S,y*S);return p;},liveSnapshot:()=>liveLayer?.snapshot(),setSelectedSquads(ids:string[]){liveLayer?.setSelected(ids);if(liveLayer){selectedArmies.clear();for(const s of data.world.tactics?.squads??[])if(ids.includes(s.id)&&s.army!==null)selectedArmies.add(s.army);}},updateWorld(world:World){data.world=world;liveLayer?.update(world);refreshLabels();const visible=new Set(world.vision?.visible??world.regions.map(r=>r.id));fogMeshes.forEach(m=>m.visible=!visible.has(m.userData.region));for(const line of borderGroup.children){const r=world.regions[line.userData.region];((line as T.Line).material as T.LineBasicMaterial).color.set(r.owner===null?0xc9c7a2:world.nations[r.owner].color);}for(const r of world.regions)politicalMats.get(r.id)?.color.set(r.owner===null?0x969e8a:world.nations[r.owner].color);},setLoad:detailed.setLoad,setFullDetail(value:boolean){fullDetail=value;},pan(dx:number,dz:number){camera.position.x+=dx;camera.position.z+=dz;controls.target.x+=dx;controls.target.z+=dz;},benchmark(ms=4000){if(sample)throw Error('Benchmark already running');return new Promise(resolve=>{sample={frames:[],last:performance.now(),end:performance.now()+ms,calls:0,triangles:0,peakVisibleSoldiers:0,resolve};});},focusArmy(id:number){const f=forces.find(f=>f.army.id===id);if(f)focus(f.x,f.z,28);},dispose(){disposed=true;sample?.resolve({cancelled:true});sample=undefined;landscapeStudy?.dispose();liveLayer?.dispose();detailed.dispose();cancelAnimationFrame(raf);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointerup",onUp);
     overlay.remove();marquee.remove();window.removeEventListener("keydown",onKey);window.removeEventListener("keyup",onKeyUp);window.removeEventListener("blur",onBlur);renderer.domElement.removeEventListener("pointermove",onMove);renderer.domElement.removeEventListener("pointercancel",onUp);politicalMats.forEach(m=>m.dispose());
     const geos=new Set<T.BufferGeometry>(),mats=new Set<T.Material>();scene.traverse(o=>{if(o instanceof T.Mesh || o instanceof T.Line || o instanceof T.Sprite){if("geometry" in o)geos.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);}});geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());resources.forEach(t=>t.dispose());snowLeafMat.dispose();atlasMaterials.forEach(m=>m.dispose());renderer.dispose();renderer.domElement.remove();
   }};
