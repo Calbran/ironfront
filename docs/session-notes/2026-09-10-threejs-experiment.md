@@ -37,3 +37,7 @@ Verified implementation, test and performance records after the user asked wheth
 ## Multi-settlement planner continuation
 
 Authorized continuation adds farming/riverside/industrial patterns, size-based density, explicit regional entrances, bounded candidate retries and neighboring-site lot clearance. The worker attempts all settlements and labels fallbacks. Expanded tests and browser/audit scripts cover patterns, entrances, deterministic seeds and independent town overlap.
+
+## Large-city diorama and capture capital direction
+
+User requested an upper-end city sample with units for scale and asked for a per-city building benchmark. Added a separate 160-building diorama with a prominent capital, civic square, neighborhoods and depot yard, plus density controls and benchmark captures. Recorded intended capital-based ownership separately from unchanged server rules. Expanded shadow coverage with city size to keep high-density measurements representative.

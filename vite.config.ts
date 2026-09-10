@@ -12,6 +12,7 @@ export default defineConfig({
         main: "apps/web/index.html",
         jeep: "apps/web/jeep-preview.html",
         three: "apps/web/three-preview.html",
+        city: "apps/web/city-diorama.html",
         reference: "apps/web/reference-preview.html",
       },
     },

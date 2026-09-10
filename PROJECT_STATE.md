@@ -1,5 +1,9 @@
 # Project State
 
+## Large-city diorama — experimental branch
+
+`/city-diorama.html` contains a 160-building candidate with a capital/clock tower, civic square, residential and market blocks, workshops, supply yard, 144 infantry scale figures and two jeeps. Building-density tests cover 128–1,024 buildings at fixed model scale. Capital-based capture is accepted direction but not implemented; existing capture rules remain unchanged. See [diorama and benchmark](docs/prototypes/large-city-diorama.md) and [decision 030](docs/05-decisions/030-city-capitals-and-large-city-study.md).
+
 ## Terrain-aware town and generation audit — experimental branch
 
 The preview now attempts terrain-aware planning across settlements, with riverside, farming and industrial patterns, size-dependent density and recorded regional-road entrances. Unsafe or undersized plans retain labeled legacy layouts. The art tour selects one sculpted example, with connected streets, street-facing lots and distinct civic/home/shop/workshop models. Fields and vegetation follow completed footprints. The worker records stage times, caches river presentation paths and avoids repeated global river checks in legacy town repair. Pure planner invariants and repeat-seed generation audits are included. Continuous-slope planning and eliminating legacy fallbacks remain future work. See [generator audit](docs/prototypes/town-generation-audit.md).

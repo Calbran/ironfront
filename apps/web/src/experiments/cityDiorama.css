@@ -1,0 +1,2 @@
+.city-study .views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.city-study select{margin-left:auto;background:#32443a;color:#eae7d8;border:1px solid #65715d;padding:5px 8px;border-radius:3px}

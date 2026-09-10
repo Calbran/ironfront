@@ -1,5 +1,11 @@
 # Changelog
 
+## Experimental branch — large-city scale study
+
+- Add a standalone 160-building diorama with a capital landmark, civic/market/residential/industrial areas, supply yard, infantry and jeeps.
+- Add city/street density comparisons through 1,024 buildings, winter views and a repeatable local benchmark.
+- Record capital-based capture as accepted direction with ownership semantics still unresolved; no campaign capture rules changed.
+
 ## Experimental branch — settlement patterns and road entrances
 
 - Attempt terrain-aware plans across preview settlements, with farming/riverside/industrial patterns and size-dependent density.
