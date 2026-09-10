@@ -77,3 +77,5 @@ Mobile infantry model and accepted six-person transport direction: [027: steam j
 Real-city settlement direction: [031 — street seeds](05-decisions/031-real-city-street-seeds.md).
 
 Crafted settlement blocks: [032 — neighborhoods and developed ground](05-decisions/032-crafted-neighborhood-blocks.md).
+
+Dense district direction: [033 — steampunk districts](05-decisions/033-dense-steampunk-districts.md).

@@ -11,7 +11,7 @@ declare global {
 function App() {
   const host = useRef<HTMLDivElement>(null),
     api = useRef<ReturnType<typeof cityDiorama>>(undefined);
-  const [count, setCount] = useState(28),
+  const [count, setCount] = useState(160),
     [winter, setWinter] = useState(false),
     [shadows, setShadows] = useState(true),
     [stats, setStats] = useState<{
@@ -19,6 +19,7 @@ function App() {
       calls: number;
       triangles: number;
       buildings: number;
+      districts?: { kind: string; buildings: number }[];
     }>(),
     [result, setResult] = useState(""),
     [busy, setBusy] = useState(false),
@@ -49,21 +50,20 @@ function App() {
       <div className="reference-canvas" ref={host} />
       <aside>
         <p>
-          Crafted neighborhood: raised civic streets, dense market frontages and
-          a lower warehouse quay. Choose 28 buildings for this study; larger
-          counts retain the city experiment.
+          District city study: commercial frontages near the civic core,
+          residential blocks beyond them, and industry along the lower quay.
+          Select 28 for the original neighborhood.
         </p>
-        {count !== 28 && (
+        {stats?.districts?.length ? (
           <p>
-            <a href="https://www.openstreetmap.org/copyright">
-              © OpenStreetMap contributors
-            </a>{" "}
-            ·{" "}
-            <a href="https://www.openstreetmap.org/#map=16/53.482/-2.2275">
-              Street reference
-            </a>
+            {["commercial", "residential", "industrial"]
+              .map(
+                (kind) =>
+                  `${kind}: ${stats.districts!.filter((d) => d.kind === kind).reduce((n, d) => n + d.buildings, 0)} buildings`,
+              )
+              .join(" · ")}
           </p>
-        )}
+        ) : null}
         <div className="views">
           {(["city", "capital", "depot", "street"] as const).map((v) => (
             <button key={v} onClick={() => api.current?.focus(v)}>

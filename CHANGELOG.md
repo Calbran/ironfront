@@ -1,5 +1,11 @@
 # Changelog
 
+## Experimental branch — dense steampunk districts
+
+- Grow commercial, residential and industrial blocks from the crafted neighborhood with checked placement and shared developed surfaces.
+- Add deep urban buildings, height/roof variants, construction shells, cranes and selected raised alley walkways.
+- Differentiate maintained commercial areas from cluttered service alleys; add emissive windows and capped instanced chimney smoke.
+
 ## Experimental branch — crafted neighborhood
 
 - Add a default 28-building composition with raised civic/residential blocks and a lower warehouse quay.

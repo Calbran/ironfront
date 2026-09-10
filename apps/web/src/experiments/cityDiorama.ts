@@ -1,3 +1,4 @@
+import { planDistrictCity } from "../../../../packages/game-core/src/districtCity";
 import {
   planCraftedNeighborhood,
   neighborhoodHeight,
@@ -20,6 +21,7 @@ export function cityDiorama(
     calls: number;
     triangles: number;
     buildings: number;
+    districts?: { kind: string; buildings: number }[];
   }) => void,
 ) {
   const renderer = new T.WebGLRenderer({ antialias: true });
@@ -69,6 +71,7 @@ export function cityDiorama(
     winter = false,
     disposed = false,
     raf = 0;
+  let districtSummary: { kind: string; buildings: number }[] = [];
   scene.add(group);
   const ownedTextures: T.Texture[] = [];
   const materials: T.Material[] = [],
@@ -86,7 +89,11 @@ export function cityDiorama(
     materials.push(m);
     return m;
   };
+  let smoke: T.InstancedMesh | undefined;
+  let smokeSources: { x: number; y: number; z: number }[] = [];
   function clear() {
+    smoke = undefined;
+    smokeSources = [];
     ownedTextures.splice(0).forEach((t) => t.dispose());
     group.traverse((o) => {
       if (o instanceof T.InstancedMesh) o.dispose();
@@ -107,10 +114,10 @@ export function cityDiorama(
     materials.length = 0;
     geometries.length = 0;
   }
-  function generate(target = 28) {
+  function generate(target = 160) {
     clear();
     count = target;
-    const crafted = target === 28;
+    const crafted = true;
     const elevation = (z: number) => (crafted ? neighborhoodHeight(z) : 0);
     const stone = mat("#aba58c"),
       roof = mat("#485b61"),
@@ -169,10 +176,18 @@ export function cityDiorama(
         z,
         a,
       );
-    const layout = crafted
-      ? planCraftedNeighborhood()
-      : planOrganicCity(target);
+    const layout =
+      target === 28
+        ? { ...planCraftedNeighborhood(), districts: [] }
+        : planDistrictCity(target);
     const lots = layout.lots;
+    districtSummary =
+      "districts" in layout
+        ? layout.districts.map((d) => ({
+            kind: d.kind,
+            buildings: d.buildings,
+          }))
+        : [];
     extent = layout.extent;
     count = lots.length + 1;
     sun.position.set(-extent * 0.8, extent * 1.4, extent * 0.6);
@@ -204,9 +219,47 @@ export function cityDiorama(
     } else box(paving, 0, 0.025, 0, 36, 0.1, 32);
     if (crafted) {
       box(paving, 0, 0.025, 25, 48, 0.1, 18);
-      for (const x of [-37, 37]) box(stone, x, 0.5, -7, 0.6, 1, 54);
+      if (target === 28)
+        for (const x of [-37, 37]) box(stone, x, 0.5, -7, 0.6, 1, 54);
       for (const x of [-21, 21])
         for (let z = 23; z < 33; z += 1) box(stone, x, 0.13, z, 2, 0.25, 1);
+    }
+    if ("districts" in layout) {
+      for (const d of layout.districts) {
+        box(
+          d.kind === "industrial" ? soil : paving,
+          d.x,
+          0.03,
+          d.z,
+          d.width + 2,
+          0.1,
+          d.depth + 4,
+        );
+      }
+      const central = layout.districts.filter((d) => d.x === 0);
+      if (central.length)
+        for (const side of [-1, 1]) {
+          const neighbors = layout.districts.filter(
+            (d) => d.x === side * 60 && d.kind !== "industrial",
+          );
+          if (neighbors.length) {
+            const low = Math.max(
+              Math.min(...central.map((d) => d.z - 14)),
+              Math.min(...neighbors.map((d) => d.z - 14)),
+            );
+            if (low < -30)
+              box(paving, side * 30, 0.025, (low - 30) / 2, 16, 0.1, -30 - low);
+          }
+        }
+      const developedWidth =
+        Math.max(
+          ...layout.districts.map((d) => Math.abs(d.x) + d.width / 2),
+          38,
+        ) * 2;
+      box(soil, 0, 0.02, 55, developedWidth, 0.08, 16);
+      box(paving, 0, 0.025, 15, developedWidth, 0.1, 32);
+      if (layout.districts.some((d) => d.x === 0))
+        box(paving, 0, 0.025, -30, 44, 0.1, 24);
     }
     // World-aligned cobbles remain the same size on curved and straight streets.
     const canvas = document.createElement("canvas");
@@ -407,6 +460,77 @@ export function cityDiorama(
         if (nearest && !lots.some((p) => lineDistance(p, [edge, nearest]) < 5))
           ribbon([edge, nearest], 2.2, path, 0.13);
       }
+    // Service alleys accumulate clutter; civic and commercial streets stay maintained.
+    if ("districts" in layout) {
+      const grime = mat("#554e40"),
+        iron = mat("#4a5550"),
+        paper = mat("#b6a888");
+      for (const [index, d] of layout.districts.entries()) {
+        const amount =
+          d.kind === "commercial" ? 2 : d.kind === "industrial" ? 12 : 9;
+        for (let i = 0; i < amount; i++) {
+          const x = d.x - 16 + ((i * 11 + index * 7) % 32),
+            z = d.z + (((i * 3) % 5) - 2) * 0.25;
+          box(grime, x, 0.09, z, 1.8, 0.025, 0.85);
+          if (i % 3 === 0) {
+            box(iron, x, 0.4, z, 0.65, 0.7, 0.65);
+            box(roof, x, 0.78, z, 0.73, 0.08, 0.73);
+          } else if (i % 3 === 1) {
+            box(wood, x, 0.3, z, 0.8, 0.55, 0.7);
+            box(brass, x, 0.6, z, 0.85, 0.05, 0.12);
+          } else
+            for (let j = 0; j < 3; j++)
+              box(
+                paper,
+                x + j * 0.25,
+                0.13,
+                z + j * 0.12,
+                0.23,
+                0.025,
+                0.16,
+                (i + j) * 0.7,
+              );
+        }
+        if (d.kind === "residential" && index % 3 === 0) {
+          const pair = lots.filter(
+            (p) =>
+              p.variant.startsWith("urban") &&
+              p.variant !== "urbanBuild" &&
+              Math.abs(p.z - d.z) === 6 &&
+              Math.abs(p.x - d.x) < 15,
+          );
+          const front = pair.find((p) =>
+            pair.some((q) => q.x === p.x && q.z !== p.z),
+          );
+          if (front) {
+            box(iron, front.x, 4.2, d.z, 1.3, 0.18, 3.4);
+            for (const dx of [-0.6, 0.6]) {
+              box(brass, front.x + dx, 4.65, d.z, 0.09, 0.08, 3.4);
+              for (const dz of [-1.5, 0, 1.5])
+                box(iron, front.x + dx, 4.45, d.z + dz, 0.08, 0.5, 0.08);
+            }
+          }
+        }
+        if (d.kind === "industrial") {
+          if (index % 2 === 0) {
+            box(iron, d.x, 3.5, d.z, 0.55, 7, 0.55);
+            box(brass, d.x + 2, 7, d.z, 10, 0.35, 0.35);
+            box(iron, d.x - 2, 6.65, d.z, 1.8, 0.6, 1.2);
+            box(iron, d.x + 6, 5, d.z, 0.045, 4, 0.045);
+            box(wood, d.x + 6, 3, d.z, 1.4, 0.12, 1.4);
+            for (let h = 1; h < 7; h++) box(brass, d.x, h, d.z, 0.9, 0.1, 0.9);
+          }
+          for (const dx of [-12, 0, 12])
+            add(
+              new T.CylinderGeometry(0.65, 0.65, 1.2, 8),
+              iron,
+              d.x + dx,
+              0.6,
+              d.z,
+            );
+        }
+      }
+    }
     // Gardens and workshops rotate with the frontage rather than the world axes.
     for (const p of lots) {
       const local = (x: number, z: number) => ({
@@ -464,7 +588,11 @@ export function cityDiorama(
         );
         ps.forEach((p, i) => {
           dummy.position.set(p.x, elevation(p.z), p.z);
-          dummy.scale.setScalar(p.scale);
+          dummy.scale.set(
+            p.scale,
+            p.scale * ("heightScale" in p ? (p.heightScale ?? 1) : 1),
+            p.scale,
+          );
           dummy.rotation.set(0, p.angle, 0);
           dummy.updateMatrix();
           mesh.setMatrixAt(i, dummy.matrix);
@@ -478,6 +606,29 @@ export function cityDiorama(
           winterMeshes.push(mesh);
         }
       }
+    }
+    smokeSources = lots
+      .filter((p) => p.variant === "factory")
+      .slice(0, 12)
+      .map((p) => ({
+        x: p.x + (2.8 * Math.cos(p.angle) - 1.4 * Math.sin(p.angle)) * p.scale,
+        y: elevation(p.z) + 6.7 * p.scale,
+        z: p.z + (-2.8 * Math.sin(p.angle) - 1.4 * Math.cos(p.angle)) * p.scale,
+      }));
+    if (smokeSources.length) {
+      const smokeMaterial = new T.MeshBasicMaterial({
+        color: "#77766d",
+        transparent: true,
+        opacity: 0.15,
+        depthWrite: false,
+      });
+      smoke = new T.InstancedMesh(
+        new T.IcosahedronGeometry(1, 1),
+        smokeMaterial,
+        smokeSources.length * 4,
+      );
+      smoke.frustumCulled = false;
+      group.add(smoke);
     }
     const troopMat = mat("#ffffff");
     troopMat.vertexColors = true;
@@ -562,6 +713,23 @@ export function cityDiorama(
     if (disposed) return;
     controls.update();
     const now = performance.now();
+    if (smoke) {
+      smokeSources.forEach((p, i) => {
+        for (let k = 0; k < 4; k++) {
+          const age = (now * 0.00012 + k * 0.25 + i * 0.07) % 1;
+          dummy.position.set(
+            p.x + age * 3,
+            p.y + age * 7,
+            p.z + Math.sin(age * 4 + i) * 0.5,
+          );
+          dummy.scale.setScalar((0.35 + age * 0.9) * Math.sin(age * Math.PI));
+          dummy.rotation.set(0, age, 0);
+          dummy.updateMatrix();
+          smoke!.setMatrixAt(i * 4 + k, dummy.matrix);
+        }
+      });
+      smoke.instanceMatrix.needsUpdate = true;
+    }
     renderer.render(scene, camera);
     frames++;
     if (sample) {
@@ -579,6 +747,7 @@ export function cityDiorama(
           q = (p: number) => times[Math.floor((times.length - 1) * p)] ?? 0;
         s.resolve({
           buildings: count,
+          districts: districtSummary,
           units: 144,
           p50: q(0.5),
           p95: q(0.95),
@@ -598,6 +767,7 @@ export function cityDiorama(
         calls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
         buildings: count,
+        districts: districtSummary,
       });
       last = now;
       frames = 0;

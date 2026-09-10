@@ -46,3 +46,9 @@ The default 160-building layout now retains approximately 1,564 of 4,174 scene u
 ## Crafted block study
 
 The current default is 28 buildings, including the hall. This authored composition establishes an elevated civic/residential area, shared developed ground and a lower warehouse quay. Count selections from 128 upward retain the larger Ancoats experiment. See decision 032 for scope. A short local 28-building sample recorded p95 17.1 ms, 59 calls and 104,300 triangles with 144 static infantry. This was a three-second smoke measurement, not a full hardware benchmark. Summer/winter and switching 28→128→28 were checked without browser errors. All 114 tests passed; focused block validation and typecheck/build passed after surface refinements.
+
+## Dense district expansion
+
+The current default is a 160-building district city; 28 retains the authored neighborhood. Larger counts now use `districtCity.ts` rather than the earlier Ancoats placement mode. The real-data experiment remains in source. District summaries describe expansion blocks; the original 28-building civic neighborhood is separate. See decision 033 for accepted crowded-steampunk direction and current limitations.
+
+`district-city-results.json` records nine local samples with the urban kit, construction shells, cranes, alley walkways, clutter, emissive windows and capped instanced smoke. Frame-interval p95 was 17.1–17.5 ms, with 84 city-view calls and about 1.13 million triangles at 1,024 buildings. No browser errors; winter and narrow-width checks passed. A final paving-seam fill followed that measurement; it does not constitute a new full benchmark. This is static-unit scenery plus decorative smoke, not live combat or minimum-device certification. No isolated before/after GPU timing for smoke or emissions was collected. All 115 tests and typecheck/build passed.

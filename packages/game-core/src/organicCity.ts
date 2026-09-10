@@ -7,6 +7,7 @@ export type CityLot = CityPoint & {
   angle: number;
   scale: number;
   variant: string;
+  heightScale?: number;
 };
 export function segmentDistance(p: CityPoint, a: CityPoint, b: CityPoint) {
   const dx = b.x - a.x,
@@ -31,12 +32,25 @@ export function lineDistance(p: CityPoint, points: CityPoint[]) {
 export function lotsOverlap(a: CityLot, b: CityLot) {
   const dims = (p: CityLot) => ({
     w:
-      ((p.variant === "factory" ? 10 : p.variant === "home" ? 6 : 7) *
+      ((p.variant.startsWith("urban")
+        ? 5
+        : p.variant === "factory"
+          ? 10
+          : p.variant === "home"
+            ? 6
+            : 7) *
         p.scale) /
         2 +
       0.2,
     d:
-      ((p.variant === "factory" ? 7 : p.variant === "home" ? 5 : 6) * p.scale) /
+      ((p.variant.startsWith("urban")
+        ? 11
+        : p.variant === "factory"
+          ? 7
+          : p.variant === "home"
+            ? 5
+            : 6) *
+        p.scale) /
         2 +
       0.2,
   });
@@ -63,13 +77,25 @@ export function lotsOverlap(a: CityLot, b: CityLot) {
 /** Conservative segment-vs-oriented-building clearance for road widths and roof eaves. */
 export function lotIntersectsStreet(lot: CityLot, street: CityStreet) {
   const w =
-    ((lot.variant === "factory" ? 10 : lot.variant === "home" ? 6 : 7) *
+    ((lot.variant.startsWith("urban")
+      ? 5
+      : lot.variant === "factory"
+        ? 10
+        : lot.variant === "home"
+          ? 6
+          : 7) *
       lot.scale) /
       2 +
     0.2 +
     street.width / 2;
   const d =
-    ((lot.variant === "factory" ? 7 : lot.variant === "home" ? 5 : 6) *
+    ((lot.variant.startsWith("urban")
+      ? 11
+      : lot.variant === "factory"
+        ? 7
+        : lot.variant === "home"
+          ? 5
+          : 6) *
       lot.scale) /
       2 +
     0.2 +

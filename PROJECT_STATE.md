@@ -1,5 +1,9 @@
 # Project State
 
+## Dense district city — experimental branch
+
+The city diorama defaults to 160 buildings organized into commercial, residential and industrial blocks around the crafted civic neighborhood. New narrow/deep urban models, varied heights, construction shells, cranes, selected alley walkways, clutter, emissive windows and capped instanced smoke establish a denser steampunk direction. The 28-building study remains available. District planning is restricted to the study terrain, not integrated with campaign generation. See [decision 033](docs/05-decisions/033-dense-steampunk-districts.md).
+
 ## Crafted neighborhood — experimental branch
 
 The city diorama now defaults to a 28-building block study with elevated civic paving, dense aligned frontages and a lower warehouse quay. Shared developed surfaces cover the interior; placement validates clearance, level foundations and street-facing entrances. Existing larger city options remain available. This is a bounded authored composition, not a general terrain parcel solver. See [decision 032](docs/05-decisions/032-crafted-neighborhood-blocks.md).
