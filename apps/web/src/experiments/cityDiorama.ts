@@ -1,5 +1,6 @@
 import {
   planOrganicCity,
+  inCivicPrecinct,
   lineDistance,
 } from "../../../../packages/game-core/src/organicCity";
 import * as T from "three";
@@ -114,6 +115,7 @@ export function cityDiorama(
       soil = mat("#827456"),
       leaves = mat("#778c51");
     ground = mat(winter ? "#dde3dc" : "#8f9c66");
+    let civicScale = 1;
     const batches = new Map<T.Material, T.BufferGeometry[]>();
     const add = (
       g: T.BufferGeometry,
@@ -125,6 +127,7 @@ export function cityDiorama(
     ) => {
       g.rotateY(angle);
       g.translate(x, y, z);
+      g.scale(civicScale, civicScale, civicScale);
       const gs = batches.get(m) ?? [];
       gs.push(g);
       batches.set(m, gs);
@@ -153,7 +156,7 @@ export function cityDiorama(
     });
     sun.shadow.camera.updateProjectionMatrix();
     box(ground, 0, -0.65, 0, extent * 2 + 32, 1.2, extent * 2 + 32);
-    box(paving, 0, 0.025, 0, 49, 0.1, 42);
+    box(paving, 0, 0.025, 0, 36, 0.1, 32);
     // World-aligned cobbles remain the same size on curved and straight streets.
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 128;
@@ -211,7 +214,7 @@ export function cityDiorama(
           b = street.points[i],
           p = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
         if (
-          (Math.abs(p.x) < 25 && p.z > -22 && p.z < 32) ||
+          inCivicPrecinct(p) ||
           (p.x > 20 && p.x < 54 && p.z > 23 && p.z < 53)
         )
           continue;
@@ -259,22 +262,25 @@ export function cityDiorama(
         }
       }
     }
+    civicScale = 0.72;
+    const civicBrick = kit.architecture.walls,
+      civicRoof = kit.architecture.roof;
     // Capital: raised civic hall, portico, slate roof and a clock tower.
     box(stone, 0, 0.6, -7, 24, 1.2, 16);
-    box(stone, 0, 4.6, -7, 21, 8, 13);
+    box(civicBrick, 0, 4.6, -7, 21, 8, 13);
     add(
       new T.ConeGeometry(1, 3, 4)
         .rotateY(Math.PI / 4)
         .scale(23 / Math.SQRT2, 1, 15 / Math.SQRT2),
-      roof,
+      civicRoof,
       0,
       10,
       -7,
     );
     for (const y of [1.5, 4, 7.6]) box(stone, 0, y, -7, 21.4, 0.2, 13.4);
-    box(stone, 0, 9.8, -10, 6, 19.6, 6);
-    box(roof, 0, 20, -10, 7, 1, 7);
-    add(new T.ConeGeometry(4.8, 5, 4), roof, 0, 23, -10, Math.PI / 4);
+    box(civicBrick, 0, 9.8, -10, 6, 19.6, 6);
+    box(civicRoof, 0, 20, -10, 7, 1, 7);
+    add(new T.ConeGeometry(4.8, 5, 4), civicRoof, 0, 23, -10, Math.PI / 4);
     box(brass, 0, 27, -10, 0.2, 5, 0.2);
     box(mat("#345d79"), 1.4, 28, -10, 2.8, 1.5, 0.08);
     for (const x of [-8, -4, 4, 8]) box(stone, x, 3.8, 1, 1, 6, 1);
@@ -293,17 +299,25 @@ export function cityDiorama(
       -6.94,
     ); // clock is mounted separately below
     const clock = new T.Mesh(new T.CircleGeometry(1, 24), mat("#e4dfbd"));
-    clock.position.set(0, 16, -6.9);
+    clock.scale.setScalar(0.72);
+    clock.position.set(0, 16 * 0.72, -6.9 * 0.72);
     group.add(clock);
-    box(roof, 0, 16.4, -6.83, 0.08, 0.8, 0.08);
-    box(roof, 0.3, 16, -6.82, 0.6, 0.08, 0.08);
+    box(civicRoof, 0, 16.4, -6.83, 0.08, 0.8, 0.08);
+    box(civicRoof, 0.3, 16, -6.82, 0.6, 0.08, 0.08);
+    for (const x of [-10.56, 10.56])
+      for (const z of [-11, -7, -3]) {
+        box(stone, x, 4.8, z, 0.16, 3.3, 1.9);
+        box(glass, x + Math.sign(x) * 0.09, 4.8, z, 0.08, 2.8, 1.45);
+        box(stone, x + Math.sign(x) * 0.14, 4.8, z, 0.08, 0.12, 1.5);
+      }
+    civicScale = 1;
     // Market square, monument, gardens and a usable supply-depot yard.
-    box(stone, 0, 0.5, 12, 3, 1, 3);
-    add(new T.CylinderGeometry(0.45, 0.7, 4, 8), brass, 0, 3, 12);
-    for (const x of [-17, 17]) {
-      box(leaves, x, 0.08, 12, 7, 0.15, 10);
-      box(stone, x, 0.1, 12, 7.5, 0.2, 10.5);
-      box(leaves, x, 0.22, 12, 6.7, 0.12, 9.7);
+    box(stone, 0, 0.5, 8, 3, 1, 3);
+    add(new T.CylinderGeometry(0.45, 0.7, 4, 8), brass, 0, 3, 8);
+    for (const x of [-13, 13]) {
+      box(leaves, x, 0.08, 8, 5, 0.15, 6);
+      box(stone, x, 0.1, 8, 5.5, 0.2, 6.5);
+      box(leaves, x, 0.22, 8, 4.7, 0.12, 5.7);
     }
     box(soil, 36, 0.07, 37, 31, 0.12, 26);
     for (let i = 0; i < 10; i++) {
@@ -319,6 +333,26 @@ export function cityDiorama(
       );
     }
     for (let i = 0; i < 4; i++) box(wood, 29 + i * 3, 0.5, 44, 2.4, 1, 5);
+    for (const edge of [
+      { x: -18, z: 0 },
+      { x: 18, z: 0 },
+      { x: 0, z: -16 },
+      { x: 8, z: 16 },
+    ]) {
+      const nearest = layout.streets
+        .flatMap((s) => s.points)
+        .filter(
+          (p) =>
+            !inCivicPrecinct(p) && Math.hypot(p.x - edge.x, p.z - edge.z) < 16,
+        )
+        .sort(
+          (a, b) =>
+            Math.hypot(a.x - edge.x, a.z - edge.z) -
+            Math.hypot(b.x - edge.x, b.z - edge.z),
+        )[0];
+      if (nearest && !lots.some((p) => lineDistance(p, [edge, nearest]) < 5))
+        ribbon([edge, nearest], 2.2, path, 0.13);
+    }
     // Gardens and workshops rotate with the frontage rather than the world axes.
     for (const p of lots) {
       const local = (x: number, z: number) => ({
@@ -356,13 +390,14 @@ export function cityDiorama(
         .scale(23.1 / Math.SQRT2, 1, 15.1 / Math.SQRT2),
       mat("#e3e9e4"),
     );
-    cap.position.set(0, 10.06, -7);
+    cap.scale.setScalar(0.72);
+    cap.position.set(0, 10.06 * 0.72, -7 * 0.72);
     cap.visible = winter;
     group.add(cap);
     winterMeshes.push(cap);
     const placements = [...lots, ...layout.trees];
-    for (const x of [-17, 17])
-      for (const z of [9, 15])
+    for (const x of [-13, 13])
+      for (const z of [6, 10])
         placements.push({ x, z, angle: 0, scale: 0.55, variant: "tree" });
     for (const variant of new Set(placements.map((p) => p.variant))) {
       const ps = placements.filter((p) => p.variant === variant);

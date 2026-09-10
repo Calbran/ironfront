@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 export interface KitPart {geometry:T.BufferGeometry; material:T.Material; snow:boolean}
-export interface MiniatureKit {variants:Map<string,KitPart[]>;dispose:()=>void}
+export interface MiniatureKit {architecture:{walls:T.MeshStandardMaterial;roof:T.MeshStandardMaterial};variants:Map<string,KitPart[]>;dispose:()=>void}
 /** Shared art-scene models. Callers instance these parts; source geometry is owned here. */
 export function createMiniatureKit():MiniatureKit {
  const groundHeight=(_x:number,_z:number)=>0;
@@ -42,5 +42,5 @@ export function createMiniatureKit():MiniatureKit {
  function capture(name:string,draw:()=>void){batches.clear();snowPieces.length=0;draw();const parts:KitPart[]=[];for(const [material,geos]of batches){const normalized=geos.map(g=>g.index?g.toNonIndexed():g);const geometry=mergeGeometries(normalized)!;parts.push({geometry,material,snow:false});new Set([...geos,...normalized]).forEach(g=>g.dispose());}if(snowPieces.length){parts.push({geometry:mergeGeometries(snowPieces)!,material:snowMat,snow:true});snowPieces.forEach(g=>g.dispose());}variants.set(name,parts);}
  for(const b of townSites)if(!variants.has(b.type))capture(b.type,()=>building({...b,x:0,z:0}));
  capture('tree',()=>tree(0,0,4,false));capture('pine',()=>tree(0,0,4,true));
- return {variants,dispose(){const materials=new Set<T.Material>();for(const parts of variants.values())for(const p of parts){p.geometry.dispose();materials.add(p.material);}materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());}};
+ return {variants,architecture:{walls,roof},dispose(){const materials=new Set<T.Material>();for(const parts of variants.values())for(const p of parts){p.geometry.dispose();materials.add(p.material);}materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());}};
 }

@@ -1,3 +1,4 @@
+import { pruneCityStreets } from "./cityStreetPruning";
 import { ancoatsSample } from "../data/city-samples/ancoats";
 /** Experimental large-city layout. Coordinates are miniature scene units, not campaign distances. */
 export type CityPoint = { x: number; z: number };
@@ -104,6 +105,13 @@ export function lotIntersectsStreet(lot: CityLot, street: CityStreet) {
   }
   return false;
 }
+export const inCivicPrecinct = (p: CityPoint, margin = 0) =>
+  (Math.abs(p.x) < 19 + margin && p.z > -18 - margin && p.z < 18 + margin) ||
+  (p.x > -12 - margin &&
+    p.x < 1 + margin &&
+    p.z > 16 - margin &&
+    p.z < 28 + margin);
+
 export function planOrganicCity(
   target = 160,
   seed = 731,
@@ -214,7 +222,7 @@ export function planOrganicCity(
     Math.min(...rivers.map((r) => lineDistance(p, r)));
   // Fixed landmarks reserve their own pedestrian and servicing space.
   const reserved = (p: CityPoint, margin = 0) =>
-    (Math.abs(p.x) < 27 + margin && p.z > -23 - margin && p.z < 32 + margin) ||
+    inCivicPrecinct(p, margin) ||
     (p.x > 20 - margin &&
       p.x < 54 + margin &&
       p.z > 23 - margin &&
@@ -282,6 +290,8 @@ export function planOrganicCity(
     if (lots.length >= target - 1) break;
     accept(p);
   }
+  const usefulStreets = pruneCityStreets(streets, lots);
+  streets.splice(0, streets.length, ...usefulStreets);
   const trees: CityLot[] = [];
   for (let i = 0; i < target * 5; i++) {
     const p = {

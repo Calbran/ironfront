@@ -1,5 +1,15 @@
 # Changelog
 
+## Experimental branch — street cleanup
+
+- Prune the imported street graph after selecting lots, retaining frontage access and connecting routes with three principal outward approaches.
+- Remove disconnected empty streets and unused spurs; reassemble road runs before placing lamps and vegetation.
+
+## Experimental branch — integrated town hall
+
+- Reduce the hall and civic square, bring surrounding frontages closer, and add pedestrian approaches to nearby streets.
+- Reuse neighborhood brick/slate materials and add side windows while retaining the clock-tower ownership landmark.
+
 ## Experimental branch — real-city organic layout
 
 - Seed the large-city study from a bundled, attributed Ancoats street/canal extract; add a repeatable offline converter.

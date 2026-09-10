@@ -2,7 +2,7 @@
 
 ## Real-city street seed — experimental branch
 
-The large-city study now uses a local Ancoats/Manchester OpenStreetMap street and canal sample with attribution. It replaces concentric roads with real district geometry, closer footprint-checked frontages, canal workshops, scattered outer housing, procedural cobbles and batched steampunk lamps. Civic/depot/park reservations remain; the canal is adapted around fixed landmarks. This is one offline reference in the diorama, not integration into the campaign/world generator. See [decision 031](docs/05-decisions/031-real-city-street-seeds.md).
+The large-city study now uses a local Ancoats/Manchester OpenStreetMap street and canal sample with attribution. It replaces concentric roads with real district geometry, closer footprint-checked frontages, canal workshops, scattered outer housing, procedural cobbles and batched steampunk lamps. The hall now uses the neighborhood brick/slate materials at 72% of its original dimensions, with side windows, a smaller square and tighter civic reservations. Civic/depot/park reservations remain; the canal is adapted around fixed landmarks. After lot placement, a graph pass removes unused street branches and retains frontage routes plus three outward approaches; the default sample retains about 37% of imported road length. This is one offline reference in the diorama, not integration into the campaign/world generator. See [decision 031](docs/05-decisions/031-real-city-street-seeds.md).
 
 ## Large-city diorama — experimental branch
 

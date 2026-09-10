@@ -6,7 +6,7 @@ The original composition reserves a civic precinct and supply yard, places house
 
 ## Current real-city layout
 
-The current scene uses `packages/game-core/src/organicCity.ts` with a bundled Ancoats OpenStreetMap reference. Dense frontage placement uses oriented footprint separation and street clearance; civic/depot areas and small parks stay reserved. Canal-side lots favor factories, and outer lots favor homes. The capital and units retain their scale. Cobbles use one procedural texture; lamps share merged geometry and emissive materials, without individual lights. Reference data and licensing live in `packages/game-core/data/city-samples/README.md`.
+The current scene uses `packages/game-core/src/organicCity.ts` with a bundled Ancoats OpenStreetMap reference. Dense frontage placement uses oriented footprint separation and street clearance; civic/depot areas and small parks stay reserved. Canal-side lots favor factories, and outer lots favor homes. The units retain their scale; a subsequent hall-integration pass reduces the capital to 72% of its original dimensions, shrinks the square to 36×32, shares neighborhood brick/slate and brings nearby lots closer. Existing benchmark measurements predate that visual pass. Cobbles use one procedural texture; lamps share merged geometry and emissive materials, without individual lights. Reference data and licensing live in `packages/game-core/data/city-samples/README.md`.
 
 This is a contemporary street seed, with canal geometry diverted around the fixed sample landmarks. It does not yet import building footprints or connect the diorama to actual campaign rivers. The density controls enlarge the same source district, not the geographic coverage of the source. See [decision 031](../05-decisions/031-real-city-street-seeds.md). Earlier results below describe the original layout; the updated measurements are stored separately in `organic-city-results.json`.
 
@@ -38,3 +38,7 @@ All normal samples stayed near 60 FPS with no frames above 33.4 ms. The renderer
 ### Ancoats-seeded layout rerun
 
 The updated local run recorded p50 frame intervals of about 16.7 ms and p95 of 18.5–18.7 ms across the nine samples, including 256 buildings at CPU4x. No sampled intervals exceeded 33.4 ms, and no browser errors were recorded. City view used 58 calls; the 1,024-building stress case submitted about 3.50 million triangles, substantially more than the original sparse study. This is still a repeated-asset/static-unit benchmark on the local machine. Typecheck, all 111 tests and the production build passed. Winter and phone-width overflow checks passed in the browser script.
+
+### Street cleanup after hall integration
+
+The default 160-building layout now retains approximately 1,564 of 4,174 scene units of source street length (62.5% removed). Shortest routes connect occupied frontage nodes to civic-facing roots within each source component, plus three principal outward approaches. Unused components disappear. Vegetation is placed against the retained roads. This is visual pruning; source components are not joined across arbitrary terrain. The earlier density benchmark predates this pass and the hall integration. Browser city/capital captures were checked without page errors, alongside typecheck, the full 112-test suite and an additional passing connected-spur test, and build.

@@ -2,7 +2,7 @@
 
 ## Accepted direction
 
-The user wants cobbled streets, steampunk lamps, close downtown frontages, alleys, open spaces, waterways tied to the surrounding geography and rural outskirts. They rejected the concentric-ring layout and its sparse spacing. They asked to seed the algorithm with actual city data and selected an industrial river town with warehouses, canals and dense worker housing.
+The user wants cobbled streets, steampunk lamps, close downtown frontages, alleys, open spaces, waterways tied to the surrounding geography and rural outskirts. They also requested that the town hall blend into the surrounding city while retaining its ownership role. They rejected the concentric-ring layout and its sparse spacing. They asked to seed the algorithm with actual city data and selected an industrial river town with warehouses, canals and dense worker housing.
 
 ## Implemented in the experiment
 
@@ -13,3 +13,7 @@ The reference database is kept separately under its ODbL license with provenance
 ## Provisional and unresolved
 
 This is one contemporary street sample adapted to game proportions, not a historical reconstruction. The fixed diorama capital and depot require a diverted canal corridor. Actual terrain/river inputs, grade-separated road interpretation, full block/parcel infill, varied worker terraces, multiple reference districts, connected regional entrances and deployment to the campaign town planner remain future work. Real-world building footprints are not yet imported. Density and art require user review. Existing authoritative capture and continent generation are unchanged.
+
+The hall integration pass uses 72% of the original model dimensions, shared neighborhood brick/slate, side windows and a 36×32 civic square. These dimensions remain provisional art tuning. Shared civic reservation logic leaves room for the existing infantry formation and lets lots approach the smaller square.
+
+The user subsequently rejected the excess unused imported roads. A post-placement graph pass now retains shortest civic-facing routes to occupied frontages, with three approaches on the principal component. Unused components and branches are removed; degree-two runs are reassembled for lamp spacing. Existing disconnected source components are not artificially joined across terrain. These remain visual roads, not authoritative movement paths.
