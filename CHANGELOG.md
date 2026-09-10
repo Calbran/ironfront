@@ -1,5 +1,9 @@
 # Changelog
 
+## Experimental branch — riverfront placement
+
+- Relocate decorative buildings off rivers using model-footprint clearance, dry-land checks and nearby street/building avoidance before generating fields and scenery.
+
 ## Experimental branch — river and region-edge refinement
 
 - Rounded preview river bends, joined strip edges and shared those paths with channel/riverbank placement while preserving bridge approaches and mouths.

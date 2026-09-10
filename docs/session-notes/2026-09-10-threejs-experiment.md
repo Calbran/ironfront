@@ -17,3 +17,7 @@ Connected an opt-in Three.js map to the existing App polling and command callbac
 ## River and edge follow-up
 
 User approved continuing the generated-region study. Added bounded river-corner rounding, continuous strip joins and matching channel/bank paths, with bridge approaches and mouths retained. Added material/grain edge blending and cached terrain-vertex evaluation. Live renderer and authoritative world remain unchanged.
+
+## Riverfront placement correction
+
+User identified buildings overlapping a river. Added conservative model-footprint clearance and deterministic dry-lot relocation in the generated preview worker, ahead of scenery/fields. Reviewed the affected town in summer and winter; browser checks reported no errors or phone overflow.

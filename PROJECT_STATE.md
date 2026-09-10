@@ -4,7 +4,7 @@
 
 The regular game can opt into Three.js with `?renderer=three`; Pixi remains the default. Existing server snapshots drive live squad models and existing commands handle selection, movement and attacks. Full Pixi interaction parity remains unfinished. See [live integration and soak methodology](docs/prototypes/live-campaign-performance.md).
 
-The generated preview now offers **Visit refined region**: one actual river-adjacent settlement region with sculpted ground, wear, grain, bank rocks, vegetation, field furrows, fences and bridge decks. River bends now use continuous rounded strips; ground height, color and texture fade into the surrounding region material. It is a bounded art study, not a continent-wide or live terrain replacement. See [landscape notes](docs/prototypes/generated-landscape.md).
+The generated preview now offers **Visit refined region**: one actual river-adjacent settlement region with sculpted ground, wear, grain, bank rocks, vegetation, field furrows, fences and bridge decks. River bends now use continuous rounded strips; ground height, color and texture fade into the surrounding region material. Preview buildings overlapping riverbanks now relocate to nearby dry lots with model-footprint clearance. It is a bounded art study, not a continent-wide or live terrain replacement. See [landscape notes](docs/prototypes/generated-landscape.md).
 
 ## Full-world miniature stress test — experimental branch
 

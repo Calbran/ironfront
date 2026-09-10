@@ -23,3 +23,7 @@ The preview now rounds river corners with bounded quadratic segments while retai
 Terrain height, color and texture grain fade over a ten-model-unit margin into the original region material, including the winter palette. The art-tour button clears its temporary region outline; ordinary map selection still draws an outline. Terrain construction caches repeated vertices to avoid recalculating nearby roads, rivers and buildings for shared triangle corners.
 
 Follow-up measurement: p95 17.6 ms both detailed and baseline, no sampled frames over 33.4 ms, no browser errors or phone overflow. Refined rendering submitted 192 calls / 574,918 triangles. The runner reached the study in 4,452 ms including its 1,500 ms settling delay. See [river/edge comparison](generated-landscape-river-results.json); the earlier comparison remains retained above. These are short local samples rather than a new full campaign soak.
+
+## Riverfront building clearance
+
+A preview-only worker pass relocates building models whose conservative footprint plus bank margin overlaps the presented river. It accounts for model eaves/porches, stays on local land, avoids town streets and other building envelopes, and searches deterministically within 180 world units. If no safe lot is available, the decorative model is omitted. Layout radius and later field/scenery generation reflect relocated buildings. Authoritative settlement features and the live campaign renderer are unchanged. Summer/winter review and local performance sampling passed (p95 17.3 ms detailed; no sampled frames over 33.4 ms).
