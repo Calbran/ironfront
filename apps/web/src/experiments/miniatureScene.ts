@@ -1,0 +1,213 @@
+import * as T from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { signedArea } from "../../../../packages/game-core/src/geography";
+import { mapGeometry } from "../mapGeometry";
+import { bakeInfantry } from "../infantryModel";
+import { createJeep } from "../prototypes/jeepModel";
+import { initialCity, WORLD_TO_MODEL as S, type MiniatureData, type StudyCity } from "./miniatureData";
+
+export interface StudySettings { textures: boolean; snow: boolean; sprites: boolean; borders: boolean; motion: boolean; shadows: boolean }
+export interface StudyStats { fps: number; calls: number; triangles: number; trees: number; buildings: number; view: string }
+export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect: (id: number) => void, onStats: (s: StudyStats) => void, onError: (text: string) => void) {
+  const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+  renderer.outputColorSpace = T.SRGBColorSpace; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.16;
+  renderer.domElement.setAttribute("aria-label", "Three-dimensional map. Drag to orbit, right-drag to pan, scroll to zoom. Use territory selection and view buttons for keyboard access.");
+  host.append(renderer.domElement);
+  const scene = new T.Scene(); scene.background = new T.Color(0x253e40);
+  const camera = new T.OrthographicCamera(-50, 50, 35, -35, 0.1, 8000);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.12;
+  controls.minPolarAngle = 0.08; controls.maxPolarAngle = 1.16;
+  controls.minZoom = 0.05; controls.maxZoom = 10;
+  controls.screenSpacePanning = false;
+  const hemi = new T.HemisphereLight(0xf0efdc, 0x485646, 2.3); scene.add(hemi);
+  const sun = new T.DirectionalLight(0xffe4b9, 3.1); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.055;
+  scene.add(sun, sun.target);
+  const sunCamera = sun.shadow.camera;
+  Object.assign(sunCamera, { left: -75, right: 75, top: 75, bottom: -75, near: 1, far: 650 });
+  sunCamera.updateProjectionMatrix();
+  let disposed = false, settings: StudySettings = { textures: false, snow: false, sprites: false, borders: false, motion: true, shadows: true };
+  const resources = new Set<T.Texture>();
+  const loader = new T.TextureLoader();
+  const load = (url: string, apply: (t: T.Texture) => void) => {
+    loader.load(url, texture => { if (disposed) { texture.dispose(); return; } resources.add(texture); texture.colorSpace = T.SRGBColorSpace; apply(texture); }, undefined, () => { if (!disposed) onError(`Some retained artwork could not load (${url.split("/").at(-1)}). Model colors remain available.`); });
+  };
+  const material = (color: number) => new T.MeshStandardMaterial({ color, roughness: 0.93, metalness: 0 });
+  const palette = { plains: 0x95a36b, forest: 0x657b4d, highlands: 0xaaa389, mountains: 0x8b9185 };
+  const grounds = Object.fromEntries(Object.entries(palette).map(([k, color]) => [k, material(color)])) as Record<keyof typeof palette, T.MeshStandardMaterial>;
+  for (const [key, mat] of Object.entries(grounds)) {
+    load(`/art/biomes/${key}-v1.webp`, texture => {
+      texture.wrapS = texture.wrapT = T.RepeatWrapping; texture.repeat.set(0.06, 0.06); texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      mat.userData.retainedMap = texture; mat.map = settings.textures && !settings.snow ? texture : null; mat.needsUpdate = true;
+    });
+  }
+  const waterMat = new T.MeshStandardMaterial({ color: 0x406a70, roughness: 0.46, metalness: 0.08 });
+  const water = new T.Mesh(new T.PlaneGeometry(100000, 100000), waterMat); water.rotation.x = -Math.PI / 2; water.position.y = -0.8; scene.add(water);
+  const geometries = mapGeometry(data.world);
+  const land = new T.Group(); scene.add(land);
+  const terrainMeshes: T.Mesh[] = [];
+  function terrain(rings: number[][][], mat: T.Material, y: number, region?: number) {
+    const shapes: T.Shape[] = [];
+    for (const ring of rings) {
+      if (ring.length < 3) continue;
+      const points = ring.map(p => new T.Vector2(p[0] * S, -p[1] * S));
+      if (signedArea(ring) > 0) shapes.push(new T.Shape(points));
+      else {
+        const probe = points[0];
+        const outer = shapes.find(shape => { const pts = shape.getPoints(); let inside = false; for (let i=0,j=pts.length-1;i<pts.length;j=i++) if ((pts[i].y>probe.y)!==(pts[j].y>probe.y) && probe.x < (pts[j].x-pts[i].x)*(probe.y-pts[i].y)/(pts[j].y-pts[i].y)+pts[i].x) inside=!inside; return inside; });
+        outer?.holes.push(new T.Path(points));
+      }
+    }
+    if (!shapes.length) return;
+    const geo = new T.ShapeGeometry(shapes); geo.rotateX(-Math.PI / 2);
+    const mesh = new T.Mesh(geo, mat); mesh.position.y = y; mesh.receiveShadow = true; land.add(mesh);
+    if (region !== undefined) { mesh.userData.region = region; terrainMeshes.push(mesh); }
+  }
+  for (const r of data.world.regions) terrain(geometries.rings[r.id], grounds[r.terrain], 0, r.id);
+  for (const patch of data.world.geography?.terrainPatches ?? []) terrain(patch.contours, grounds[patch.terrain], 0.012);
+  for (const island of data.world.geography?.islands ?? []) terrain([island], grounds.plains, 0);
+  const borderGroup = new T.Group(); scene.add(borderGroup); borderGroup.visible = false;
+  for (const r of data.world.regions) {
+    const color = r.owner === null ? 0xc9c7a2 : new T.Color(data.world.nations[r.owner].color).getHex();
+    for (const ring of geometries.rings[r.id]) {
+      const geo = new T.BufferGeometry().setFromPoints([...ring, ring[0]].map(p => new T.Vector3(p[0]*S, 0.075, p[1]*S)));
+      borderGroup.add(new T.Line(geo, new T.LineBasicMaterial({ color, transparent: true, opacity: 0.65 })));
+    }
+  }
+  let selection: T.Object3D | null = null;
+  function select(id: number) {
+    if (selection) { scene.remove(selection); selection.traverse(o => { if (o instanceof T.Line) { o.geometry.dispose(); (o.material as T.Material).dispose(); } }); }
+    selection = new T.Group();
+    for (const ring of geometries.rings[id] ?? []) (selection as T.Group).add(new T.Line(new T.BufferGeometry().setFromPoints([...ring,ring[0]].map(p=>new T.Vector3(p[0]*S,0.1,p[1]*S))),new T.LineBasicMaterial({color:0xf4dd97})));
+    scene.add(selection);
+  }
+  function ribbon(points: {x:number;y:number}[], width: number, mat: T.Material, y = 0.055) {
+    if(points.length<2)return;
+    const positions:number[]=[];
+    for(let i=1;i<points.length;i++){
+      const a=points[i-1],b=points[i],dx=b.x-a.x,dz=b.y-a.y,len=Math.hypot(dx,dz);if(len<0.001)continue;
+      const nx=-dz/len*width/2,nz=dx/len*width/2;
+      for(const p of [[a.x*S+nx,a.y*S+nz],[a.x*S-nx,a.y*S-nz],[b.x*S+nx,b.y*S+nz],[b.x*S+nx,b.y*S+nz],[a.x*S-nx,a.y*S-nz],[b.x*S-nx,b.y*S-nz]]) positions.push(p[0],y,p[1]);
+    }
+    const geometry = new T.BufferGeometry();geometry.setAttribute("position",new T.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();
+    const mesh=new T.Mesh(geometry,mat);mesh.receiveShadow=true;scene.add(mesh);
+  }
+  const roadMat = new T.MeshStandardMaterial({ color: 0xb7a17a, side: T.DoubleSide, roughness: 1 });
+  const riverMat = new T.MeshStandardMaterial({ color:0x4c858b,side:T.DoubleSide,roughness:0.5,metalness:0.04 });
+  for(const river of data.world.geography?.rivers ?? []) ribbon(river.map(p=>({x:p[0],y:p[1]})),1.35,riverMat,0.035);
+  for(const road of data.roads) ribbon(road.points,road.kind==="main"?0.8:0.5,roadMat);
+  for(const city of data.cities) for(const road of city.layout.roads) ribbon(road,0.8,roadMat);
+
+  const modelBuildings = new T.Group(), spriteBuildings = new T.Group(); scene.add(modelBuildings,spriteBuildings); spriteBuildings.visible=false;
+  const buildingRecords = data.cities.flatMap(city=>city.layout.buildings.map(b=>({...b,region:city.region})));
+  const brick = material(0xa47a58), roofMat = material(0x48565b), windowMat = material(0xdbc79a), stoneMat=material(0xb2aa8c), chimneyMat=material(0x80593f);
+  const boxGeometry = new T.BoxGeometry(1,1,1);
+  const roofGeometry = new T.BufferGeometry();
+  roofGeometry.setAttribute("position", new T.Float32BufferAttribute([
+    -.5,0,-.5,.5,0,-.5,0,.38,-.5, -.5,0,.5,0,.38,.5,.5,0,.5,
+    -.5,0,-.5,0,.38,-.5,0,.38,.5, -.5,0,-.5,0,.38,.5,-.5,0,.5,
+    .5,0,-.5,.5,0,.5,0,.38,.5, .5,0,-.5,0,.38,.5,0,.38,-.5,
+  ],3)); roofGeometry.computeVertexNormals(); roofMat.side=T.DoubleSide;
+  const count=buildingRecords.length;
+  const bodies=new T.InstancedMesh(boxGeometry,brick,count),roofs=new T.InstancedMesh(roofGeometry,roofMat,count),foundations=new T.InstancedMesh(boxGeometry,stoneMat,count),chimneys=new T.InstancedMesh(boxGeometry,chimneyMat,count), windows=new T.InstancedMesh(boxGeometry,windowMat,count*4);
+  for(const m of [bodies,roofs,foundations,chimneys,windows]){m.castShadow=true;m.receiveShadow=true;modelBuildings.add(m);}
+  const dummy=new T.Object3D();
+  function place(mesh:T.InstancedMesh,i:number,x:number,y:number,z:number,sx:number,sy:number,sz:number,angle=0){dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(0,angle,0);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);}
+  const atlasMaterials=new Map<number,T.SpriteMaterial>();
+  load("/art/city-kit/buildings-atlas.png", texture=>{
+    for(let i=0;i<36;i++){const tile=texture.clone();resources.add(tile);tile.repeat.set(1/6,1/6);tile.offset.set((i%6)/6,1-(Math.floor(i/6)+1)/6);tile.needsUpdate=true;atlasMaterials.set(i,new T.SpriteMaterial({map:tile,alphaTest:0.08,depthWrite:true}));}
+    for(const b of buildingRecords){const sprite=new T.Sprite(atlasMaterials.get(b.sprite%36));sprite.scale.set(b.width*S*1.25,b.height*S*1.25,1);sprite.position.set(b.x*S,b.height*S*0.55,b.y*S);spriteBuildings.add(sprite);}
+  });
+  buildingRecords.forEach((b,i)=>{
+    const x=b.x*S,z=b.y*S,w=b.width*S,d=b.height*S,h=Math.max(0.85,Math.min(w,d)*(b.role==="landmark"?0.65:0.4));
+    place(foundations,i,x,.08,z,w*1.1,.16,d*1.1,b.angle);
+    place(bodies,i,x,h/2+.15,z,w,h,d,b.angle);
+    place(roofs,i,x,h+.15,z,w*1.12,w*.65,d*1.14,b.angle);
+    place(chimneys,i,x-w*.24,h+.45,z+d*.22,w*.13,h*.9,w*.13,b.angle);
+    for(let j=0;j<4;j++) place(windows,i*4+j,x+(j%2===0?-1:1)*w*.24,h*.57,z+(j<2?-1:1)*(d*.5+.02),w*.16,h*.32,.05);
+    bodies.setColorAt(i,new T.Color().setHSL(.065+(i%5)*.008,.19,.55+(i%4)*.025));
+  });
+  for(const m of [bodies,roofs,foundations,chimneys,windows]){m.instanceMatrix.needsUpdate=true;m.computeBoundingSphere();}
+  const trees=data.scenery.filter(s=>s.kind==="tree");
+  // Chunked instance batches allow Three's frustum culling to skip distant forests.
+  const treeChunks=new Map<string,typeof trees>();
+  for(const tree of trees){const key=`${Math.floor(tree.x/700)}:${Math.floor(tree.y/700)}`;const chunk=treeChunks.get(key)??[];chunk.push(tree);treeChunks.set(key,chunk);}
+  const trunkMat=material(0x675340),leafMat=material(0x668348),snowLeafMat=material(0xdde6dc);
+  const crownParts = [new T.SphereGeometry(.46,6,5),new T.SphereGeometry(.4,6,5),new T.SphereGeometry(.38,6,5)];
+  crownParts[0].translate(0,.95,0);crownParts[1].translate(-.2,.62,.05);crownParts[2].translate(.21,.68,-.05);
+  const crownGeometry=mergeGeometries(crownParts)!;crownParts.forEach(g=>g.dispose());
+  const treeGroups:T.Group[]=[];
+  for(const chunk of treeChunks.values()){
+    const g=new T.Group(),trunks=new T.InstancedMesh(new T.CylinderGeometry(.07,.1,.8,5),trunkMat,chunk.length),crowns=new T.InstancedMesh(crownGeometry,leafMat,chunk.length);
+    for(const m of [trunks,crowns]){m.castShadow=true;m.receiveShadow=true;g.add(m);}
+    chunk.forEach((t,i)=>{const size=t.width*S*.9;place(trunks,i,t.x*S,size*.3,t.y*S,size,size,size);place(crowns,i,t.x*S,0,t.y*S,size,size,size,i*.72);crowns.setColorAt(i,new T.Color().setHSL(.20+(i%7)*.004,.22,.65+(i%4)*.03));});
+    trunks.computeBoundingSphere();crowns.computeBoundingSphere();treeGroups.push(g);scene.add(g);
+  }
+  const rocks = data.world.mountainScenery?.length ? data.world.mountainScenery : data.scenery.filter(s=>s.kind==="rock");
+  const rockMat=material(0x9a9d90),rockGeo=new T.IcosahedronGeometry(1,0),rockMesh=new T.InstancedMesh(rockGeo,rockMat,rocks.length*3);
+  rocks.forEach((r,i)=>{const size=r.width*S*.38;for(let j=0;j<3;j++)place(rockMesh,i*3+j,r.x*S+Math.sin(i+j)*size*.32,size*(.3+j*.12),r.y*S+Math.cos(i+j)*size*.2,size*(.8-j*.13),size*(.65+j*.15),size*.7,i+j);});
+  rockMesh.castShadow=true;rockMesh.receiveShadow=true;rockMesh.computeBoundingSphere();scene.add(rockMesh);
+
+  // Reuse the same infantry source and jeep; animation is staged, never a campaign command.
+  const rig=bakeInfantry(0),troopMat=new T.MeshStandardMaterial({vertexColors:true,roughness:.9});
+  const troopCount=24;
+  const troopMeshes=rig.parts.map(p=>{const m=new T.InstancedMesh(p.geometry,troopMat,troopCount);m.castShadow=true;m.frustumCulled=false;scene.add(m);return m;});
+  const jeep=createJeep();jeep.root.scale.setScalar(.42);scene.add(jeep.root);
+  let studyCity=initialCity(data), staging=studyCity?.layout.roads.find(r=>r.length>=2) ?? [];
+  const actorWorld=new T.Matrix4(),local=new T.Matrix4(),combined=new T.Matrix4();
+  let actorTime=0;
+  const updateActors=(dt:number)=>{
+    if(settings.motion)actorTime+=dt;
+    if(!studyCity || staging.length<2)return;
+    const start=staging[0],end=staging[staging.length-1];
+    const dx=(end.x-start.x)*S,dz=(end.y-start.y)*S,len=Math.hypot(dx,dz)||1;
+    const heading=Math.atan2(dx,dz);
+    for(let i=0;i<troopCount;i++){
+      const t=(i/32+actorTime*.024)%1,side=(i%3-1)*.3;
+      dummy.position.set(start.x*S+dx*t-dz/len*side,.07,start.y*S+dz*t+dx/len*side);dummy.rotation.set(0,heading,0);dummy.scale.setScalar(.36);dummy.updateMatrix();actorWorld.copy(dummy.matrix);
+      const frame=settings.motion?Math.floor((actorTime*1.7+i*.17)%1*64):0;
+      rig.parts.forEach((_,part)=>{local.fromArray(rig.walk[frame][part]);combined.multiplyMatrices(actorWorld,local);troopMeshes[part].setMatrixAt(i,combined);});
+    }
+    for(const m of troopMeshes)m.instanceMatrix.needsUpdate=true;
+    const t=(actorTime*.012+.6)%1;jeep.root.position.set(start.x*S+dx*t+.9,.07,start.y*S+dz*t);jeep.root.rotation.y=heading;
+  };
+  const target=new T.Vector3();
+  function focus(x:number,z:number,span:number,overhead=false){
+    target.set(x,0,z);controls.target.copy(target);camera.position.copy(target).add(new T.Vector3(0,overhead?500:240,overhead?.001:260));
+    camera.zoom=100/span;camera.updateProjectionMatrix();controls.update();
+  }
+  function view(mode:"continent"|"town"|"ground"|"top"){
+    if(mode==="continent"){
+      const bounds=new T.Box3().setFromObject(land),center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());
+      const aspect=host.clientWidth/host.clientHeight;
+      focus(center.x,center.z,Math.max(size.z,size.x/aspect)*1.18,true);
+    }
+    else if(studyCity)focus(studyCity.feature.x*S,studyCity.feature.y*S,mode==="ground"?28:mode==="town"?85:100,mode==="top");
+  }
+  function chooseCity(id:string){const city=data.cities.find(c=>c.feature.id===id);if(!city)return;studyCity=city;staging=city.layout.roads.find(r=>r.length>=2)??[];actorTime=0;select(city.region);view("town");}
+  function configure(next:StudySettings){
+    settings={...next};borderGroup.visible=settings.borders;modelBuildings.visible=!settings.sprites;spriteBuildings.visible=settings.sprites;renderer.shadowMap.enabled=settings.shadows;
+    for(const [name,mat]of Object.entries(grounds)){mat.map=settings.textures&&!settings.snow?mat.userData.retainedMap??null:null;mat.needsUpdate=true;mat.color.setHex(settings.snow?(name==="forest"?0xb8c8c0:0xe5e6db):palette[name as keyof typeof palette]);}
+    leafMat.color.setHex(settings.snow?0xc5d5cf:0x668348);roofMat.color.setHex(settings.snow?0xc8d4d7:0x48565b);rockMat.color.setHex(settings.snow?0xc5cbc6:0x9a9d90);
+    hemi.color.setHex(settings.snow?0xe0ebf5:0xf0efdc);sun.color.setHex(settings.snow?0xfff1da:0xffe4b9);
+  }
+  const raycaster=new T.Raycaster(),pointer=new T.Vector2();let down={x:0,y:0};
+  const onDown=(e:PointerEvent)=>{down={x:e.clientX,y:e.clientY};};
+  const onUp=(e:PointerEvent)=>{if(e.button!==0||Math.hypot(e.clientX-down.x,e.clientY-down.y)>5)return;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(terrainMeshes,false)[0];if(hit){const id=hit.object.userData.region as number;select(id);onSelect(id);}};
+  renderer.domElement.addEventListener("pointerdown",onDown);renderer.domElement.addEventListener("pointerup",onUp);
+  const resize=()=>{const {width,height}=host.getBoundingClientRect();if(!width||!height)return;renderer.setSize(width,height);camera.left=-50*width/height;camera.right=50*width/height;camera.top=50;camera.bottom=-50;camera.updateProjectionMatrix();};
+  const observer=new ResizeObserver(resize);observer.observe(host);resize();view("town");
+  let previous=performance.now(),sampleAt=previous,frames=0,raf=0;
+  const render=()=>{if(disposed)return;const now=performance.now(),dt=Math.min(.05,(now-previous)/1000);previous=now;if(!document.hidden){controls.update();updateActors(dt);
+    sun.target.position.copy(controls.target);sun.position.copy(controls.target).add(new T.Vector3(-85,160,90));
+    renderer.render(scene,camera);frames++;
+    if(now-sampleAt>1200){onStats({fps:Math.round(frames*1000/(now-sampleAt)),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,trees:trees.length,buildings:count,view:camera.zoom<.3?"Continent":camera.zoom>2?"Ground":"Regional"});sampleAt=now;frames=0;}
+  }else{sampleAt=now;frames=0;}raf=requestAnimationFrame(render);};render();
+  return {view,chooseCity,configure,select,dispose(){disposed=true;cancelAnimationFrame(raf);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointerup",onUp);
+    const geos=new Set<T.BufferGeometry>(),mats=new Set<T.Material>();scene.traverse(o=>{if(o instanceof T.Mesh || o instanceof T.Line || o instanceof T.Sprite){if("geometry" in o)geos.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);}});geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());resources.forEach(t=>t.dispose());snowLeafMat.dispose();atlasMaterials.forEach(m=>m.dispose());renderer.dispose();renderer.domElement.remove();
+  }};
+}

@@ -5,3 +5,5 @@ dist/
 .impeccable/review/
 playwright-report/
 test-results/
+
+/node_modules

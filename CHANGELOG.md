@@ -437,3 +437,7 @@ Reduced the default jeep from 3,964 to 692 triangles and 188 to two meshes. Vert
 ## 2026-09-10 — Live infantry models
 
 Integrated the benchmark infantry model with live squad positions, facing and firing. Added lazy loading, viewport/zoom culling, offscreen member-animation omission, instanced poses, contact shadows and renderer cleanup/fallback. Existing saves work on reload.
+
+## 2026-09-10 — Experimental Three.js world renderer (branch only)
+
+Added a standalone generated-world preview with retained Pixi comparison, instanced model buildings/forests, reused infantry and jeep, sprite/texture switches, winter palette and camera presets. Kept the original checkout and campaign authority intact. Typecheck/build and all 106 tests passed; desktop/mobile browser smoke passed with no page errors. Art parity, elevation and live campaign migration remain future work.

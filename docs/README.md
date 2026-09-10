@@ -59,3 +59,5 @@ Contextual scenery: [023: farmland, riverbanks, and vegetation groups](05-decisi
 Mobile infantry model and accepted six-person transport direction: [027: steam jeep](05-decisions/027-steam-jeep-transport.md).
 
 - [028: Live infantry rendering](05-decisions/028-live-infantry-rendering.md) — model integration, culling and limits.
+
+- [Three.js migration experiment](prototypes/threejs-migration.md) — isolated miniature-world renderer study.

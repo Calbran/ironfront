@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         main: "apps/web/index.html",
         jeep: "apps/web/jeep-preview.html",
+        three: "apps/web/three-preview.html",
       },
     },
   },

@@ -1,5 +1,9 @@
 # Project State
 
+## Three.js renderer experiment — branch only
+
+`/three-preview.html` explores the existing generated world in Three.js with miniature building volumes, reused infantry/jeep models, sprites, winter colors and a Pixi comparison. The original game remains available. No campaign migration or new biome mechanics are shipped. See [prototype notes](docs/prototypes/threejs-migration.md) and decision 029.
+
 ## Steam jeep model study — September 10, 2026
 
 The default jeep is simplified to 692 triangles and two merged meshes (previously 3,964 triangles and 188 meshes), with geometry/materials shared across copies. Six passenger sockets and the hinged gate remain. Crowd instancing and live campaign performance are not yet measured.
