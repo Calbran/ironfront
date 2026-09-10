@@ -1,0 +1,9 @@
+# Connected settlement roads
+
+Accepted: settlements should share a believable sparse road network, with major routes, local feeders, occasional alternate routes, and river bridges. Roads are visual initially.
+
+Implemented: deterministic distance-ordered component linking connects reachable settlement sites using existing ground routing and mountain avoidance. Unlike the old proximity-limited pair links, the connecting pass has no distance or degree cutoff. A second pass adds up to roughly 12% extra links when they significantly shorten detours. Pruning minor-town leaf branches identifies a main-road backbone linking major cities and national capitals. Local roads appear closer in; main roads remain visible farther out. Road/river intersections receive bridge decks and rails. Validated bank-side arc alternatives are preferred when they reduce repeated river crossings. Existing terrain accents follow the expanded network.
+
+The network is derived from saved geography, so existing campaigns receive it on reload. No migration, movement bonus, supply mechanic, ownership change, or bridge combat is introduced. River crossings are marked where routes intersect rivers; choosing optimal engineered crossings and elevation-aware valley routing beyond existing mountain avoidance remain future refinements. Road widths and loop density are provisional visual tuning.
+
+Performance follow-up: shared border gateways and each region's legal navigation-grid edges are cached for the lifetime of that immutable region geometry. Decorative road, terrain-accent, and scenery generation runs in a dedicated browser worker; results are attached to Pixi only after the worker returns. Campaign 1886A31B's cold road generation fell from roughly 35 seconds to 2.5 seconds locally, and the remaining computation no longer blocks map input, animation, or polling. Path invalidation still clears local navigation grids when saved mountain obstacles are established.

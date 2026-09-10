@@ -1,0 +1,9 @@
+# Forest and mountain sprite generation — 2026-09-09
+
+Created an eight-variant transparent atlas using the built-in image-generation tool. Preserved its original PNG and a 1024px WebP runtime copy (223 KiB); exact prompt recorded in docs/06-art/biome-scenery-prompt.md.
+
+Added pure cosmetic generation in packages/game-core/src/biomeScenery.ts. Region and biome contours are rasterized once; seeded candidates vary location, variant, size and local density. Forests receive dense irregular canopy, mountain patches receive larger rocky sprites, and highlands receive sparse foothills/ridges. Land envelopes, river corridors and settlement-layout radii exclude conflicting placements. Client frame trimming tolerates small atlas gutter shifts. World-space sprites are grouped spatially and hidden outside the viewport. Both old triangle rendering paths were removed.
+
+Validation: typecheck, all 17 test files, and production build pass. Generator invariants verify deterministic output, no world mutation, independence from campaign ownership/time, land placement, settlement clearings, variant ranges and biome patch use. Desktop 1440px and phone 390px browser checks verify texture and scenery loading, pan into woodland, close zoom/Fit and no runtime errors/overflow. Reviewed forest coverage, natural silhouettes and overview mountain distribution. No saved-game migration or mechanics changes.
+
+Owner requested larger, fewer mountains. Increased rock size by 15/7 and spacing by 11/6; larger footprint checks further reduce placements in narrow terrain. Boreal: 126→20 rocks, average width 160→351. Ironfront: 246→40, width 164→349. Trees retain their tuning. Verified typecheck, targeted scenery invariants, production build and mountain-focused desktop/phone browser checks. Art tuning remains provisional.

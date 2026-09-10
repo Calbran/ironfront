@@ -1,0 +1,9 @@
+# Port art kit
+
+Generated with the built-in ImageGen tool. Installed at `apps/web/public/art/city-kit/port-atlas-v1.png`: 1536 × 1024 RGBA, three columns and two rows, 512 × 512 cells. Source orientation is preserved for buildings, cargo, and crane. Flat pier and quay decks can rotate along a shoreline.
+
+Cells, row-major: wooden pier, warehouse, harbor office, steam crane, cargo pallet, stone quay. The renderer trims transparent cell padding. Atlas indexes 36–41 follow the original city atlas. The circular ground stamp is no longer rendered; old ground texture files remain available for future art work.
+
+## Exact generation prompt
+
+Create a transparent PNG sprite atlas for a Victorian steampunk strategy game harbor. Actual alpha transparency, no checkerboard painted background. Exactly 3 columns by 2 rows, six equally sized square cells, each object centered with 15 percent clear padding, no overlap. Muted slate gray roofs, warm weathered timber, brick, restrained brass. Consistent high overhead view, fronts facing screen bottom, no isometric diamond angle. Crisp readable shapes for small game sprites. Top row left: long straight wooden pier deck viewed directly overhead, vertical north-south, no buildings, no shadows outside deck. Top row middle: brick harbor warehouse with broad slate roof and cargo doors facing screen bottom. Top row right: small harbor master's office with copper roof and signal mast. Bottom row left: dockside steam cargo crane with compact wooden base. Bottom row middle: stacked cargo crates and barrels on a square pallet. Bottom row right: low stone quay segment with mooring bollards viewed directly overhead, vertical north-south. Six separate reusable objects only, no ocean, no ground scenery, no boats, no labels, no text, no grid lines. Transparent background. Buildings have a fixed consistent viewpoint; pier and quay are flat overhead modules.

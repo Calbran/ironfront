@@ -10,12 +10,23 @@ import {
   createWorld,
   report,
 } from "../../../packages/game-core/src/index.ts";
+import { worldForPlayer } from "../../../packages/game-core/src/vision.ts";
 import { Store } from "./store.ts";
 const identity = z.object({
   name: z.string().trim().min(2).max(26),
   faction: z.enum(["iron", "crown", "aether"]),
 });
 const order = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("squad-attack"), squads: z.array(z.string().min(1).max(100)).min(1).max(32), target: z.string().min(1).max(100) }),
+  z.object({type:z.literal("capture-settlement"),squads:z.array(z.string().min(1).max(100)).min(1).max(32),region:z.number().int().nonnegative(),feature:z.string().min(1).max(100)}),
+  z.object({type:z.literal("garrison-squads"),squads:z.array(z.string().min(1).max(100)).min(1).max(32),region:z.number().int().nonnegative(),feature:z.string().min(1).max(100)}),
+  z.object({ type: z.literal("squad-order"), squads: z.array(z.string().min(1).max(100)).min(1).max(32), mode: z.enum(["move", "hold"]), points: z.array(z.object({x:z.number().finite(),y:z.number().finite()})).max(8), append:z.boolean().optional() }),
+  z.object({
+    type: z.literal("cover"),
+    army: z.number().int().nonnegative(),
+    region: z.number().int().nonnegative(),
+    feature: z.string().min(1).max(120),
+  }),
   z.object({
     type: z.literal("build"),
     region: z.number().int().nonnegative(),
@@ -124,7 +135,12 @@ export async function makeServer(store: Store) {
   });
   app.get("/api/world", async (req) => {
     const s = auth(req.headers.authorization);
-    return { world: store.get(s.world), owner: s.owner, host: !!s.host };
+    const world = store.get(s.world)!;
+    return {
+      world: worldForPlayer(world, s.owner),
+      owner: s.owner,
+      host: !!s.host,
+    };
   });
   app.post("/api/command", async (req) => {
     const s = auth(req.headers.authorization),

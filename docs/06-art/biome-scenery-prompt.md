@@ -1,0 +1,7 @@
+# Biome scenery atlas
+
+Generated with the built-in image-generation tool. Original: `source/biomes/scenery-atlas-v1.png`. Runtime: `../../apps/web/public/art/biomes/scenery-atlas-v1.webp` (1024px, transparent, approximately 223 KiB). The renderer locates transparent gutters and trims eight cells; rows contain trees then rocky scenery.
+
+## Exact prompt
+
+Use case: stylized-concept. Production transparent PNG sprite atlas for Ironfront Victorian grand strategy map. Square image arranged as EXACTLY 4 columns by 2 rows of equally sized cells. Eight isolated sprites, one centered per cell, generous fully transparent margins, no overlap across cells. Top row: four distinct tree sprites: rounded oak canopy, irregular beech canopy, tall fir, clustered spruce. Bottom row: four distinct mountain sprites: broad weathered rocky peak, jagged double peak, rounded rocky foothill, long low rocky ridge. Consistent very high bird's-eye almost top-down view with slight elevation showing volume, north up, soft light from upper left. Restrained hand-painted game art, readable simple silhouettes with natural foliage and rock shading, muted olive forest greens, grey taupe mountains, no snow. NO triangle symbols. No text, labels, grids, frames, ground tiles, buildings or horizon. Real transparent alpha everywhere between objects, no background, no checkerboard baked in, very subtle contact shadow only. Sprites should look cohesive at 32-100 pixels on a strategy map. Every tree has a different natural silhouette; mountain base fades minimally into transparent edge.

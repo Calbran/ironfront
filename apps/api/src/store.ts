@@ -1,3 +1,7 @@
+import {
+  advanceTactics,
+  ensureTactics,
+} from "../../../packages/game-core/src/tactics.ts";
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
@@ -69,8 +73,22 @@ export class Store {
   }
   tick(id: string, now = Date.now(), force = false) {
     return this.mutate(id, (w) => {
-      if (w.winner !== null || (!force && now < w.nextTickAt)) return false;
-      advance(w);
+      if (w.winner !== null) return false;
+      const tactics = ensureTactics(w);
+      if (force) {
+        advance(w, 1);
+        tactics.lastWallAt = now;
+        w.nextTickAt = now + w.tickMs;
+        return true;
+      }
+      const previous =
+        tactics.lastWallAt || Math.max(0, w.nextTickAt - w.tickMs);
+      const elapsed = Math.max(0, Math.min(w.tickMs, now - previous));
+      if (!force && elapsed < Math.min(1000, w.tickMs / 12)) return false;
+      advanceTactics(w, elapsed / w.tickMs);
+      tactics.lastWallAt = now;
+      if (!force && now < w.nextTickAt) return false;
+      advance(w, 0);
       w.nextTickAt = now + w.tickMs;
       return true;
     });
@@ -79,6 +97,7 @@ export class Store {
     for (const id of this.ids())
       this.mutate(id, (w) => {
         w.nextTickAt = now + w.tickMs;
+        ensureTactics(w).lastWallAt = now;
       });
   }
   close() {

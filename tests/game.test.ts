@@ -15,7 +15,7 @@ test("seeded continents are repeatable, connected, and scale with seats", () => 
   for (const seats of [2, 4, 8]) {
     const r = generateRegions("Meridian", seats);
     assert.deepEqual(r, generateRegions("Meridian", seats));
-    assert.equal(r.length, Math.max(72, seats * 24));
+    assert.equal(r.length, seats * 24);
     assert(r.every((r) => r.area > 0));
     const w = createWorld("test", "Meridian", seats, 10000, 0);
     const start = r.find((r) => r.terrain !== "mountains")!.id;

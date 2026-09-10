@@ -1,0 +1,9 @@
+# Group movement lanes — 2026-09-09
+
+The owner reported that mixed multi-squad orders moved as one mass, with infantry visually wrapping around a mobile vehicle. The cause was authoritative: group pace was synchronized, but every selected squad received the exact same waypoint. Cosmetic member separation could keep individual glyphs readable but could not give squad centers distinct places to travel.
+
+Multi-squad Move orders now derive deterministic formation slots across the direction of travel. Infantry occupies the inner lanes and motorized or armored squads sort toward an outer lane, producing a simple side-by-side column for the starting two-infantry/one-mobile force. Each waypoint gets its own orientation. The spacing is bounded in world space and contracts toward the clicked coordinate when the destination is constrained by coastlines or holes. If a valid nearby slot cannot be routed, that squad safely uses the original clicked destination. A lone squad still goes exactly where ordered.
+
+This is intentionally not continuous physics or unit-to-unit collision. Squads can close up while passing through a narrow shared border gateway, then spread toward their assigned lanes. The approach preserves authoritative routes, atomic group validation, shared slowest-member pace, save compatibility and deterministic restart behavior. Formation spacing is provisional.
+
+Validation: `npm run typecheck`, `npm run build`, the local-movement regression, and the isolated 1440px/390px browser group-order flow pass. The movement regression verifies three distinct endpoints, minimum separation, the mobile outer lane, final separated positions, shared pace and persistence. The full suite passes 17 of 18 files; the unrelated pre-existing `city-scene` metropolis-width assertion currently fails (`360 >= 170 * 5`).

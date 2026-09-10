@@ -1,17 +1,16 @@
+import { CommandDock } from "./CommandDock";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   BUILDINGS,
+  formationName,
   FACTIONS,
-  createWorld,
   ownership,
   type World,
   type Faction,
   type Command,
 } from "../../../packages/game-core/src/index";
 import { MapView } from "./ContinentalMap";
-import { ArmyOrders } from "./ArmyOrders";
 type View = { world: World; owner: number; host: boolean };
-const preview = createWorld("PREVIEW", "Meridian", 6, 10000, 0);
 function Mark() {
   return (
     <svg
@@ -44,14 +43,55 @@ export function App() {
     [selected, setSelected] = useState<number | null>(null);
   const [tab, setTab] = useState<"nation" | "orders" | "dispatches">("nation");
   const [panelOpen, setPanelOpen] = useState(true);
+  const [battleFocus, setBattleFocus] = useState<{
+    region: number;
+    revision: number;
+  } | null>(null);
+  const [selectedSettlement, setSelectedSettlement] = useState<string | null>(
+    null,
+  );
+  const [selectedSquads, setSelectedSquads] = useState<string[]>([]);
+  const [placingSquads, setPlacingSquads] = useState(false);
+  const [mapResync, setMapResync] = useState(0);
+  const resumePending = useRef(false);
+  const readSequence = useRef(0);
+  const localCommandQueue = useRef<Promise<void>>(Promise.resolve());
+  const [mapArmies, setMapArmies] = useState<number[]>([]);
+  const mapArmy = mapArmies[0] ?? null;
+  const setMapArmy = (id: number | null) =>
+    setMapArmies(id === null ? [] : [id]);
   const [selectedArmy, setSelectedArmy] = useState<number | null>(null);
   const [joining, setJoining] = useState(false);
   const [name, setName] = useState("Bluehaven Union"),
     [faction, setFaction] = useState<Faction>("iron"),
-    [seed, setSeed] = useState("Meridian"),
+    [seed, setSeed] = useState(() => `Map-${crypto.randomUUID().slice(0, 8)}`),
     [seats, setSeats] = useState(4),
     [pace, setPace] = useState("test"),
     [code, setCode] = useState("");
+  const [preview, setPreview] = useState<World | null>(null);
+  const validSeed = /^[a-zA-Z0-9 -]{1,32}$/.test(seed.trim());
+  const previewPending =
+    validSeed &&
+    (!preview ||
+      preview.seed !== seed.trim() ||
+      preview.nations.length !== seats);
+  useEffect(() => {
+    if (token || !validSeed) return;
+    let worker: Worker | undefined;
+    const timer = setTimeout(() => {
+      worker = new Worker(new URL("./mapPreview.worker.ts", import.meta.url), {
+        type: "module",
+      });
+      worker.onmessage = (event: MessageEvent<World>) => setPreview(event.data);
+      worker.onerror = () =>
+        setError("Map generation failed. Generate a new map to try again.");
+      worker.postMessage({ seed: seed.trim(), seats });
+    }, 250);
+    return () => {
+      clearTimeout(timer);
+      worker?.terminate();
+    };
+  }, [seed, seats, token, validSeed]);
   const [copied, setCopied] = useState(""),
     [credentials, setCredentials] = useState(false),
     [restore, setRestore] = useState("");
@@ -76,9 +116,16 @@ export function App() {
     [token],
   );
   const refresh = useCallback(async () => {
+    const sequence = ++readSequence.current;
     const result = (await request("world")) as View;
+    if (sequence !== readSequence.current) return;
     setView(result);
-    setSelected((s) => s ?? result.world.nations[result.owner].capital);
+    if (resumePending.current) {
+      resumePending.current = false;
+      setMapResync((value) => value + 1);
+    }
+    if (lastVisit.current === null)
+      setSelected(result.world.nations[result.owner].capital);
     if (lastVisit.current === null)
       lastVisit.current = Number(
         localStorage.getItem("warfare-seen-" + result.world.id) || 0,
@@ -96,10 +143,21 @@ export function App() {
         if (active) setError(e.message);
       });
     void read();
-    const interval = setInterval(read, 3000);
+    const resume = () => {
+      if (document.hidden) return;
+      resumePending.current = true;
+      void read();
+    };
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("focus", resume);
+    const interval = setInterval(() => {
+      if (!document.hidden) void read();
+    }, 3000);
     return () => {
       active = false;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("focus", resume);
     };
   }, [token, refresh]);
   const act = async (fn: () => Promise<unknown>) => {
@@ -138,6 +196,9 @@ export function App() {
     setView(null);
     setSelected(null);
     setSelectedArmy(null);
+    setSelectedSquads([]);
+    setPlacingSquads(false);
+    setMapArmy(null);
     setCredentials(false);
     setError("");
     lastVisit.current = null;
@@ -163,7 +224,13 @@ export function App() {
   const scores = w ? ownership(w).sort((a, b) => b.area - a.area) : [];
   const completed = !!w && w.winner !== null;
   return (
-    <div className={view ? "app campaign-view" : "app"}>
+    <div
+      className={
+        view
+          ? `app campaign-view ${panelOpen ? "dock-open" : "dock-closed"}`
+          : "app"
+      }
+    >
       <header className="masthead">
         <a className="brand" href="/" aria-label="Ironfront home">
           <Mark />
@@ -172,10 +239,35 @@ export function App() {
             <span className="brand-detail">A continent in contention</span>
           </span>
         </a>
+        {n && (
+          <dl className="hud-resources" aria-label="National resources">
+            <div>
+              <dt>Industry</dt>
+              <dd>
+                {Math.floor(n.industry)}
+                <small>Build & repair</small>
+              </dd>
+            </div>
+            <div>
+              <dt>Fuel</dt>
+              <dd>
+                {Math.floor(n.fuel)}
+                <small>Armor & aircraft</small>
+              </dd>
+            </div>
+            <div>
+              <dt>Manpower</dt>
+              <dd>
+                {Math.floor(n.manpower)}
+                <small>Replenishment</small>
+              </dd>
+            </div>
+          </dl>
+        )}
         <div className="header-right">
           {w ? (
             <>
-              <span className="campaign-name">{w.seed} campaign</span>
+              <span className="campaign-name">{n?.name}</span>
               <span className="clock">
                 Day {Math.min(28, Math.floor(w.hour / 24) + 1)}{" "}
                 <span>/ 28</span> · {String(w.hour % 24).padStart(2, "0")}:00
@@ -217,14 +309,33 @@ export function App() {
                 the war.
               </p>
             </div>
-            <MapView
-              initialZoom={1}
-              world={preview}
-              selected={null}
-              onSelect={() => {}}
-            />
+            {preview ? (
+              <MapView
+                preview
+                key={preview.id}
+                initialZoom={1}
+                world={preview}
+                selected={null}
+                onSelect={() => {}}
+              />
+            ) : (
+              <div className="map-shell preview-loading" role="status">
+                Surveying new terrain…
+              </div>
+            )}
+            {preview && (
+              <div className="preview-size" aria-live="polite">
+                World size: {preview.geography?.width.toLocaleString()} ×{" "}
+                {preview.geography?.height.toLocaleString()} ·{" "}
+                {preview.nations.length} nations
+              </div>
+            )}
             <div className="lobby-foot">
-              <span>Generated continent · Illustrative preview</span>
+              <span aria-live="polite">
+                {previewPending || !preview
+                  ? "Generating map…"
+                  : `${preview.seed} · ${preview.regions.length} territories`}
+              </span>
               <span>Conquest, on your time.</span>
             </div>
           </section>
@@ -326,6 +437,20 @@ export function App() {
                       </select>
                     </label>
                   </div>
+                  <button
+                    type="button"
+                    className="full"
+                    disabled={busy}
+                    onClick={() =>
+                      setSeed(`Map-${crypto.randomUUID().slice(0, 8)}`)
+                    }
+                  >
+                    Generate new map
+                  </button>
+                  <p className="muted map-preview-note">
+                    Change the seed or generate a new map to explore continents.
+                    Your campaign will use this preview.
+                  </p>
                   <label>
                     Campaign pace
                     <select
@@ -340,7 +465,13 @@ export function App() {
                   </label>
                 </>
               )}
-              <button className="primary full" disabled={busy}>
+              <button
+                className="primary full"
+                disabled={
+                  busy ||
+                  (!joining && (previewPending || !preview || !validSeed))
+                }
+              >
                 {busy
                   ? "Preparing campaign…"
                   : joining
@@ -402,8 +533,188 @@ export function App() {
             <section className="theater">
               <MapView
                 world={w}
-                selectedArmy={army?.id ?? null}
+                focus={battleFocus}
+                resyncKey={mapResync}
+                selectedArmy={mapArmy}
+                selectedArmies={mapArmies}
+                selectedSquads={selectedSquads}
+                placingSquads={placingSquads}
+                onSelectSquad={(id, additive) => {
+                  setSelectedSettlement(null);
+                  const squad = w.tactics?.squads.find(
+                    (s) => s.id === id && s.owner === view.owner,
+                  );
+                  if (!squad || squad.army === null) return;
+                  setSelectedSquads((current) =>
+                    additive ? [...new Set([...current, id])] : [id],
+                  );
+                  setMapArmy(squad.army);
+                  setSelectedArmy(squad.army);
+                  setSelected(squad.region);
+                  setTab("orders");
+                  setPanelOpen(true);
+                  setCredentials(false);
+                }}
+                onAttackTarget={(target) => {
+                  const squads = selectedSquads.length
+                    ? selectedSquads
+                    : (w.tactics?.squads
+                        .filter(
+                          (s) =>
+                            s.owner === view.owner &&
+                            s.strength > 0 &&
+                            mapArmies.includes(s.army!),
+                        )
+                        .map((s) => s.id) ?? []);
+                  if (completed || !squads.length) return;
+                  setPlacingSquads(false);
+                  localCommandQueue.current = localCommandQueue.current.then(
+                    () => send({ type: "squad-attack", squads, target }),
+                  );
+                }}
+                onCaptureSettlement={(region, feature) => {
+                  const squads = selectedSquads.filter((id) =>
+                    w.tactics?.squads.some(
+                      (s) =>
+                        s.id === id &&
+                        s.owner === view.owner &&
+                        s.strength > 0.5 &&
+                        s.kind !== "garrison" &&
+                        s.movementLayer !== "air",
+                    ),
+                  );
+                  if (completed || !squads.length) return;
+                  setPlacingSquads(false);
+                  localCommandQueue.current = localCommandQueue.current.then(
+                    () =>
+                      send({
+                        type: "capture-settlement",
+                        squads,
+                        region,
+                        feature,
+                      }),
+                  );
+                }}
+                onLocalPoint={(x, y, append) => {
+                  const squads = selectedSquads.length
+                    ? selectedSquads
+                    : (w.tactics?.squads
+                        .filter(
+                          (s) =>
+                            s.owner === view.owner &&
+                            s.strength > 0 &&
+                            mapArmies.includes(s.army!),
+                        )
+                        .map((s) => s.id) ?? []);
+                  if (completed || !squads.length) return;
+                  setPlacingSquads(false);
+                  localCommandQueue.current = localCommandQueue.current.then(
+                    () =>
+                      send({
+                        type: "squad-order",
+                        squads,
+                        mode: "move",
+                        points: [{ x, y }],
+                        append,
+                      }),
+                  );
+                }}
+                onSelectArmies={(ids, additive) => {
+                  const armyIds = additive
+                    ? [...new Set([...mapArmies, ...ids])]
+                    : ids;
+                  setSelectedSquads(
+                    w.tactics?.squads
+                      .filter(
+                        (s) =>
+                          s.owner === view.owner &&
+                          s.strength > 0 &&
+                          armyIds.includes(s.army!),
+                      )
+                      .map((s) => s.id) ?? [],
+                  );
+                  setPlacingSquads(false);
+                  setMapArmies(armyIds);
+                  if (ids.length) {
+                    setSelectedArmy(ids[0]);
+                    setTab("orders");
+                    setPanelOpen(true);
+                    setCredentials(false);
+                  } else if (!additive) {
+                    setSelected(null);
+                    setPanelOpen(false);
+                  }
+                }}
+                onDeselect={() => {
+                  setSelectedSettlement(null);
+                  setSelectedSquads([]);
+                  setPlacingSquads(false);
+                  setMapArmies([]);
+                  setSelected(null);
+                  setPanelOpen(false);
+                }}
+                onOrder={(id, cover) => {
+                  if (busy || completed) return;
+                  const units = w.armies.filter(
+                    (a) =>
+                      mapArmies.includes(a.id) &&
+                      a.owner === view.owner &&
+                      a.strength > 0,
+                  );
+                  if (!units.length) {
+                    setError(
+                      "Select one of your armies before giving a right-click order.",
+                    );
+                    return;
+                  }
+                  const target = w.regions[id];
+                  if (target.terrain === "mountains") {
+                    setError(
+                      "Mountains are impassable. Choose a land territory.",
+                    );
+                    return;
+                  }
+                  void act(async () => {
+                    const failures: string[] = [];
+                    for (const unit of units) {
+                      const order =
+                        id === unit.region
+                          ? "hold"
+                          : target.owner === view.owner
+                            ? "redeploy"
+                            : "advance";
+                      try {
+                        await request(
+                          "command",
+                          cover
+                            ? {
+                                type: "cover",
+                                army: unit.id,
+                                region: id,
+                                feature: cover,
+                              }
+                            : {
+                                type: "order",
+                                army: unit.id,
+                                order,
+                                ...(order === "hold" ? {} : { target: id }),
+                              },
+                        );
+                      } catch (error) {
+                        failures.push(
+                          `${unit.role}: ${error instanceof Error ? error.message : "Order failed"}`,
+                        );
+                      }
+                    }
+                    await refresh();
+                    if (failures.length) setError(failures.join(" · "));
+                  });
+                }}
                 onSelectArmy={(id) => {
+                  setSelectedSettlement(null);
+                  setSelectedSquads([]);
+                  setPlacingSquads(false);
+                  setMapArmy(id);
                   const chosen = w.armies.find((a) => a.id === id);
                   if (chosen) {
                     if (chosen.owner === view.owner) setSelectedArmy(id);
@@ -413,14 +724,32 @@ export function App() {
                     setCredentials(false);
                   }
                 }}
+                selectedSettlement={selectedSettlement}
+                onSelectSettlement={(id, feature) => {
+                  setSelected(id);
+                  setSelectedSettlement(feature);
+                  setPanelOpen(true);
+                  setCredentials(false);
+                }}
                 selected={selected}
                 onSelect={(id) => {
+                  setSelectedSettlement(null);
+                  setSelectedSquads([]);
+                  setPlacingSquads(false);
+                  setMapArmy(null);
                   setSelected(id);
                   setTab("orders");
                   setPanelOpen(true);
                   setCredentials(false);
                 }}
               />
+              <div className="command-identity" role="status">
+                <strong>You command {n.name}</strong>
+                <span>{FACTIONS.find((f) => f.id === n.faction)?.name}</span>
+                <span>
+                  ■ Your forces · ◆ Other forces · Shaded land: out of sight
+                </span>
+              </div>
               <div className="map-legend">
                 <span>
                   <i className="legend-neutral" />
@@ -430,7 +759,10 @@ export function App() {
                   <i className="legend-front" />
                   National boundary
                 </span>
-                <span>Selected army defense</span>
+                <span className="legend-garrison">
+                  <i /> Neutral defenders
+                </span>
+                <span title="1: Hamlet · 2: Village · 3: Town · 4: City · 5: Metropolis">City pips: 1–5</span>
                 <span>Scroll to zoom · Drag to pan</span>
               </div>
             </section>
@@ -480,317 +812,62 @@ export function App() {
                   </div>
                 </section>
               )}
-              <div hidden={credentials}>
-                <div className="tabs">
-                  <button
-                    className={tab === "nation" ? "active" : ""}
-                    onClick={() => setTab("nation")}
-                  >
-                    Nation
-                  </button>
-                  <button
-                    className={tab === "orders" ? "active" : ""}
-                    onClick={() => setTab("orders")}
-                  >
-                    Command
-                  </button>
-                  <button
-                    className={tab === "dispatches" ? "active" : ""}
-                    onClick={() => {
-                      setTab("dispatches");
-                      setPanelOpen(true);
-                      setCredentials(false);
-                    }}
-                  >
-                    Dispatches
-                  </button>
-                </div>
-                {(!w.geography ||
-                  w.regions.length > Math.max(72, w.nations.length * 24)) && (
-                  <section className="legacy-map-notice">
-                    <strong>
-                      Earlier map · {w.regions.length} territories
-                    </strong>
-                    <p>
-                      This saved campaign uses an earlier territory layout.
-                      Create a new campaign for the revised continent. Your
-                      current map will stay intact.
-                    </p>
-                    <button onClick={() => setCredentials(true)}>
-                      Save session &amp; open lobby
-                    </button>
-                  </section>
-                )}
-                {tab === "nation" ? (
-                  <section className="nation-panel">
-                    <div className="campaign-overview">
-                      <h2>
-                        {completed
-                          ? "The campaign is decided"
-                          : "Continental theater"}
-                      </h2>
-                      <span>
-                        {completed
-                          ? w
-                              .winner!.map((id) => w.nations[id].name)
-                              .join(" & ")
-                          : `${w.regions.filter((r) => r.owner === view.owner).length} regions under your flag`}
-                      </span>
-                    </div>
-
-                    <div className="nation-heading">
-                      <span
-                        className="nation-swatch"
-                        style={{ background: n.color }}
-                      />
-                      <h1>{n.name}</h1>
-                      <p>{FACTIONS.find((f) => f.id === n.faction)?.name}</p>
-                    </div>
-                    <dl className="resources">
-                      <div>
-                        <dt>Industry</dt>
-                        <dd>
-                          {Math.floor(n.industry)}
-                          <small>Build & repair</small>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Fuel</dt>
-                        <dd>
-                          {Math.floor(n.fuel)}
-                          <small>Armor & aircraft</small>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Manpower</dt>
-                        <dd>
-                          {Math.floor(n.manpower)}
-                          <small>Replenishment</small>
-                        </dd>
-                      </div>
-                    </dl>
-                    <section className="land-section">
-                      <h2>The balance of land</h2>
-                      <p className="muted">
-                        Every stretch of land counts equally.
-                      </p>
-                      {scores.map((s) => (
-                        <div className="standing" key={s.owner}>
-                          <div>
-                            <span>
-                              <i
-                                style={{ background: w.nations[s.owner].color }}
-                              />
-                              {w.nations[s.owner].name}
-                              {s.owner === view.owner ? " · You" : ""}
-                            </span>
-                            <strong>{s.percent.toFixed(1)}%</strong>
-                          </div>
-                          <div className="land-track">
-                            <span
-                              style={{
-                                width: s.percent + "%",
-                                background: w.nations[s.owner].color,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                      <p className="rule-note">
-                        Hold over 50% for 48 hours to win early. Otherwise, most
-                        land at day 28 wins.
-                      </p>
-                      {w.majority && (
-                        <p className="majority">
-                          {w.nations[w.majority.owner].name}: {w.majority.hours}
-                          /48 majority hours
-                        </p>
-                      )}
-                    </section>
-                    <div className="host-tools">
-                      {view.host && w.tickMs === 10000 && (
-                        <button
-                          disabled={busy || completed}
-                          onClick={() =>
-                            act(async () => {
-                              await request("advance", {});
-                              await refresh();
-                            })
-                          }
-                        >
-                          Advance 1 hour
-                        </button>
-                      )}
-                      <span>Orders persist while you’re away.</span>
-                    </div>
-                  </section>
-                ) : tab === "dispatches" ? (
-                  <section className="dispatch-list">
-                    <h2>Your field report</h2>
-                    <p className="muted">
-                      {w.hour > (lastVisit.current ?? 0)
-                        ? `${w.hour - (lastVisit.current ?? 0)} campaign hours since your previous visit.`
-                        : "Orders and developments will appear here."}
-                    </p>
-                    {[...w.events].reverse().map((e) => (
-                      <button
-                        key={e.id}
-                        onClick={() => {
-                          if (e.region !== null) {
-                            setSelected(e.region);
-                            setTab("orders");
-                          }
-                        }}
-                      >
-                        <time>
-                          Day {Math.floor(e.hour / 24) + 1} · {e.hour % 24}:00
-                        </time>
-                        <p>{e.text}</p>
-                      </button>
-                    ))}
-                  </section>
-                ) : (
-                  <>
-                    <label className="region-select">
-                      Inspect region
-                      <select
-                        value={selected ?? ""}
-                        onChange={(e) => setSelected(Number(e.target.value))}
-                      >
-                        {w.regions.map((r) => (
-                          <option value={r.id} key={r.id}>
-                            {r.name}
-                            {r.owner === view.owner ? " · Yours" : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    {region && (
-                      <section className="region-info">
-                        <h2>{region.name}</h2>
-                        {region.province !== undefined && (
-                          <p className="muted">
-                            {w.geography?.provinces[region.province]?.name}
-                          </p>
-                        )}
-                        {region.terrain === "mountains" && (
-                          <p className="rule-note">
-                            Impassable mountains. Cannot be occupied or
-                            captured; excluded from land standings.
-                          </p>
-                        )}
-                        <p className="region-owner">
-                          <i
-                            style={{
-                              background:
-                                region.owner === null
-                                  ? "#9ca696"
-                                  : w.nations[region.owner].color,
-                            }}
-                          />
-                          {region.owner === null
-                            ? "Neutral territory"
-                            : w.nations[region.owner].name}
-                        </p>
-                        <dl className="region-facts">
-                          <div>
-                            <dt>Terrain</dt>
-                            <dd>{region.terrain}</dd>
-                          </div>
-                          <div>
-                            <dt>Garrison</dt>
-                            <dd>{Math.round(region.garrison)}</dd>
-                          </div>
-                        </dl>
-                        {region.consolidation > 0 && (
-                          <p className="building-status">
-                            Consolidating
-                            <span>{region.consolidation}h remaining</span>
-                          </p>
-                        )}
-                        {region.building && (
-                          <p className="building-status">
-                            {BUILDINGS[region.building].name}
-                            <span>Operational</span>
-                          </p>
-                        )}
-                        {region.construction && (
-                          <p className="building-status">
-                            {BUILDINGS[region.construction.kind].name}
-                            <span>
-                              {region.construction.remaining}h remaining
-                            </span>
-                          </p>
-                        )}
-                        {region.owner === view.owner &&
-                          !region.building &&
-                          !region.construction && (
-                            <>
-                              <h3>Develop this region</h3>
-                              <div className="build-options">
-                                {(
-                                  Object.keys(
-                                    BUILDINGS,
-                                  ) as (keyof typeof BUILDINGS)[]
-                                ).map((k) => (
-                                  <button
-                                    key={k}
-                                    disabled={
-                                      busy ||
-                                      completed ||
-                                      n.industry < BUILDINGS[k].cost
-                                    }
-                                    onClick={() =>
-                                      send({
-                                        type: "build",
-                                        region: region.id,
-                                        building: k,
-                                      })
-                                    }
-                                  >
-                                    <span>
-                                      <strong>{BUILDINGS[k].name}</strong>
-                                      <small>{BUILDINGS[k].effect}</small>
-                                    </span>
-                                    <span>
-                                      {BUILDINGS[k].cost}
-                                      <small>{BUILDINGS[k].hours}h</small>
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                      </section>
-                    )}
-                    {army ? (
-                      <ArmyOrders
-                        world={w}
-                        owner={view.owner}
-                        army={army}
-                        selected={selected}
-                        busy={busy}
-                        completed={completed}
-                        send={send}
-                        selectArmy={setSelectedArmy}
-                      />
-                    ) : (
-                      <section className="army-section">
-                        <h2>No field army remains</h2>
-                        <p>
-                          No operational army remains. Your land still counts;
-                          recruitment is planned for a later build.
-                        </p>
-                      </section>
-                    )}
-                  </>
-                )}
-              </div>
+              {!credentials && (
+                <CommandDock
+                  settlement={selectedSettlement}
+                  inspectSquad={(id) => {
+                    const s = w.tactics?.squads.find((s) => s.id === id);
+                    if (!s || s.army === null) return;
+                    setSelectedSquads([id]);
+                    setMapArmy(s.army);
+                    setSelectedArmy(s.army);
+                    setSelected(s.region);
+                  }}
+                  world={w}
+                  owner={view.owner}
+                  selected={selectedSquads}
+                  groups={mapArmies}
+                  region={selected}
+                  picking={placingSquads}
+                  choosePosition={() => {
+                    if (!selectedSquads.length)
+                      setSelectedSquads(
+                        w.tactics?.squads
+                          .filter(
+                            (s) =>
+                              s.owner === view.owner &&
+                              s.strength > 0 &&
+                              mapArmies.includes(s.army!),
+                          )
+                          .map((s) => s.id) ?? [],
+                      );
+                    setPlacingSquads((v) => !v);
+                  }}
+                  send={send}
+                  disabled={busy || completed}
+                  host={view.host}
+                  advance={() =>
+                    void act(async () => {
+                      await request("advance", {});
+                      await refresh();
+                    })
+                  }
+                  focus={(id) => {
+                    setSelected(id);
+                    setMapArmies([]);
+                    setSelectedSquads([]);
+                    setBattleFocus({ region: id, revision: Date.now() });
+                  }}
+                />
+              )}
             </aside>
           </main>
         </>
       ) : null}
       <footer className="footer">
+        <a href="/terrain-attribution.html" target="_blank" rel="noreferrer">
+          Terrain sources
+        </a>
         <span>IRONFRONT · Experimental campaign rules</span>
         <span>Cold steel. Long horizons.</span>
       </footer>

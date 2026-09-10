@@ -5,7 +5,7 @@ The organization follows Crownfall, with a deliberately smaller starting scope.
 | Area | Read |
 |---|---|
 | Direction | [Vision](01-design/vision.md), [game blueprint](01-design/game-blueprint.md), [theme and factions](01-design/thematic-direction.md) |
-| Interface | [Built visual system](../DESIGN.md) |
+| Interface | [Built visual system](../DESIGN.md), [working style guide](06-art/style-guide.md) |
 | Scope | [Proof and MVP](01-design/mvp.md) |
 | Rules | [Campaign systems](02-systems/campaign-systems.md), [armies and fronts](02-systems/fronts-and-armies.md), [geography](02-systems/continental-geography.md) |
 | Engineering | [Stack and architecture](03-technical/tech-stack.md), [hosting](03-technical/self-hosting.md) |
@@ -13,3 +13,45 @@ The organization follows Crownfall, with a deliberately smaller starting scope.
 | Decisions | [001: direction](05-decisions/001-lightweight-land-conquest.md), [002: architecture](05-decisions/002-authoritative-browser-proof.md), [003: armies and fronts](05-decisions/003-armies-and-fronts.md), [004: Ironfront and terrain](05-decisions/004-ironfront-and-continental-terrain.md) |
 
 **Accepted** means the owner established the direction. **Provisional** means a concrete hypothesis for playtesting. **Implemented** describes code, not approval or balance validation. PROJECT_STATE.md is the current save file; session notes and CHANGELOG.md preserve history.
+
+Latest generator decisions: [clean terrain and preview](05-decisions/005-clean-terrain-and-map-preview.md), [Earth-derived geography](05-decisions/006-earth-derived-geography.md).
+
+Latest feature direction: [007: compact territories and local features](05-decisions/007-territory-features.md).
+
+Latest visibility rules: [010: vision and force identity](05-decisions/010-vision-and-force-identity.md).
+
+Latest controls: [011: group controls and cover](05-decisions/011-group-controls-and-cover.md).
+
+Direct local positioning: [012: local squad orders](05-decisions/012-local-squad-orders.md).
+
+Current primary movement: [013: cross-region squad orders](05-decisions/013-cross-region-squad-orders.md) supersedes the local-only restriction in 012.
+
+Current interface layout: [014: command HUD](05-decisions/014-command-hud-layout.md).
+
+Current new-map scale: [015: grand-campaign map scale](05-decisions/015-grand-campaign-map-scale.md).
+
+Current territory count and nation spacing: [016: neutral expansion space](05-decisions/016-neutral-expansion-space.md).
+
+Current terrain, settlement interactions, and physical world scale: [017: terrain and settlements](05-decisions/017-terrain-settlements-and-world-space.md).
+
+Seeded modular cities: [018: layout and spacing](05-decisions/018-seeded-modular-cities.md), [asset kit](../apps/web/public/art/city-kit/README.md), [art prompts](06-art/city-kit-prompts.md).
+
+Harbor art: [port kit and prompts](06-art/port-kit-prompts.md).
+
+Current forest/mountain decoration: [019: seeded biome scenery](05-decisions/019-seeded-biome-scenery.md).
+
+Authored settlements: [decision 019](05-decisions/019-authored-settlement-scenes.md), [asset catalog](../apps/web/public/art/settlement-scenes/README.md), [generation prompts](06-art/settlement-scene-prompts.md).
+
+Current settlement presentation: [020: abstract icons](05-decisions/020-abstract-settlement-icons.md), superseding authored city scenes.
+
+Ground movement obstacles and air exemption: [020: mountain collision](05-decisions/020-ground-mountain-collision.md).
+
+Water art: [ocean and river texture specifications/prompts](06-art/water-textures.md).
+
+Terrain accents, town roads, and consistent sprite dimensions: [021: shared visual scale](05-decisions/021-terrain-accents-and-scale.md), [accent art and prompt](06-art/terrain-accent-prompt.md).
+
+Current city occupation rules: [022: physical settlement capture](05-decisions/022-settlement-capture.md).
+
+Map view control: [022: manual strategy/terrain toggle](05-decisions/022-manual-map-mode.md).
+
+Contextual scenery: [023: farmland, riverbanks, and vegetation groups](05-decisions/023-contextual-landscape.md).

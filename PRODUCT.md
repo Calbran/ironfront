@@ -32,3 +32,7 @@ Design discussion from September 9, 2026. Crownfall's documentation organization
 - Return summaries explain consequences.
 - A few readable choices outweigh intricate management.
 - Keep accepted direction, proposed tuning, and implemented behavior separate.
+
+## Countries and visible warfare — accepted direction, 2026-09-09
+
+The continent should read as countries containing territories and cities. Territories can have several cities according to their size, with one territorial capital. Warfare should be visible through small moving squad dots/icons, firing effects, and readable active engagements, presenting an aerial view while battles unfold over the asynchronous campaign pace. See decision 008 for the distinction between accepted creative direction, proposed control rules, and current implementation.

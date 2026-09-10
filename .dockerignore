@@ -3,3 +3,5 @@ dist
 data
 .git
 .impeccable
+!packages/game-core/src/data/
+!packages/game-core/src/data/**

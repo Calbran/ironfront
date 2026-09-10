@@ -1,0 +1,5 @@
+# Contextual landscape — 2026-09-09
+
+Added seeded farmland parcels, planting rows and broken scrub hedges around plains settlements. Added meadow/scrub clusters, small groves and elongated riverbank reed beds with occasional trees, using existing atlases and shared sprite sizes. Parcel footprints are several tree widths across rather than enlarging individual plants. Placement clears towns, road corridors, rivers and physical mountain obstacles; parcel corners also respect actual plains biome patches. Fields have a restrained tint over the existing ground. All features are cosmetic.
+
+Validation: full 23-file suite passed; after tightening biome placement, the terrain-accent regression file passed again including deterministic output, field land/settlement clearance, and powerline continuity. Typecheck and production build passed. Desktop/mobile browser checks verified field generation, asset loading, zoom/Fit, and mode switching; desktop close-zoom rendering visually reviewed. Field contrast was slightly increased following review. Existing large build chunk advisory remains.

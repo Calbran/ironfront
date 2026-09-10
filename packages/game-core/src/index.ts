@@ -1,3 +1,10 @@
+import { ensureMountainObstacles } from "./mountainObstacles.ts";
+import { orderAttack } from "./attackOrders.ts";
+import { startingTerritories } from "./startingTerritories.ts";
+import { orderSquads, type LocalPoint } from "./localMovement.ts";
+import { coverSite } from "./cover.ts";
+import { canCaptureSettlement, settlementOwner } from "./settlementCapture.ts";
+import { advanceTactics, beginEngagement, ensureTactics, isEngaged, syncSquads, type TacticalState } from "./tactics.ts";
 import { generateContinent, type Geography } from "./geography.ts";
 
 export const FACTIONS = [
@@ -59,6 +66,16 @@ export const BUILDINGS: Record<
     effect: "+35% regional defense",
   },
 };
+export interface RegionFeature {
+  id: string;
+  kind: "settlement" | "forest" | "ridge" | "open" | "peaks";
+  name: string;
+  x: number;
+  y: number;
+  size?: "hamlet" | "village" | "town" | "city" | "metropolis";
+  /** Settlement controller. Missing values in legacy saves inherit region ownership. */
+  owner?: number | null;
+}
 export interface Region {
   id: number;
   name: string;
@@ -72,6 +89,11 @@ export interface Region {
   elevation?: number;
   moisture?: number;
   coastal?: boolean;
+  features?: RegionFeature[];
+  landUse?: "agricultural" | "settled" | "wilderness";
+  purpose?: "farming basin" | "woodland district" | "highland pass" | "upland district" | "port hinterland" | "settled heartland" | "wilderness";
+  mountainObstacles?: import("./mountainObstacles.ts").MountainObstacle[];
+  navigationCellSize?:number;
   contours?: [number,number][][];
   owner: number | null;
   garrison: number;
@@ -91,6 +113,9 @@ export interface Nation {
   capital: number;
 }
 export interface Army {
+  squadKind?: "infantry" | "motorized";
+  unitCount?: number;
+  cover?: { region: number; feature: string };
   id: number;
   owner: number;
   region: number;
@@ -123,6 +148,9 @@ export interface Dispatch {
   kind: "combat" | "build" | "order" | "world";
 }
 export interface World {
+  mountainScenery?: import("./biomeScenery.ts").ScenerySprite[];
+  vision?: { owner: number; visible: number[] };
+  tactics?: TacticalState;
   version: 1 | 2;
   id: string;
   name: string;
@@ -171,31 +199,12 @@ export function createWorld(
 ): World {
   const {regions,geography} = generateContinent(seed,seats);
   const nations: Nation[] = [];
-  const chosen: number[] = [];
+  const starts = startingTerritories(regions,seats);
   for (let i = 0; i < seats; i++) {
-    const angle = (i / seats) * Math.PI * 2;
-    const target = [geography.width/2 + Math.cos(angle)*geography.width*.32, geography.height/2 + Math.sin(angle)*geography.height*.32];
-    const available = regions.filter((r) => r.owner === null && r.terrain !== "mountains");
-    const start = available.sort(
-      (a, b) =>
-        Math.hypot(a.x - target[0], a.y - target[1]) -
-        Math.hypot(b.x - target[0], b.y - target[1]),
-    )[0];
-    chosen.push(start.id);
-    start.owner = i;
-    start.garrison = 32;
-    const queue = [start.id];
-    let owned = 1;
-    while (queue.length && owned < 4) {
-      const r = regions[queue.shift()!];
-      for (const n of r.neighbors) {
-        if (regions[n].owner === null && regions[n].terrain !== "mountains" && owned < 4) {
-          regions[n].owner = i;
-          regions[n].garrison = 26;
-          queue.push(n);
-          owned++;
-        }
-      }
+    const start = regions[starts[i][0]];
+    for(const id of starts[i]) {
+      regions[id].owner=i;
+      regions[id].garrison=id===start.id?32:26;
     }
     nations.push({
       id: i,
@@ -219,6 +228,9 @@ export function createWorld(
     });
     start.building = "factory";
   }
+  for (const region of regions)
+    for (const feature of region.features ?? [])
+      if (feature.kind === "settlement") feature.owner = region.owner;
   const w: World = {
     version: 2,
     id,
@@ -231,12 +243,13 @@ export function createWorld(
     geography,
     nations,
     armies: nations.flatMap((n) => (["line", "assault", "mobile"] as const).map((role, i) =>
-      makeArmy(n.id + i * seats, n.id, regions.filter(r => r.owner === n.id)[i]?.id ?? n.capital, role))),
+      makeStartingSquad(n.id + i * seats, n.id, n.capital, role))),
     events: [],
     eventSeq: 0,
     majority: null,
     winner: null,
   };
+  ensureMountainObstacles(w);
   report(
     w,
     "The continent is open. Establish your borders and give your first orders.",
@@ -287,9 +300,23 @@ export function makeArmy(id: number, owner: number, region: number, role: ArmyRo
     sector: [region], deployment: 0, entrenchment: 0, supplies: 12, risk: "balanced",
     fallback: null, status: "Holding position" };
 }
+/** One commandable formation per squad; compositions no longer hide extra units. */
+export function makeStartingSquad(id: number, owner: number, region: number, role: ArmyRole): Army {
+  const a = makeArmy(id, owner, region, role);
+  a.squadKind = role === "mobile" ? "motorized" : "infantry";
+  a.unitCount = role === "mobile" ? 2 : 6;
+  a.infantry = role === "mobile" ? 0 : 100;
+  a.motorized = role === "mobile" ? 100 : 0;
+  a.tanks = 0; a.artillery = 0;
+  return a;
+}
+export function formationName(a: Army): string {
+  return a.squadKind ? a.squadKind === "motorized" ? "Mobile infantry squad" : "Infantry squad" : ARMY_ROLES[a.role].name;
+}
 // Pure, idempotent save upgrade; the store persists this inside its next transaction.
 export function upgradeWorld(w: World): World {
-  if (w.version === 2) return w;
+  ensureMountainObstacles(w);
+  if (w.version === 2) { ensureTactics(w); syncSquads(w); return w; }
   for (const r of w.regions) r.consolidation = 0;
   let nextId = Math.max(-1, ...w.armies.map(a => a.id)) + 1;
   for (const a of w.armies) {
@@ -306,6 +333,7 @@ export function upgradeWorld(w: World): World {
       w.armies.push(makeArmy(nextId++, n.id, land[i % land.length].id, role));
   }
   w.version = 2;
+  ensureTactics(w); syncSquads(w);
   if (w.winner === null) report(w, "Front-line rules activated. Existing armies hold position; assault and mobile armies are ready. Review your sectors and objectives.");
   return w;
 }
@@ -360,6 +388,11 @@ export function retreatThreshold(a: Army): number {
   return a.risk === "cautious" ? 45 : a.risk === "aggressive" ? 15 : 30;
 }
 export type Command =
+  | { type: "squad-attack"; squads: string[]; target: string }
+  | { type: "capture-settlement"; squads: string[]; region: number; feature: string }
+  | { type: "garrison-squads"; squads:string[]; region:number; feature:string }
+  | { type: "squad-order"; squads: string[]; mode: "move" | "hold"; points: LocalPoint[]; append?: boolean }
+  | { type: "cover"; army: number; region: number; feature: string }
   | { type: "build"; region: number; building: Building }
   | { type: "order"; army: number; order: Army["order"]; target?: number }
   | { type: "sector"; army: number; regions: number[] }
@@ -369,6 +402,55 @@ export function command(w: World, owner: number, c: Command) {
   if (w.winner !== null) throw Error("This campaign has ended. Create another campaign to play again.");
   const n = w.nations[owner];
   if (!n) throw Error("Nation not found.");
+  if (c.type === "squad-attack") {
+    orderAttack(w, owner, c.squads, c.target);
+    report(w, `${c.squads.length} squad(s): engaging designated target.`, "order", null, owner);
+    return;
+  }
+  if (c.type === "capture-settlement") {
+    const region = w.regions[c.region];
+    const site = region?.features?.find(
+      (feature) => feature.id === c.feature && feature.kind === "settlement",
+    );
+    if (!site) throw Error("Choose a settlement to capture.");
+    if (settlementOwner(region, site) === owner)
+      throw Error("You already control this settlement.");
+    const selected = c.squads.map((id) =>
+      w.tactics?.squads.find((squad) => squad.id === id),
+    );
+    if (
+      selected.some(
+        (squad) =>
+          !squad || squad.owner !== owner || !canCaptureSettlement(squad),
+      )
+    )
+      throw Error("Only your living ground squads can capture a settlement.");
+    orderSquads(w, owner, c.squads, "move", [{ x: site.x, y: site.y }]);
+    for (const squad of selected as NonNullable<(typeof selected)[number]>[])
+      squad.captureSite = { region: region.id, feature: site.id };
+    report(
+      w,
+      `${c.squads.length} squad(s) ordered to capture ${site.name}.`,
+      "order",
+      region.id,
+      owner,
+    );
+    return;
+  }
+  if(c.type === "garrison-squads") {
+    const region=w.regions[c.region];
+    const site=region?.features?.find(f=>f.id===c.feature && f.kind==="settlement");
+    if(!site || settlementOwner(region, site)!==owner) throw Error("Choose a settlement you control.");
+    orderSquads(w,owner,c.squads,"move",[{x:site.x,y:site.y}]);
+    for(const id of c.squads) w.tactics!.squads.find(s=>s.id===id)!.garrisonSite={region:c.region,feature:c.feature};
+    report(w,`${c.squads.length} squad(s) ordered to garrison ${site.name}.`,"order",c.region,owner);
+    return;
+  }
+  if (c.type === "squad-order") {
+    orderSquads(w, owner, c.squads, c.mode, c.points, c.append);
+    report(w, `${c.squads.length} squad(s): ${c.mode === "hold" ? "holding position" : "following local waypoints"}.`, "order", null, owner);
+    return;
+  }
   if (c.type === "build") {
     const r = w.regions[c.region], b = BUILDINGS[c.building];
     if (!r || r.owner !== owner || r.terrain === "mountains") throw Error("Build in a region you own.");
@@ -380,6 +462,16 @@ export function command(w: World, owner: number, c: Command) {
   }
   const a = w.armies.find(a => a.id === c.army && a.owner === owner);
   if (!a) throw Error("You can only command your own army.");
+  if (c.type === "cover") {
+    const proposed = { ...a, cover: { region: c.region, feature: c.feature } };
+    const site = coverSite(w, proposed);
+    if (!site) throw Error("Choose a friendly settlement or fort for cover.");
+    command(w, owner, { type: "order", army: a.id, order: c.region === a.region ? "hold" : "redeploy", ...(c.region === a.region ? {} : { target: c.region }) });
+    a.cover = proposed.cover; a.sector = [a.region];
+    a.status = `Moving to cover: ${site.name}`;
+    report(w, `${ARMY_ROLES[a.role].name} ordered to take cover at ${site.name}.`, "order", c.region, owner);
+    return;
+  }
   if (c.type === "air") { a.air = c.enabled; return; }
   if (c.type === "policy") {
     if (c.fallback !== null && !friendlyPath(w, a.region, c.fallback, owner).length)
@@ -391,6 +483,8 @@ export function command(w: World, owner: number, c: Command) {
       !c.regions.includes(a.region) || c.regions.some(id => w.regions[id]?.owner !== owner || w.regions[id].terrain === "mountains" ||
         (id !== a.region && !w.regions[a.region].neighbors.includes(id))))
       throw Error("A sector includes headquarters and up to two adjacent friendly regions.");
+    for (const s of w.tactics?.squads ?? []) if (s.army === a.id) { delete s.localOrder; delete s.independent; delete s.garrisonSite; delete s.captureSite; }
+    delete a.cover;
     a.sector = [...c.regions]; a.deployment = 4; a.entrenchment = 0;
     stop(a, "hold", "Deploying across sector (4h)");
     report(w, `${ARMY_ROLES[a.role].name} is deploying across ${a.sector.length} regions.`, "order", a.region, owner);
@@ -407,18 +501,21 @@ export function command(w: World, owner: number, c: Command) {
     a.campaignOwner = w.regions[c.target].owner;
     a.sector = [a.region]; a.entrenchment = 0;
   } else { a.target = null; a.route = []; }
+  for (const s of w.tactics?.squads ?? []) if (s.army === a.id) { delete s.localOrder; delete s.independent; delete s.garrisonSite; delete s.captureSite; }
+  delete a.cover;
   a.order = c.order; a.progress = 0;
   a.status = c.order === "advance" ? "Advancing along planned corridor" : c.order === "redeploy" ? "Redeploying through friendly territory" : c.order === "reserve" ? "Watching sector for attacks" : c.order === "recover" ? "Recovering strength" : "Holding sector";
   report(w, `${ARMY_ROLES[a.role].name}: ${a.status.toLowerCase()}.`, "order", a.target ?? a.region, owner);
 }
-function stop(a: Army, order: "hold" | "recover", status: string) {
+export function stop(a: Army, order: "hold" | "recover", status: string) {
+  delete a.cover;
   a.order = order; a.target = null; a.route = []; a.progress = 0; a.status = status;
 }
-function moveArmy(a: Army, target: number) {
+export function moveArmy(a: Army, target: number) {
   a.region = target; a.sector = [target]; a.entrenchment = 0; a.deployment = 0;
   if (a.route[0] === target) a.route.shift();
 }
-function withdraw(w: World, a: Army, excluded: Set<number> = new Set()): boolean {
+export function withdraw(w: World, a: Army, excluded: Set<number> = new Set()): boolean {
   const route = a.fallback === null ? [] : friendlyPath(w, a.region, a.fallback, a.owner);
   const choices = [route[1], ...w.regions[a.region].neighbors];
   const next = choices.find(id => id !== undefined && !excluded.has(id) && w.regions[id].owner === a.owner && w.regions[id].terrain !== "mountains");
@@ -432,12 +529,7 @@ function withdraw(w: World, a: Army, excluded: Set<number> = new Set()): boolean
   report(w, `${ARMY_ROLES[a.role].name} withdrew to ${w.regions[next].name}.`, "combat", next, a.owner);
   return true;
 }
-function defenseMultiplier(w: World, r: Region, artillery: number) {
-  return (1 + (r.building === "fort" ? 0.35 * (1 - Math.min(0.8, artillery / 40)) : 0)) *
-    (r.terrain === "highlands" ? 1.2 : r.terrain === "forest" ? 1.1 : 1) *
-    (r.owner !== null && w.nations[r.owner].faction === "crown" ? 1.15 : 1);
-}
-export function advance(w: World) {
+export function advance(w: World, tacticalHours = 1) {
   if (w.winner !== null) return;
   w.hour++;
   for (const n of w.nations) {
@@ -457,6 +549,25 @@ export function advance(w: World) {
   const networks = w.nations.map(n => supplyNetwork(w, n.id));
   for (const a of w.armies) {
     if (a.strength <= 0) continue;
+    const direct = w.tactics?.squads.filter(s => s.army === a.id && s.independent) ?? [];
+    if (direct.length) {
+      // Group logistics follow its actual squads; HQ no longer moves or captures for them.
+      const n = w.nations[a.owner];
+      const connected = direct.every(s => s.strength <= 0 || networks[a.owner].has(s.region));
+      a.supplies = connected ? Math.min(reserveCapacity(w,a),a.supplies+2) : Math.max(0,a.supplies-1);
+      for (const s of direct) {
+        if(s.strength <= 0) continue;
+        if(!networks[a.owner].has(s.region) && a.supplies === 0) s.strength=Math.max(0,s.strength-.02*s.capacity);
+        else if(networks[a.owner].has(s.region) && s.localOrder?.mode === "hold" &&
+          !w.tactics!.engagements.some(e=>e.region===s.region && e.status==="active")) {
+          const amount=Math.max(0,Math.min(s.capacity-s.strength,n.manpower,n.industry*2,s.capacity*.02));
+          s.strength+=amount;n.manpower-=amount;n.industry-=amount/2;
+        }
+      }
+      a.strength=direct.reduce((sum,s)=>sum+s.strength,0);
+      a.status="Following squad orders";
+      continue;
+    }
     const n = w.nations[a.owner], connected = networks[a.owner].has(a.region);
     a.sector = a.sector.filter(id => w.regions[id].owner === a.owner);
     if (!a.sector.includes(a.region)) a.sector = [a.region];
@@ -509,7 +620,7 @@ export function advance(w: World) {
   }
   const intents: { army: Army; from: number; target: number }[] = [];
   for (const a of w.armies) {
-    if (a.strength <= 0 || !a.route.length) continue;
+    if (a.strength <= 0 || !a.route.length || isEngaged(w, a.id)) continue;
     const target = a.route[0], next = w.regions[target], local = w.regions[a.region];
     if (!local.neighbors.includes(target) || !next || next.terrain === "mountains" ||
       (a.order !== "advance" && next.owner !== a.owner) ||
@@ -533,74 +644,22 @@ export function advance(w: World) {
     if (x.army.owner !== y.army.owner && x.from === y.target && y.from === x.target) {
       blocked.add(x.army.id); blocked.add(y.army.id);
     }
-  for (const id of blocked) {
-    const a = w.armies.find(a => a.id === id)!;
-    a.strength = Math.max(0, a.strength - 8); a.status = "Opposing advance: line holds";
+  for (const x of intents) {
+    const other = intents.find(y => x.army.owner !== y.army.owner && x.from === y.target && y.from === x.target);
+    if (other && x.army.id < other.army.id) beginEngagement(w, x.army, x.target);
   }
-  // Snapshot the deployed frontage before any arrivals, so a region never gets the
-  // whole army merely because another attack resolved first.
-  const deployed = new Map(w.armies.map(a => [a.id, coverage(w, a)]));
   intents.sort((x, y) => ((x.army.owner + w.hour) % w.nations.length) - ((y.army.owner + w.hour) % w.nations.length) || x.army.id - y.army.id);
   for (const { army: a, from, target } of intents) {
     if (blocked.has(a.id) || a.strength <= 0 || a.region !== from || a.route[0] !== target || w.regions[from].owner !== a.owner) continue;
     const r = w.regions[target], n = w.nations[a.owner];
     if (r.owner === a.owner) { moveArmy(a, target); continue; }
     if (a.order !== "advance" || r.owner !== a.campaignOwner) { stop(a, "hold", "Route blocked: ownership changed"); continue; }
-    const defenders = w.armies.filter(d => d.owner === r.owner && d.strength > 0 &&
-      deployed.get(d.id)!.includes(target) && coverage(w, d).includes(target));
-    const shares = defenders.map(d => ({ army: d, strength: d.strength / deployed.get(d.id)!.length }));
-    const armorFuel = (a.tanks + a.motorized) / 25;
-    const fueled = n.fuel >= armorFuel;
-    if (fueled) n.fuel -= armorFuel;
-    const airCost = n.faction === "aether" ? 1 : 2;
-    const air = a.air && n.fuel >= airCost;
-    if (air) n.fuel -= airCost;
-    const armorFactor = r.terrain === "plains" ? 1.8 : r.terrain === "forest" ? 0.8 : 0.5;
-    const power = (a.infantry + a.motorized * (fueled ? 1.1 : 0.7) + a.artillery * 1.3 + a.tanks * armorFactor * (fueled ? 1 : 0.35)) / 100;
-    const attack = a.strength * power * (n.faction === "iron" ? 1.1 : 1) * (a.supplies >= 6 ? 1 : 0.65) * (air ? 1.2 : 1);
-    const fieldDefense = shares.reduce((sum, s) => sum + s.strength *
-      (0.8 + (s.army.infantry + s.army.motorized) / 200) *
-      (1 + Math.max(0, s.army.entrenchment - a.artillery / 10) * 0.06), 0);
-    const defense = (r.garrison + fieldDefense) * defenseMultiplier(w, r, a.artillery);
-    const loss = Math.min(a.strength, Math.max(5, defense * 0.22));
-    a.strength -= loss; a.supplies = Math.max(0, a.supplies - (a.role === "line" ? 1 : 2));
-    let damage = Math.max(7, attack * 0.36);
-    // Field formations take their share of fire even while a garrison survives.
-    const total = r.garrison + shares.reduce((sum, s) => sum + s.strength, 0);
-    const garrisonHit = Math.min(r.garrison, total ? damage * r.garrison / total : damage);
-    r.garrison -= garrisonHit; damage -= garrisonHit;
-    let contested = false;
-    for (const share of shares) {
-      const d = share.army;
-      const hit = Math.min(share.strength, damage * share.strength / Math.max(1, total - (r.garrison + garrisonHit)));
-      d.strength = Math.max(0, d.strength - hit);
-      d.entrenchment = Math.max(0, d.entrenchment - a.artillery / 20);
-      const overrun = hit >= share.strength - 0.001 || d.strength < retreatThreshold(d);
-      if (overrun) {
-        if (d.region === target) {
-          if (!withdraw(w, d, new Set([from])) && d.strength > 0) contested = true;
-        } else {
-          d.sector = d.sector.filter(id => id !== target);
-          d.deployment = 4;
-          d.status = "Sector pushed back; regrouping";
-        }
-      } else contested = true;
-    }
-    // Tiny residual floating-point garrisons must not prevent a capture.
-    if (r.garrison < 0.5) r.garrison = 0;
-    if (r.garrison === 0 && !contested && a.strength > 0) {
-      r.owner = a.owner; r.garrison = 6; r.construction = null;
-      r.consolidation = Math.max(3, Math.ceil(8 - (a.infantry + a.motorized) / 20));
-      moveArmy(a, target); a.status = `Consolidating ${r.name}: ${r.consolidation}h`;
-      report(w, `${n.name} captured ${r.name}; consolidation takes ${r.consolidation} hours.`, "combat", target, a.owner);
-    } else {
-      a.status = `Fighting for ${r.name}`;
-      report(w, `Fighting at ${r.name}: ${ARMY_ROLES[a.role].name} lost ${Math.round(loss)} strength.`, "combat", target, a.owner);
-    }
-    if (a.strength < retreatThreshold(a)) stop(a, "recover", "Offensive halted: recovering strength");
+    beginEngagement(w, a, target);
   }
+  advanceTactics(w, tacticalHours);
   for (const a of w.armies) {
-    if (a.target === a.region && !a.route.length) stop(a, a.order === "recover" ? "recover" : "hold", "Objective reached");
+    if (w.tactics?.squads.some(s=>s.army===a.id && s.independent)) continue;
+    if (a.target === a.region && !a.route.length) { const cover = a.cover; stop(a, a.order === "recover" ? "recover" : "hold", "Objective reached"); if (cover?.region === a.region) a.cover = cover; }
     if (a.strength > 0 && w.regions[a.region].owner !== a.owner && !withdraw(w, a)) a.strength = 0;
     if (a.strength <= 0) report(w, `${ARMY_ROLES[a.role].name} of ${w.nations[a.owner].name} was destroyed or surrendered.`, "combat", a.region, a.owner);
   }
@@ -621,9 +680,11 @@ export function advance(w: World) {
       .filter((s) => Math.abs(s.area - top) < 0.000001)
       .map((s) => s.owner);
   }
-  if (w.winner !== null)
+  if (w.winner !== null) {
+    advanceTactics(w, 0);
     report(
       w,
       `Campaign concluded. ${w.winner.map((id) => w.nations[id].name).join(" and ")} hold the winning land share.`,
     );
+  }
 }

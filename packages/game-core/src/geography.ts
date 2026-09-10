@@ -1,4 +1,5 @@
-import { Delaunay } from "d3-delaunay";
+import { openEnclosedTerritories } from "./territoryPartition.ts";
+import { noise, generateRelief } from "./relief.ts";
 import type { Region } from "./index.ts";
 
 export type Point = [number, number];
@@ -9,7 +10,10 @@ export interface Province {
   regions: number[];
 }
 export interface Geography {
-  version: 1;
+  version: 1 | 2 | 3 | 4 | 5 | 6;
+  terrainPatches?: { terrain: Region["terrain"]; contours: Point[][] }[];
+  sources?: string[];
+  wind?: number;
   width: number;
   height: number;
   cellSize: number;
@@ -26,11 +30,7 @@ export interface GeographicRegion extends Region {
   coastal: boolean;
   contours: Point[][];
 }
-const W = 2400,
-  H = 1600,
-  S = 8,
-  COLS = W / S,
-  ROWS = H / S;
+const S = 8;
 function randomSeed(seed: string) {
   let h = 2166136261;
   for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
@@ -46,28 +46,6 @@ function hash(x: number, y: number, s: number) {
   v = Math.imul(v ^ (v >>> 13), 1274126177);
   return ((v ^ (v >>> 16)) >>> 0) / 4294967295;
 }
-function noise(x: number, y: number, seed: number) {
-  const ix = Math.floor(x),
-    iy = Math.floor(y);
-  let tx = x - ix,
-    ty = y - iy;
-  tx = tx * tx * (3 - 2 * tx);
-  ty = ty * ty * (3 - 2 * ty);
-  return (
-    (hash(ix, iy, seed) * (1 - tx) + hash(ix + 1, iy, seed) * tx) * (1 - ty) +
-    (hash(ix, iy + 1, seed) * (1 - tx) + hash(ix + 1, iy + 1, seed) * tx) * ty
-  );
-}
-function ellipse(
-  x: number,
-  y: number,
-  cx: number,
-  cy: number,
-  rx: number,
-  ry: number,
-) {
-  return 1 - Math.hypot((x - cx) / rx, (y - cy) / ry);
-}
 export function signedArea(points: number[][]) {
   let a = 0;
   for (let i = 0; i < points.length; i++) {
@@ -78,7 +56,12 @@ export function signedArea(points: number[][]) {
   return a / 2;
 }
 // Trace exact shared raster edges. Adjacent territories share their land boundaries.
-function trace(labels: Int32Array, value: number): Point[][] {
+function trace(
+  labels: Int32Array,
+  value: number,
+  COLS: number,
+  ROWS: number,
+): Point[][] {
   const edges = new Map<number, number[]>(),
     stride = COLS + 1;
   const add = (a: number, b: number) => {
@@ -248,64 +231,21 @@ export function generateContinent(
   seed: string,
   seats: number,
 ): { regions: GeographicRegion[]; geography: Geography } {
+  // Keep land area per nation constant instead of packing more cells into a fixed world.
+  const scale = Math.sqrt(seats / 4);
+  const W = Math.round((4800 * scale) / S) * S;
+  const H = Math.round((3200 * scale) / S) * S;
+  const COLS = W / S,
+    ROWS = H / S;
   const random = randomSeed(seed),
-    salt = Math.floor(random() * 0x7fffffff),
-    phase = random() * 6.28;
-  const land = new Int32Array(COLS * ROWS).fill(-1),
-    heights = new Float32Array(COLS * ROWS),
-    wetness = new Float32Array(COLS * ROWS);
-  const ridges: Point[][] = [[], []];
-  for (let j = 0; j < 2; j++)
-    for (let i = 0; i < 52; i++) {
-      const t = i / 51;
-      const x = 550 + t * 1430;
-      const y =
-        (j === 0 ? 460 : 1000) +
-        Math.sin(t * 5 + phase + j) * 120 +
-        (noise(t * 8, j, salt) - 0.5) * 100;
-      ridges[j].push([x, y]);
-    }
-  for (let y = 0; y < ROWS; y++)
-    for (let x = 0; x < COLS; x++) {
-      const px = (x + 0.5) * S,
-        py = (y + 0.5) * S;
-      let u = (px - W / 2) / (W * 0.46),
-        v = (py - H / 2) / (H * 0.46);
-      u += (noise(px / 420, py / 420, salt) - 0.5) * 0.15;
-      v += (noise(px / 330, py / 330, salt + 1) - 0.5) * 0.13;
-      let f = Math.max(
-        ellipse(u, v, -0.13, -0.04, 0.63, 0.7),
-        ellipse(u, v, 0.4, -0.05, 0.46, 0.55),
-        ellipse(u, v, -0.17, 0.57, 0.24, 0.35),
-        ellipse(u, v, -0.66, 0.02, 0.32, 0.22),
-        ellipse(u, v, 0.52, -0.58, 0.21, 0.29),
-      );
-      f +=
-        (noise(px / 130, py / 130, salt + 2) - 0.5) * 0.16 +
-        (noise(px / 38, py / 38, salt + 3) - 0.5) * 0.08;
-      // Bays penetrate the coast; the inland sea is a genuine hole in playable land.
-      f = Math.min(
-        f,
-        -ellipse(u, v, 0.19, 0.61, 0.23, 0.37),
-        -ellipse(u, v, -0.39, -0.64, 0.16, 0.26),
-        -ellipse(u, v, 0.36, 0.03, 0.105, 0.135),
-      );
-      let distance = 10000;
-      for (const ridge of ridges)
-        for (const p of ridge)
-          distance = Math.min(distance, Math.hypot(px - p[0], py - p[1]));
-      const i = y * COLS + x;
-      heights[i] = Math.min(
-        1,
-        0.13 +
-          Math.exp((-distance * distance) / 15000) * 0.78 +
-          noise(px / 100, py / 100, salt + 7) * 0.16,
-      );
-      wetness[i] =
-        noise(px / 300, py / 300, salt + 11) * 0.65 +
-        noise(px / 85, py / 85, salt + 8) * 0.35;
-      if (f > 0) land[i] = 1;
-    }
+    salt = Math.floor(random() * 0x7fffffff);
+  const { land, heights, wetness, sources, wind } = generateRelief(
+    seed,
+    W,
+    H,
+    S,
+  );
+  const ridges: Point[][] = [];
   // Only the connected mainland is playable until naval transport exists.
   const seen = new Uint8Array(land.length),
     components: number[][] = [];
@@ -332,38 +272,18 @@ export function generateContinent(
   const mainland = components[0];
   land.fill(-1);
   mainland.forEach((i) => (land[i] = 1));
-  const coastlines = trace(land, 1).map((r) => smooth(r));
+  const coastlines = trace(land, 1, COLS, ROWS).map((r) => smooth(r));
   const islands: Point[][] = [];
   for (const c of components.slice(1).filter((c) => c.length >= 5)) {
     const mask = new Int32Array(land.length).fill(-1);
     c.forEach((i) => (mask[i] = 1));
     islands.push(
-      ...trace(mask, 1)
+      ...trace(mask, 1, COLS, ROWS)
         .filter((r) => signedArea(r) > 0)
         .map((r) => smooth(r)),
     );
   }
-  // Small offshore island chains, kept separate from ownership and land victory.
-  for (let chain = 0; chain < 3; chain++) {
-    const angle = phase + chain * 2.1;
-    for (let k = 0; k < 7; k++) {
-      const cx = W / 2 + Math.cos(angle + k * 0.04) * (W * 0.44 + k * 4),
-        cy = H / 2 + Math.sin(angle + k * 0.04) * (H * 0.44 + k * 6);
-      if (cx < 30 || cx > W - 30 || cy < 30 || cy > H - 30) continue;
-      const ix = Math.floor(cx / S),
-        iy = Math.floor(cy / S);
-      if (land[iy * COLS + ix] === 1) continue;
-      const radius = 5 + random() * 13;
-      const ring: Point[] = [];
-      for (let j = 0; j < 12; j++) {
-        const a = (j / 12) * Math.PI * 2,
-          rr = radius * (0.6 + random() * 0.6);
-        ring.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.65]);
-      }
-      islands.push(smooth(ring));
-    }
-  }
-  const count = Math.max(72, seats * 24),
+  const count = seats * 24,
     candidates = mainland.filter((_, i) => i % 4 === 0),
     distances = new Float64Array(candidates.length).fill(Infinity),
     sites: Point[] = [];
@@ -381,51 +301,111 @@ export function generateContinent(
         dx = ((c % COLS) + 0.5) * S - p[0],
         dy = (Math.floor(c / COLS) + 0.5) * S - p[1];
       distances[j] = Math.min(distances[j], dx * dx + dy * dy);
-      const score = distances[j] * (0.8 + hash(j, k, salt) * 0.4);
+      const score = distances[j] * (0.15 + hash(j, k, salt) ** 3 * 1.85);
       if (score > max) {
         max = score;
         choice = j;
       }
     }
   }
-  const delaunay = Delaunay.from(sites),
-    labels = new Int32Array(land.length).fill(-1);
-  let hint = 0;
-  for (const i of mainland) {
-    hint = delaunay.find(
-      ((i % COLS) + 0.5) * S,
-      (Math.floor(i / COLS) + 0.5) * S,
-      hint,
-    );
-    labels[i] = hint;
-  }
-  // A nearest-site cell can straddle a bay. Reassign disconnected fragments to adjacent territory.
-  for (let pass = 0; pass < 4; pass++) {
-    const visited = new Uint8Array(labels.length);
-    let changed = false;
-    for (let id = 0; id < count; id++) {
-      const anchor =
-          Math.floor(sites[id][1] / S) * COLS + Math.floor(sites[id][0] / S),
-        q = [anchor];
-      visited[anchor] = 1;
-      for (let k = 0; k < q.length; k++)
-        for (const n of neighbors(q[k]))
-          if (labels[n] === id && !visited[n]) {
-            visited[n] = 1;
-            q.push(n);
-          }
+  // Uneven, terrain-sensitive expansion. Every claimed cell has a cardinal
+  // predecessor in its territory, so no enclave can jump a channel or a rival.
+  const labels = new Int32Array(land.length).fill(-1);
+  type Claim = { cell: number; id: number; cost: number };
+  const claims: Claim[] = [];
+  const enqueue = (claim: Claim) => {
+    let at = claims.length;
+    claims.push(claim);
+    while (at > 0) {
+      const parent = (at - 1) >> 1;
+      if (claims[parent].cost <= claim.cost) break;
+      claims[at] = claims[parent];
+      at = parent;
     }
-    for (const i of mainland)
-      if (!visited[i]) {
-        const n = neighbors(i).find((n) => visited[n] && labels[n] >= 0);
-        if (n !== undefined) {
-          labels[i] = labels[n];
-          visited[i] = 1;
-          changed = true;
-        }
+    claims[at] = claim;
+  };
+  const take = () => {
+    const first = claims[0],
+      last = claims.pop()!;
+    if (claims.length) {
+      let at = 0;
+      while (at * 2 + 1 < claims.length) {
+        let child = at * 2 + 1;
+        if (
+          child + 1 < claims.length &&
+          claims[child + 1].cost < claims[child].cost
+        )
+          child++;
+        if (claims[child].cost >= last.cost) break;
+        claims[at] = claims[child];
+        at = child;
       }
-    if (!changed) break;
+      claims[at] = last;
+    }
+    return first;
+  };
+  // A broad, skewed growth range creates a few large hinterlands among
+  // compact regions. Site spacing still prevents clusters of tiny territories.
+  const speeds = sites.map(() => 0.5 + random() ** 2 * 2.5);
+  const claimed = new Int32Array(count);
+  const coreSize = Math.max(8, Math.floor((mainland.length / count) * 0.04));
+  const resistance = (i: number) => {
+    const x = i % COLS,
+      y = Math.floor(i / COLS);
+    return (
+      1.3 +
+      0.45 * Math.sin(x / 13 + Math.sin(y / 19) * 2 + salt) +
+      0.35 * Math.cos(y / 11 + Math.sin(x / 23) * 2 + salt)
+    );
+  };
+  sites.forEach((p, id) =>
+    enqueue({
+      cell: Math.floor(p[1] / S) * COLS + Math.floor(p[0] / S),
+      id,
+      cost: 0,
+    }),
+  );
+  while (claims.length) {
+    const { cell, id, cost } = take();
+    if (labels[cell] !== -1) continue;
+    labels[cell] = id;
+    claimed[id]++;
+    const x = cell % COLS,
+      y = Math.floor(cell / COLS);
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) {
+        if (
+          (!dx && !dy) ||
+          x + dx < 0 ||
+          x + dx >= COLS ||
+          y + dy < 0 ||
+          y + dy >= ROWS
+        )
+          continue;
+        const n = cell + dy * COLS + dx;
+        if (land[n] !== 1 || labels[n] !== -1) continue;
+        if (
+          dx &&
+          dy &&
+          labels[cell + dx] !== id &&
+          labels[cell + dy * COLS] !== id
+        )
+          continue;
+        const slope = Math.abs(heights[cell] - heights[n]);
+        const moistureEdge = Math.abs(wetness[cell] - wetness[n]);
+        enqueue({
+          cell: n,
+          id,
+          cost:
+            cost +
+            ((Math.hypot(dx, dy) *
+              (resistance(n) + slope * 35 + moistureEdge * 8)) /
+              speeds[id]) *
+              (claimed[id] < coreSize ? 0.1 : 1),
+        });
+      }
   }
+  openEnclosedTerritories(labels, COLS, ROWS);
   const cells: number[][] = Array.from({ length: count }, () => []),
     adj = Array.from({ length: count }, () => new Set<number>());
   for (const i of mainland) {
@@ -436,7 +416,21 @@ export function generateContinent(
   }
   const regions: GeographicRegion[] = sites.map((p, id) => {
     const own = cells[id],
-      contours = trace(labels, id);
+      contours = trace(labels, id, COLS, ROWS);
+    // Repairs can move a boundary across the old growth site. Keep the region
+    // anchor on its own land, near the center of its new footprint.
+    if (labels[Math.floor(p[1] / S) * COLS + Math.floor(p[0] / S)] !== id) {
+      const cx = own.reduce((sum, i) => sum + (i % COLS), 0) / own.length;
+      const cy =
+        own.reduce((sum, i) => sum + Math.floor(i / COLS), 0) / own.length;
+      const distance = (i: number) =>
+        ((i % COLS) - cx) ** 2 + (Math.floor(i / COLS) - cy) ** 2;
+      const center = own.reduce((best, i) =>
+        distance(i) < distance(best) ? i : best,
+      );
+      p = [((center % COLS) + 0.5) * S, (Math.floor(center / COLS) + 0.5) * S];
+      sites[id] = p;
+    }
     let e = 0,
       m = 0;
     for (const i of own) {
@@ -472,7 +466,12 @@ export function generateContinent(
   // Impassable peaks never sever the connected playable mainland: leave navigable highland passes.
   const blocked = new Set<number>();
   for (const r of [...regions]
-    .filter((r) => r.elevation > 0.78)
+    .filter(
+      (r) =>
+        cells[r.id].filter((i) => heights[i] > 0.78).length /
+          cells[r.id].length >
+        0.3,
+    )
     .sort((a, b) => b.elevation - a.elevation)) {
     blocked.add(r.id);
     const start = regions.find((r) => !blocked.has(r.id))!.id,
@@ -491,47 +490,17 @@ export function generateContinent(
     regions[id].garrison = 0;
     regions[id].name += " Peaks";
   }
-  // Contiguous provinces are administrative groups over the finer conquest territories.
-  const provinceCount = seats * 2,
-    provinceSeeds = [0];
-  while (provinceSeeds.length < provinceCount) {
-    let best = 0,
-      score = -1;
-    for (const r of regions) {
-      const distance = Math.min(
-        ...provinceSeeds.map((id) =>
-          Math.hypot(r.x - regions[id].x, r.y - regions[id].y),
-        ),
-      );
-      if (distance > score) {
-        best = r.id;
-        score = distance;
-      }
-    }
-    provinceSeeds.push(best);
-  }
-  const q = provinceSeeds.map((id, p) => {
-    regions[id].province = p;
-    return id;
-  });
-  for (let k = 0; k < q.length; k++)
-    for (const n of regions[q[k]].neighbors)
-      if (regions[n].province === -1) {
-        regions[n].province = regions[q[k]].province;
-        q.push(n);
-      }
-  const provinces = provinceSeeds.map((_, id) => {
-    const members = regions.filter((r) => r.province === id);
-    return {
-      id,
-      name: provinceNames[id],
-      center: [
-        members.reduce((s, r) => s + r.x, 0) / members.length,
-        members.reduce((s, r) => s + r.y, 0) / members.length,
-      ] as Point,
-      regions: members.map((r) => r.id),
-    };
-  });
+  // Local geography is independent of administrative boundaries. These features
+  // are map data, not yet separate combat positions or economic modifiers.
+  const biome = new Int32Array(land.length).fill(-1);
+  for (const i of mainland)
+    biome[i] =
+      heights[i] > 0.78 ? 3 : heights[i] > 0.52 ? 2 : wetness[i] > 0.52 ? 1 : 0;
+  const terrainKinds = ["plains", "forest", "highlands", "mountains"] as const;
+  const terrainPatches = terrainKinds.map((terrain, id) => ({
+    terrain,
+    contours: trace(biome, id, COLS, ROWS),
+  }));
   // Flood outward from sea outlets. The drainage parent follows low terrain,
   // with diagonal steps and a small slope through basins to avoid cycles.
   const distance = new Int32Array(land.length).fill(-1),
@@ -609,12 +578,18 @@ export function generateContinent(
         push(n, next);
       }
   }
-  const rivers: Point[][] = [],
-    sources = mainland
-      .filter((i) => heights[i] > 0.68 && distance[i] > 14)
-      .sort((a, b) => distance[b] - distance[a]),
-    used: number[] = [];
-  for (const source of sources) {
+  const accumulation = new Float32Array(land.length);
+  for (const i of mainland) accumulation[i] = 0.3 + wetness[i];
+  for (const i of [...mainland].sort((a, b) => flooded[b] - flooded[a])) {
+    if (downhill[i] >= 0) accumulation[downhill[i]] += accumulation[i];
+  }
+  const rivers: Point[][] = [];
+  const riverSources = mainland
+    .filter((i) => heights[i] > 0.5 && distance[i] > 12 && accumulation[i] > 35)
+    .sort((a, b) => distance[b] - distance[a]);
+  const used: number[] = [];
+  const riverCells = new Set<number>();
+  for (const source of riverSources) {
     if (
       used.some(
         (i) =>
@@ -629,26 +604,226 @@ export function generateContinent(
     let at = source;
     while (at >= 0) {
       points.push([((at % COLS) + 0.5) * S, (Math.floor(at / COLS) + 0.5) * S]);
+      if (riverCells.has(at)) break;
       at = downhill[at];
     }
     if (points.length > 15) {
       rivers.push(points);
       used.push(source);
+      for (const [x, y] of points)
+        riverCells.add(Math.floor(y / S) * COLS + Math.floor(x / S));
     }
-    if (rivers.length >= 14) break;
+    if (rivers.length >= Math.max(8, seats * 3)) break;
+  }
+  const allSettlements: { x: number; y: number; major: boolean }[] = [];
+  for (const r of regions) {
+    const fertile =
+      cells[r.id].filter((i) => biome[i] === 0).length / cells[r.id].length;
+    r.landUse =
+      r.terrain === "mountains"
+        ? "wilderness"
+        : fertile > 0.6 &&
+            noise(r.x / (S * 100), r.y / (S * 100), salt + 53) < 0.68
+          ? "agricultural"
+          : "settled";
+    r.purpose =
+      r.terrain === "mountains"
+        ? "wilderness"
+        : r.landUse === "agricultural"
+          ? "farming basin"
+          : r.terrain === "forest"
+            ? "woodland district"
+            : r.terrain === "highlands"
+              ? r.neighbors.filter((id) => regions[id].terrain === "mountains")
+                  .length >= 2
+                ? "highland pass"
+                : "upland district"
+              : r.coastal
+                ? "port hinterland"
+                : "settled heartland";
+    r.features = [];
+    const point = (cell: number): Point => [
+      ((cell % COLS) + 0.5) * S,
+      (Math.floor(cell / COLS) + 0.5) * S,
+    ];
+    for (let kind = 0; kind < 4; kind++) {
+      const patch = cells[r.id].filter((i) => biome[i] === kind);
+      if (patch.length < 12) continue;
+      const cell = patch[Math.floor(patch.length / 2)],
+        [x, y] = point(cell);
+      r.features.push({
+        id: `${r.id}-terrain-${kind}`,
+        kind: ["open", "forest", "ridge", "peaks"][kind] as
+          "open" | "forest" | "ridge" | "peaks",
+        name: ["Open country", "Woodland", "High ridge", "Mountain peaks"][
+          kind
+        ],
+        x,
+        y,
+      });
+    }
+    if (r.terrain === "mountains") continue;
+    const suitable = cells[r.id].filter((i) => heights[i] < 0.72);
+    const pool = suitable.length ? suitable : cells[r.id];
+    const desired =
+      r.landUse === "agricultural"
+        ? random() < 0.45
+          ? 0
+          : 1
+        : 1 +
+          (r.area > ((W * H) / regions.length) * 0.35 && random() < 0.28
+            ? 1
+            : 0);
+    for (let k = 0; k < desired; k++) {
+      const roll = random();
+      const size =
+        r.landUse === "agricultural"
+          ? roll < 0.55
+            ? "hamlet"
+            : "village"
+          : k > 0
+            ? roll < 0.7
+              ? "hamlet"
+              : "village"
+            : roll < 0.2
+              ? "hamlet"
+              : roll < 0.5
+                ? "village"
+                : roll < 0.86
+                  ? "town"
+                  : roll < 0.975
+                    ? "city"
+                    : "metropolis";
+      const major = size === "city" || size === "metropolis";
+      let best = -1,
+        score = -Infinity;
+      for (const cell of pool) {
+        const p = point(cell);
+        if (
+          allSettlements.some(
+            (q) =>
+              Math.hypot(p[0] - q.x, p[1] - q.y) <
+              (major && q.major ? 420 : major || q.major ? 220 : 150) * scale,
+          )
+        )
+          continue;
+        const interior = neighbors(cell).filter(
+          (n) => labels[n] === r.id,
+        ).length;
+        if (interior < 4) continue;
+        const coastal = neighbors(cell).some((n) =>
+          neighbors(n).some((m) => land[m] < 0),
+        );
+        const waterside = neighbors(cell).some((n) => riverCells.has(n));
+        // Favor safe riverbanks, lowland access, and genuine shore sites for ports.
+        if (riverCells.has(cell)) continue;
+        const slope = Math.max(
+          ...neighbors(cell).map((n) => Math.abs(heights[n] - heights[cell])),
+        );
+        const value =
+          1 -
+          heights[cell] +
+          hash(cell, k, salt) * 0.15 -
+          slope * 5 +
+          (waterside ? 0.32 : 0) +
+          (coastal && r.purpose === "port hinterland" ? 0.7 : 0);
+        if (value > score) {
+          score = value;
+          best = cell;
+        }
+      }
+      if (best < 0) break;
+      const [x, y] = point(best);
+      allSettlements.push({ x, y, major });
+      r.features.push({
+        id: `${r.id}-settlement-${k}`,
+        kind: "settlement",
+        name:
+          k === 0
+            ? r.name
+            : townPrefixes[(r.id + k * 7) % 24] +
+              townSuffixes[(r.id + k * 11) % 24],
+        x,
+        y,
+        size,
+      });
+    }
+  }
+  // Contiguous provinces are administrative groups over the finer conquest territories.
+  const provinceCount = seats * 2,
+    provinceSeeds = [0];
+  while (provinceSeeds.length < provinceCount) {
+    let best = 0,
+      score = -1;
+    for (const r of regions) {
+      const distance = Math.min(
+        ...provinceSeeds.map((id) =>
+          Math.hypot(r.x - regions[id].x, r.y - regions[id].y),
+        ),
+      );
+      if (distance > score) {
+        best = r.id;
+        score = distance;
+      }
+    }
+    provinceSeeds.push(best);
+  }
+  const q = provinceSeeds.map((id, p) => {
+    regions[id].province = p;
+    return id;
+  });
+  for (let k = 0; k < q.length; k++)
+    for (const n of regions[q[k]].neighbors)
+      if (regions[n].province === -1) {
+        regions[n].province = regions[q[k]].province;
+        q.push(n);
+      }
+  const provinces = provinceSeeds.map((_, id) => {
+    const members = regions.filter((r) => r.province === id);
+    return {
+      id,
+      name: provinceNames[id],
+      center: [
+        members.reduce((s, r) => s + r.x, 0) / members.length,
+        members.reduce((s, r) => s + r.y, 0) / members.length,
+      ] as Point,
+      regions: members.map((r) => r.id),
+    };
+  });
+  // Expand world coordinates without multiplying the terrain raster workload.
+  const worldScale = 3;
+  const scalePoint = ([x, y]: Point): Point => [x * worldScale, y * worldScale];
+  const scaleRings = (rings: Point[][]) => rings.map((r) => r.map(scalePoint));
+  for (const r of regions) {
+    r.x *= worldScale;
+    r.y *= worldScale;
+    r.area *= worldScale * worldScale;
+    r.navigationCellSize = S * worldScale;
+    r.polygon = r.polygon.map((p) => scalePoint(p as Point));
+    r.contours = scaleRings(r.contours);
+    for (const f of r.features ?? []) {
+      f.x *= worldScale;
+      f.y *= worldScale;
+    }
   }
   return {
     regions,
     geography: {
-      version: 1,
-      width: W,
-      height: H,
-      cellSize: S,
-      coastlines,
-      islands,
-      rivers,
-      ridges,
-      provinces,
+      version: 6,
+      terrainPatches: terrainPatches.map((p) => ({
+        ...p,
+        contours: scaleRings(p.contours),
+      })),
+      sources,
+      wind,
+      width: W * worldScale,
+      height: H * worldScale,
+      cellSize: S * worldScale,
+      coastlines: scaleRings(coastlines),
+      islands: scaleRings(islands),
+      rivers: scaleRings(rivers),
+      ridges: scaleRings(ridges),
+      provinces: provinces.map((p) => ({ ...p, center: scalePoint(p.center) })),
     },
   };
 }

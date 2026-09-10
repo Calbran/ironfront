@@ -1,254 +1,213 @@
-import { Delaunay } from "d3-delaunay";
+import { blendedGround } from "./blendedGround";
+import { FillPattern, Graphics, Matrix, type Texture } from "pixi.js";
 import type { World } from "../../../packages/game-core/src/index";
-import {
-  smooth,
-  signedArea,
-  type Point,
-} from "../../../packages/game-core/src/geography";
-export function coastPath(ctx: CanvasRenderingContext2D, rings: number[][][]) {
-  ctx.beginPath();
-  for (const ring of rings) {
-    if (!ring.length) continue;
-    ctx.moveTo(ring[0][0], ring[0][1]);
-    for (const p of ring.slice(1)) ctx.lineTo(p[0], p[1]);
-    ctx.closePath();
+import { signedArea } from "../../../packages/game-core/src/geography";
+import type { MapGeometry } from "./mapGeometry";
+
+/** Vector terrain shares the exact mesh used for borders and interaction. */
+export type BiomeTextures = Partial<
+  Record<World["regions"][number]["terrain"] | "river", Texture>
+>;
+
+/** Bake one large material per animation frame so initial texture preparation
+ * never monopolizes the browser main thread in one multi-second task. */
+export async function prepareTerrainTextures(textures: BiomeTextures) {
+  const durations: Record<string, number> = {},
+    baked: Texture[] = [];
+  for (const [name, source] of Object.entries(textures)) {
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => resolve()),
+    );
+    const started = performance.now();
+    baked.push(blendedGround(source, name === "river" ? 1024 : 2048));
+    durations[name] = performance.now() - started;
   }
+  return { baked, durations };
 }
-export function terrainTexture(w: World): HTMLCanvasElement {
-  const width = w.geography?.width ?? 1000,
-    height = w.geography?.height ?? 690;
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d")!;
-  const coasts = w.geography?.coastlines ?? w.regions.map((r) => r.polygon),
-    islands = w.geography?.islands ?? [];
-  // Submerged coastal shelves establish water depth before the land silhouette.
-  for (const [line, alpha] of [
-    [44, 0.045],
-    [24, 0.06],
-    [10, 0.09],
-  ] as const) {
-    coastPath(ctx, [...coasts, ...islands]);
-    ctx.strokeStyle = `rgba(174,202,186,${alpha})`;
-    ctx.lineWidth = line;
-    ctx.stroke();
+
+export function terrainGraphics(
+  world: World,
+  geometry: MapGeometry,
+  textures: BiomeTextures = {},
+) {
+  const terrain = new Graphics();
+  const colors = {
+    plains: "#c1c293",
+    forest: "#718966",
+    highlands: "#bcb8a6",
+    mountains: "#88877e",
+  };
+  const patterns = new Map<string, FillPattern>();
+  const finePatterns = new Map<string, FillPattern>();
+  for (const [name, source] of Object.entries(textures)) {
+    const texture = blendedGround(source, name === "river" ? 1024 : 2048);
+    const pattern = new FillPattern({ texture, textureSpace: "global" });
+    pattern.setTransform(
+      new Matrix().scale(
+        (name === "river" ? 192 : (world.geography?.cellSize ?? 8) * 96) /
+          texture.width,
+        (name === "river" ? 192 : (world.geography?.cellSize ?? 8) * 96) /
+          texture.height,
+      ),
+    );
+    patterns.set(name, pattern);
+    if (name !== "river") {
+      const fine = new FillPattern({ texture, textureSpace: "global" });
+      const period = (world.geography?.cellSize ?? 8) * 16;
+      fine.setTransform(
+        new Matrix().scale(period / texture.width, period / texture.height),
+      );
+      finePatterns.set(name, fine);
+    }
   }
-  ctx.save();
-  coastPath(ctx, [...coasts, ...islands]);
-  ctx.clip("evenodd");
-  const step = 3,
-    cw = Math.ceil(width / step),
-    ch = Math.ceil(height / step),
-    field = new Float32Array(cw * ch),
-    moist = new Float32Array(cw * ch);
-  const d = Delaunay.from(w.regions.map((r) => [r.x, r.y])),
-    neighbor = w.regions.map((_, i) => [i, ...d.neighbors(i)]);
-  let hint = 0;
-  for (let y = 0; y < ch; y++)
-    for (let x = 0; x < cw; x++) {
-      const px = x * step,
-        py = y * step;
-      hint = d.find(px, py, hint);
-      let e = 0,
-        m = 0,
-        weight = 0;
-      for (const id of neighbor[hint]) {
-        const r = w.regions[id],
-          dx = px - r.x,
-          dy = py - r.y,
-          v = 1 / Math.pow(dx * dx + dy * dy + 450, 1.6);
-        weight += v;
-        e += (r.elevation ?? (r.terrain === "highlands" ? 0.7 : 0.25)) * v;
-        m += (r.moisture ?? (r.terrain === "forest" ? 0.7 : 0.4)) * v;
+  // Reuse identical geometry for both frequencies so coasts and biome edges agree.
+  function groundLayer(patterns: Map<string, FillPattern>) {
+    const terrain = new Graphics();
+    const fill = (name: keyof typeof colors) =>
+      patterns.has(name)
+        ? { fill: patterns.get(name)! }
+        : { color: colors[name] };
+    for (const region of world.regions) {
+      for (const ring of geometry.rings[region.id]) {
+        terrain.poly(ring.flat());
+        if (signedArea(ring) > 0) terrain.fill(fill(region.terrain));
+        else terrain.cut();
       }
-      field[y * cw + x] =
-        e / weight +
-        (Math.sin(px * 0.075 + Math.sin(py * 0.041) * 3) +
-          Math.sin(py * 0.095 + px * 0.042)) *
-          0.012;
-      moist[y * cw + x] = m / weight;
     }
-  const raster = document.createElement("canvas");
-  raster.width = cw;
-  raster.height = ch;
-  const rctx = raster.getContext("2d")!,
-    pixels = rctx.createImageData(cw, ch);
-  for (let y = 0; y < ch; y++)
-    for (let x = 0; x < cw; x++) {
-      const i = y * cw + x,
-        e = field[i],
-        m = moist[i];
-      let color = [177, 178, 145];
-      if (m > 0.43) {
-        const f = Math.min(1, (m - 0.43) * 4);
-        color = color.map((c, j) => c * (1 - f) + [99, 128, 103][j] * f);
+    // Clip biome paint to the same smoothed land mesh as selection and borders.
+    const biomes = new Graphics(),
+      mask = new Graphics();
+    for (const rings of geometry.rings)
+      for (const ring of rings) {
+        mask.poly(ring.flat());
+        if (signedArea(ring) > 0) mask.fill(0xffffff);
+        else mask.cut();
       }
-      if (e > 0.5) {
-        const f = Math.min(1, (e - 0.5) * 2.5);
-        color = color.map((c, j) => c * (1 - f) + [141, 147, 137][j] * f);
-      }
-      if (e > 0.79) {
-        const f = Math.min(1, (e - 0.79) * 5);
-        color = color.map((c, j) => c * (1 - f) + [219, 221, 205][j] * f);
-      }
-      const dx =
-          field[y * cw + Math.max(0, x - 1)] -
-          field[y * cw + Math.min(cw - 1, x + 1)],
-        dy =
-          field[Math.max(0, y - 1) * cw + x] -
-          field[Math.min(ch - 1, y + 1) * cw + x];
-      const shade = Math.max(-35, Math.min(30, dx * 550 + dy * 380));
-      const grain = ((Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1) * 3;
-      for (let j = 0; j < 3; j++)
-        pixels.data[i * 4 + j] = color[j] + shade + grain;
-      pixels.data[i * 4 + 3] = 255;
-    }
-  rctx.putImageData(pixels, 0, 0);
-  ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(raster, 0, 0, width, height);
-  // Fine forest canopy clusters, grounded in the broad moisture field.
-  ctx.fillStyle = "rgba(33,69,48,.14)";
-  for (let y = 3; y < ch; y += 2)
-    for (let x = 3; x < cw; x += 2) {
-      const i = y * cw + x;
-      if (moist[i] > 0.54 && field[i] < 0.66) {
-        const n = Math.abs(Math.sin(x * 12.98 + y * 78.2));
-        if (n > 0.45) {
-          ctx.beginPath();
-          ctx.ellipse(
-            x * step + n * 3,
-            y * step,
-            1.4 + n,
-            1.7 + n,
-            0,
-            0,
-            Math.PI * 2,
+    for (const patch of world.geography?.terrainPatches ?? [])
+      for (const ring of patch.contours) {
+        if (ring.length < 3) continue;
+        const last = ring[ring.length - 1];
+        biomes.moveTo((last[0] + ring[0][0]) / 2, (last[1] + ring[0][1]) / 2);
+        for (let i = 0; i < ring.length; i++) {
+          const p = ring[i],
+            next = ring[(i + 1) % ring.length];
+          biomes.quadraticCurveTo(
+            p[0],
+            p[1],
+            (p[0] + next[0]) / 2,
+            (p[1] + next[1]) / 2,
           );
-          ctx.fill();
         }
+        biomes.closePath();
+        if (signedArea(ring) > 0) biomes.fill(fill(patch.terrain));
+        else biomes.cut();
       }
+    terrain.addChild(biomes, mask);
+    biomes.mask = mask;
+    return terrain;
+  }
+  // Draw the coastal shelf behind land: terrain fills cover the inland half.
+  // Join shared mesh edges into paths so translucent strokes have no segment seams.
+  const coastalEdges = geometry.edges.filter(
+    (edge) => edge.regions.length === 1,
+  );
+  const vertexKey = (p: number[]) => p.map((n) => n.toFixed(4)).join(",");
+  const links = new Map<string, number[]>();
+  coastalEdges.forEach((edge, index) => {
+    for (const p of [edge.a, edge.b]) {
+      const key = vertexKey(p);
+      const neighbors = links.get(key) ?? [];
+      neighbors.push(index);
+      links.set(key, neighbors);
     }
-  // Rivers are connected source-to-shore paths; their width is geographic, not a region decoration.
-  for (const river of w.geography?.rivers ?? []) {
+  });
+  const visited = new Set<number>();
+  const coasts: number[][][] = [];
+  coastalEdges.forEach((edge, index) => {
+    if (visited.has(index)) return;
+    const path = [edge.a, edge.b];
+    visited.add(index);
+    let current = edge.b;
+    while (true) {
+      const next = links
+        .get(vertexKey(current))
+        ?.find((id) => !visited.has(id));
+      if (next === undefined) break;
+      visited.add(next);
+      const segment = coastalEdges[next];
+      current =
+        vertexKey(segment.a) === vertexKey(current) ? segment.b : segment.a;
+      path.push(current);
+    }
+    coasts.push(path);
+  });
+  for (const ring of world.geography?.islands ?? [])
+    if (ring.length) coasts.push([...ring, ring[0]]);
+  const traceCoasts = (target: Graphics) => {
+    for (const path of coasts) {
+      target.moveTo(path[0][0], path[0][1]);
+      for (const p of path.slice(1)) target.lineTo(p[0], p[1]);
+      if (vertexKey(path[0]) === vertexKey(path.at(-1)!)) target.closePath();
+    }
+  };
+  // Small overlapping steps soften the shelf into the existing ocean texture.
+  for (let step = 12; step >= 1; step--) {
+    traceCoasts(terrain);
+    terrain.stroke({
+      width: 12 + step * 4,
+      color: "#589b98",
+      alpha: 0.025 + (12 - step) * 0.003,
+      cap: "round",
+      join: "round",
+    });
+  }
+  traceCoasts(terrain);
+  terrain.stroke({ width: 10, color: "#b4ae87", alpha: 0.85, join: "round" });
+  traceCoasts(terrain);
+  terrain.stroke({ width: 5, color: "#d0c49a", join: "round" });
+  for (const ring of world.geography?.islands ?? [])
+    terrain.poly(ring.flat()).fill("#bcc5a5");
+  terrain.addChild(groundLayer(patterns));
+  const fineGround = groundLayer(finePatterns);
+  terrain.addChild(fineGround);
+  const setDetailZoom = (zoom: number) => {
+    const t = Math.max(0, Math.min(1, (zoom - 3) / 5));
+    fineGround.alpha = finePatterns.size ? 0.55 * t * t * (3 - 2 * t) : 0;
+    fineGround.visible = fineGround.alpha > 0;
+  };
+  setDetailZoom(1);
+  const details = new Graphics();
+  terrain.addChild(details);
+  for (const river of world.geography?.rivers ?? []) {
     if (river.length < 2) continue;
     for (const [width, color] of [
-      [4, "#7f9b98"],
-      [1.7, "#bdd3c4"],
+      [12, "#354f4f"],
+      [9, "#90b7b5"],
+      [6.5, "#477e89"],
     ] as const) {
-      ctx.beginPath();
-      ctx.moveTo(river[0][0], river[0][1]);
+      details.moveTo(...river[0]);
       for (let i = 1; i < river.length - 1; i++) {
         const p = river[i],
           n = river[i + 1];
-        ctx.quadraticCurveTo(p[0], p[1], (p[0] + n[0]) / 2, (p[1] + n[1]) / 2);
+        details.quadraticCurveTo(
+          p[0],
+          p[1],
+          (p[0] + n[0]) / 2,
+          (p[1] + n[1]) / 2,
+        );
       }
-      ctx.lineTo(...river.at(-1)!);
-      ctx.lineWidth = width;
-      ctx.strokeStyle = color;
-      ctx.stroke();
+      details.lineTo(...river.at(-1)!).stroke({
+        width,
+        ...(width === 6.5 && patterns.has("river")
+          ? { fill: patterns.get("river")! }
+          : { color }),
+        alpha: width === 12 ? 0.55 : 1,
+        cap: "round",
+        join: "round",
+      });
     }
   }
-  ctx.restore();
-  coastPath(ctx, [...coasts, ...islands]);
-  ctx.lineWidth = 1.3;
-  ctx.strokeStyle = "#c2c7a7";
-  ctx.stroke();
-  return canvas;
-}
-export function territoryRings(r: World["regions"][number]): Point[][] {
-  return r.contours
-    ? r.contours.map((ring) => smooth(ring, 1))
-    : [r.polygon as Point[]];
-}
-export function boundaryEdges(w: World) {
-  const edges = new Map<string, { a: Point; b: Point; regions: number[] }>();
-  for (const r of w.regions)
-    for (const ring of r.contours ?? [r.polygon as Point[]])
-      for (let j = 0; j < ring.length; j++) {
-        const a = ring[j],
-          b = ring[(j + 1) % ring.length];
-        const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
-        const steps = r.contours ? Math.max(1, Math.round(length / 8)) : 1;
-        for (let k = 0; k < steps; k++) {
-          const p: Point = [
-              a[0] + ((b[0] - a[0]) * k) / steps,
-              a[1] + ((b[1] - a[1]) * k) / steps,
-            ],
-            q: Point = [
-              a[0] + ((b[0] - a[0]) * (k + 1)) / steps,
-              a[1] + ((b[1] - a[1]) * (k + 1)) / steps,
-            ];
-          const ps = p.map((n) => n.toFixed(2)).join(","),
-            qs = q.map((n) => n.toFixed(2)).join(","),
-            key = ps < qs ? ps + "|" + qs : qs + "|" + ps;
-          const e = edges.get(key);
-          if (e) e.regions.push(r.id);
-          else edges.set(key, { a: p, b: q, regions: [r.id] });
-        }
-      }
-  if (!w.geography) return [...edges.values()];
-  // Smooth each shared boundary once so both territories use the same line.
-  // Endpoints stay fixed at coast/junction intersections.
-  const groups = new Map<string, { a: Point; b: Point; regions: number[] }[]>();
-  for (const edge of edges.values()) {
-    const key = edge.regions
-      .slice()
-      .sort((a, b) => a - b)
-      .join(":");
-    const group = groups.get(key) ?? [];
-    group.push(edge);
-    groups.set(key, group);
-  }
-  const result: { a: Point; b: Point; regions: number[] }[] = [];
-  for (const group of groups.values()) {
-    const links = new Map<string, number[]>();
-    const key = (p: Point) => p.join(",");
-    group.forEach((e, i) => {
-      for (const p of [e.a, e.b]) {
-        const list = links.get(key(p)) ?? [];
-        list.push(i);
-        links.set(key(p), list);
-      }
-    });
-    const used = new Set<number>();
-    const starts = group
-      .map((_, i) => i)
-      .sort(
-        (a, b) =>
-          Number(
-            links.get(key(group[b].a))!.length === 1 ||
-              links.get(key(group[b].b))!.length === 1,
-          ) -
-          Number(
-            links.get(key(group[a].a))!.length === 1 ||
-              links.get(key(group[a].b))!.length === 1,
-          ),
-      );
-    for (const first of starts) {
-      if (used.has(first)) continue;
-      const e = group[first];
-      let at = links.get(key(e.b))!.length === 1 ? e.b : e.a;
-      const chain: Point[] = [at];
-      let next: number | undefined = first;
-      while (next !== undefined) {
-        used.add(next);
-        const edge = group[next];
-        at = key(edge.a) === key(at) ? edge.b : edge.a;
-        chain.push(at);
-        next = links.get(key(at))?.find((i) => !used.has(i));
-      }
-      const curve = chain.map((p, i): Point =>
-        i === 0 || i === chain.length - 1
-          ? p
-          : [
-              (chain[i - 1][0] + p[0] * 2 + chain[i + 1][0]) / 4,
-              (chain[i - 1][1] + p[1] * 2 + chain[i + 1][1]) / 4,
-            ],
-      );
-      for (let i = 1; i < curve.length; i++)
-        result.push({ a: curve[i - 1], b: curve[i], regions: e.regions });
-    }
-  }
-  return result;
+  traceCoasts(details);
+  details.stroke({ color: "#d0c49a", width: 2, alpha: 0.8, join: "round" });
+  return Object.assign(terrain, { setDetailZoom });
 }

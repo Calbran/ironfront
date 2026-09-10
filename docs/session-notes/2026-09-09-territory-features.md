@@ -1,0 +1,9 @@
+# Compact territories and local features — 2026-09-09
+
+Reviewed the Earth-derived generator and current military/map contracts. The grid-like outlines came from near-uniform farthest-point sites and equal-cost cardinal breadth-first expansion. Version 3 keeps the relief/coast/drainage pipeline, uses eight territories per nation, uneven seed selection and weighted connected growth with variable expansion speeds. Slopes, moisture transitions and coherent spatial resistance influence borders.
+
+Added terrain patches independent of territory boundaries and optional per-region landmarks. Settlements have five size categories and interior positions; icons/labels emerge with zoom. The inspector lists settlements and terrain. Preserved the concurrent shared vector-mesh renderer work and integrated terrain patches into it. No combat, building-slot or economic effects attach to local features yet.
+
+Typecheck, full tests and build passed. Tests cover determinism, reciprocal adjacency, connected territories/provinces/passable land, mountain exclusion, twenty relief seeds, varied territory areas, feature containment and exact local-terrain area coverage. Existing full-world reopen tests cover feature persistence. Desktop and phone browser checks use an isolated temporary database and verify preview/campaign equality, seed changes, player scaling, settlement inspector contents, zoomed landmarks and overflow. Final desktop/phone screenshots were visually inspected. Existing chunk-size advisory remains.
+
+Follow-up: playtest the reduced territory graph (up to four starting regions and existing supply reach), then design direct squad positions and contested territory ownership. Roads, bridges and settlement gameplay effects are deferred. See decision 007 for accepted versus provisional scope.

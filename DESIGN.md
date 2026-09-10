@@ -220,3 +220,21 @@ The detector's palette advisories for defense-sector cream, province-boundary gr
 - Don't hide land standings on small screens; keep them in the left context panel.
 - Don't describe the runtime terrain raster as external faction artwork or add ornamental machinery as if already established.
 - Don't turn the context panel's flat ruled groups into separate elevated cards.
+
+## Clean terrain revision — 2026-09-09
+
+The current map uses flat sage plains, green forest, muted tan highlands, and pale gray mountains, with simple rivers and ownership overlays. Procedural grain, canopy speckling, and shaded relief are removed. The lobby shows the selected seed and territory count, refreshes when seed/nation inputs change, and offers Generate new map.
+
+Lobby previews now run in a worker, show a surveying placeholder on first load, and start with a random seed. Terrain credits are linked in the footer. The palette stays flat while geography derives from warped real elevation.
+
+## Forward style guide
+
+[Visual style guide v0.1](docs/06-art/style-guide.md) proposes typography, UI states, cartography, settlement silhouettes and unit symbols. It is a working proposal; this file remains the shipped-interface record. Later clean-terrain and shared-vector revisions supersede the earlier raster descriptions above.
+
+## Visible engagements — 2026-09-09
+
+Server-confirmed squads appear as small grouped infantry dots or vehicle marks, with faction colors and representative tracer bursts. Artillery uses slower warm-colored traces. Active battles have restrained activity rings and a navigable list in Nation. Command shows squad firing counts and morale. Animation pauses on stale snapshots and respects reduced-motion preferences; bullets never drive authoritative outcomes.
+
+## Local squad controls — 2026-09-09
+
+The Command panel now includes a squad roster, local Hold, map placement and expandable coordinate controls. Detail-map own squads select individually (Shift adds), and selected confirmed paths/waypoints use warm line/marker overlays. Right-click moves locally while squads are selected; Shift appends. Army counters and box-selection retain strategic controls. A persistent map status distinguishes squad placement from army selection.

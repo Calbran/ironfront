@@ -1,0 +1,11 @@
+# Map freeze — 2026-09-09
+
+The owner reported that the game was freezing again. Both live services remained responsive (about 2 ms for the Vite page and 14 ms for the API), isolating the stall to the browser. Profiling campaign 1886A31B showed city layouts completing in about 70 ms, followed by approximately 35 seconds of synchronous settlement-road generation on the main thread. Terrain accents took another roughly 0.3 seconds; the road pass was the dominant cause.
+
+Cross-region routing repeatedly rediscovered identical polygon gateways and revalidated the same legal navigation-grid edges for every local route. Shared gateways are now cached by region pair, and grid adjacency is built once per region/layer and reused by breadth-first path searches. Saved mountain-obstacle initialization continues to invalidate local path grids. On the same campaign, cold road generation dropped to approximately 2.5 seconds while returning the same 99-road network shape and 889 routed points.
+
+The remaining decorative computation now runs in `mapDetails.worker.ts`. The main thread initializes Pixi and remains available for input, animation, and polling while the worker derives roads, terrain accents, fields, utilities, and biome scenery. Results are attached only after both worker data and required textures are ready. Worker cleanup follows the map lifecycle.
+
+High-resolution ground materials are also baked and uploaded one at a time across animation frames. Seam wrapping now draws only canvas copies that can intersect an edge rather than an unconditional 3×3 set of mostly clipped copies. Instrumentation on headless Chromium measured individual material bakes around 120–135 ms, texture uploads around 1–5 ms, terrain attachment around 50–80 ms, scenery attachment around 30–60 ms, and overlay rebuilds below 10 ms. Software-rendered Pixi frames can still be slower than hardware-backed interactive frames, so the browser regression rejects multi-second generation stalls and reports its measured maximum gap.
+
+Validation: typecheck, production build, and all 24 test files pass. Local movement, cross-region routing, and city-road regressions pass. The isolated desktop/phone biome browser flow loads roads and scenery, checks the post-canvas frame-gap bound, exercises zoom and Fit, and reports no rendering errors.

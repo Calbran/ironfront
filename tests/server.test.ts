@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Store } from "../apps/api/src/store.ts";
 import { makeServer } from "../apps/api/src/server.ts";
+import { worldForPlayer } from "../packages/game-core/src/vision.ts";
 import { createWorld } from "../packages/game-core/src/index.ts";
 
 test("two sessions share a persistent campaign but cannot command one another", async () => {
@@ -85,7 +86,8 @@ test("two sessions share a persistent campaign but cannot command one another", 
     app = await makeServer(store);
     const restored = (await app.inject({ url: "/api/world", headers })).json();
     assert.equal(restored.owner, 0);
-    assert.deepEqual(restored.world, before);
+    assert.deepEqual(store.get(id), before);
+    assert.deepEqual(restored.world, worldForPlayer(before, 0));
     assert.equal(restored.world.regions[own.id].construction.kind, "depot");
     assert.equal(store.tick(id, before.nextTickAt), true);
     assert.equal(store.tick(id, before.nextTickAt), false);
@@ -209,7 +211,7 @@ test("front plans and reserves survive reopen; invalid sector commands roll back
           type: "order",
           army: mobile.id,
           order: "redeploy",
-          target: army.region,
+          target: neighbor,
         })
       ).statusCode,
       200,
