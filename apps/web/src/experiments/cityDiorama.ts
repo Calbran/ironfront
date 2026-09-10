@@ -1,4 +1,8 @@
 import {
+  planCraftedNeighborhood,
+  neighborhoodHeight,
+} from "../../../../packages/game-core/src/craftedNeighborhood";
+import {
   planOrganicCity,
   inCivicPrecinct,
   lineDistance,
@@ -103,9 +107,11 @@ export function cityDiorama(
     materials.length = 0;
     geometries.length = 0;
   }
-  function generate(target = 160) {
+  function generate(target = 28) {
     clear();
     count = target;
+    const crafted = target === 28;
+    const elevation = (z: number) => (crafted ? neighborhoodHeight(z) : 0);
     const stone = mat("#aba58c"),
       roof = mat("#485b61"),
       wood = mat("#755d42"),
@@ -128,6 +134,12 @@ export function cityDiorama(
       g.rotateY(angle);
       g.translate(x, y, z);
       g.scale(civicScale, civicScale, civicScale);
+      if (m !== ground) {
+        const pos = g.getAttribute("position");
+        for (let i = 0; i < pos.count; i++)
+          pos.setY(i, pos.getY(i) + elevation(pos.getZ(i)));
+        g.computeVertexNormals();
+      }
       const gs = batches.get(m) ?? [];
       gs.push(g);
       batches.set(m, gs);
@@ -141,8 +153,25 @@ export function cityDiorama(
       h: number,
       d: number,
       a = 0,
-    ) => add(new T.BoxGeometry(w, h, d), m, x, y, z, a);
-    const layout = planOrganicCity(target);
+    ) =>
+      add(
+        new T.BoxGeometry(
+          w,
+          h,
+          d,
+          crafted && m !== ground ? Math.max(1, Math.ceil(w / 2)) : 1,
+          1,
+          crafted && m !== ground ? Math.max(1, Math.ceil(d / 2)) : 1,
+        ),
+        m,
+        x,
+        y,
+        z,
+        a,
+      );
+    const layout = crafted
+      ? planCraftedNeighborhood()
+      : planOrganicCity(target);
     const lots = layout.lots;
     extent = layout.extent;
     count = lots.length + 1;
@@ -156,7 +185,29 @@ export function cityDiorama(
     });
     sun.shadow.camera.updateProjectionMatrix();
     box(ground, 0, -0.65, 0, extent * 2 + 32, 1.2, extent * 2 + 32);
-    box(paving, 0, 0.025, 0, 36, 0.1, 32);
+    if (crafted) {
+      const terrain = new T.PlaneGeometry(
+        extent * 2 + 32,
+        extent * 2 + 32,
+        64,
+        64,
+      ).rotateX(-Math.PI / 2);
+      const pos = terrain.getAttribute("position");
+      for (let i = 0; i < pos.count; i++)
+        pos.setY(i, elevation(pos.getZ(i)) - 0.04);
+      terrain.computeVertexNormals();
+      add(terrain, ground, 0, 0, 0);
+      // Continuous developed blocks: civic paving, residential yards and lower quay.
+      box(paving, 0, 0.025, -6, 72, 0.1, 56);
+      box(soil, 0, 0.04, 36, 76, 0.12, 22);
+      box(stone, 0, 0.09, 45, 76, 0.2, 2);
+    } else box(paving, 0, 0.025, 0, 36, 0.1, 32);
+    if (crafted) {
+      box(paving, 0, 0.025, 25, 48, 0.1, 18);
+      for (const x of [-37, 37]) box(stone, x, 0.5, -7, 0.6, 1, 54);
+      for (const x of [-21, 21])
+        for (let z = 23; z < 33; z += 1) box(stone, x, 0.13, z, 2, 0.25, 1);
+    }
     // World-aligned cobbles remain the same size on curved and straight streets.
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 128;
@@ -214,7 +265,7 @@ export function cityDiorama(
           b = street.points[i],
           p = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
         if (
-          inCivicPrecinct(p) ||
+          (!crafted && inCivicPrecinct(p)) ||
           (p.x > 20 && p.x < 54 && p.z > 23 && p.z < 53)
         )
           continue;
@@ -300,7 +351,7 @@ export function cityDiorama(
     ); // clock is mounted separately below
     const clock = new T.Mesh(new T.CircleGeometry(1, 24), mat("#e4dfbd"));
     clock.scale.setScalar(0.72);
-    clock.position.set(0, 16 * 0.72, -6.9 * 0.72);
+    clock.position.set(0, 16 * 0.72 + elevation(-6.9 * 0.72), -6.9 * 0.72);
     group.add(clock);
     box(civicRoof, 0, 16.4, -6.83, 0.08, 0.8, 0.08);
     box(civicRoof, 0.3, 16, -6.82, 0.6, 0.08, 0.08);
@@ -314,11 +365,12 @@ export function cityDiorama(
     // Market square, monument, gardens and a usable supply-depot yard.
     box(stone, 0, 0.5, 8, 3, 1, 3);
     add(new T.CylinderGeometry(0.45, 0.7, 4, 8), brass, 0, 3, 8);
-    for (const x of [-13, 13]) {
-      box(leaves, x, 0.08, 8, 5, 0.15, 6);
-      box(stone, x, 0.1, 8, 5.5, 0.2, 6.5);
-      box(leaves, x, 0.22, 8, 4.7, 0.12, 5.7);
-    }
+    if (!crafted)
+      for (const x of [-13, 13]) {
+        box(leaves, x, 0.08, 8, 5, 0.15, 6);
+        box(stone, x, 0.1, 8, 5.5, 0.2, 6.5);
+        box(leaves, x, 0.22, 8, 4.7, 0.12, 5.7);
+      }
     box(soil, 36, 0.07, 37, 31, 0.12, 26);
     for (let i = 0; i < 10; i++) {
       box(wood, 26 + (i % 5) * 3, 0.6, 29 + Math.floor(i / 5) * 3, 2, 1.2, 2);
@@ -333,26 +385,28 @@ export function cityDiorama(
       );
     }
     for (let i = 0; i < 4; i++) box(wood, 29 + i * 3, 0.5, 44, 2.4, 1, 5);
-    for (const edge of [
-      { x: -18, z: 0 },
-      { x: 18, z: 0 },
-      { x: 0, z: -16 },
-      { x: 8, z: 16 },
-    ]) {
-      const nearest = layout.streets
-        .flatMap((s) => s.points)
-        .filter(
-          (p) =>
-            !inCivicPrecinct(p) && Math.hypot(p.x - edge.x, p.z - edge.z) < 16,
-        )
-        .sort(
-          (a, b) =>
-            Math.hypot(a.x - edge.x, a.z - edge.z) -
-            Math.hypot(b.x - edge.x, b.z - edge.z),
-        )[0];
-      if (nearest && !lots.some((p) => lineDistance(p, [edge, nearest]) < 5))
-        ribbon([edge, nearest], 2.2, path, 0.13);
-    }
+    if (!crafted)
+      for (const edge of [
+        { x: -18, z: 0 },
+        { x: 18, z: 0 },
+        { x: 0, z: -16 },
+        { x: 8, z: 16 },
+      ]) {
+        const nearest = layout.streets
+          .flatMap((s) => s.points)
+          .filter(
+            (p) =>
+              !inCivicPrecinct(p) &&
+              Math.hypot(p.x - edge.x, p.z - edge.z) < 16,
+          )
+          .sort(
+            (a, b) =>
+              Math.hypot(a.x - edge.x, a.z - edge.z) -
+              Math.hypot(b.x - edge.x, b.z - edge.z),
+          )[0];
+        if (nearest && !lots.some((p) => lineDistance(p, [edge, nearest]) < 5))
+          ribbon([edge, nearest], 2.2, path, 0.13);
+      }
     // Gardens and workshops rotate with the frontage rather than the world axes.
     for (const p of lots) {
       const local = (x: number, z: number) => ({
@@ -391,14 +445,15 @@ export function cityDiorama(
       mat("#e3e9e4"),
     );
     cap.scale.setScalar(0.72);
-    cap.position.set(0, 10.06 * 0.72, -7 * 0.72);
+    cap.position.set(0, 10.06 * 0.72 + elevation(-7 * 0.72), -7 * 0.72);
     cap.visible = winter;
     group.add(cap);
     winterMeshes.push(cap);
     const placements = [...lots, ...layout.trees];
-    for (const x of [-13, 13])
-      for (const z of [6, 10])
-        placements.push({ x, z, angle: 0, scale: 0.55, variant: "tree" });
+    if (!crafted)
+      for (const x of [-13, 13])
+        for (const z of [6, 10])
+          placements.push({ x, z, angle: 0, scale: 0.55, variant: "tree" });
     for (const variant of new Set(placements.map((p) => p.variant))) {
       const ps = placements.filter((p) => p.variant === variant);
       for (const part of kit.variants.get(variant)!) {
@@ -408,7 +463,7 @@ export function cityDiorama(
           ps.length,
         );
         ps.forEach((p, i) => {
-          dummy.position.set(p.x, 0, p.z);
+          dummy.position.set(p.x, elevation(p.z), p.z);
           dummy.scale.setScalar(p.scale);
           dummy.rotation.set(0, p.angle, 0);
           dummy.updateMatrix();
@@ -431,7 +486,7 @@ export function cityDiorama(
       for (let i = 0; i < 144; i++) {
         dummy.position.set(
           -10 + (i % 12) * 0.7,
-          0,
+          elevation(19 + Math.floor(i / 12) * 0.75),
           19 + Math.floor(i / 12) * 0.75,
         );
         dummy.scale.setScalar(0.55);
@@ -450,7 +505,7 @@ export function cityDiorama(
       const jeep = createJeep();
       const obj = jeep.root;
       const model = obj as unknown as T.Object3D;
-      model.position.set(30 + i * 7, 0, 39);
+      model.position.set(30 + i * 7, elevation(39), 39);
       model.scale.setScalar(0.6);
       group.add(model);
     }
@@ -465,7 +520,14 @@ export function cityDiorama(
           : new T.Vector3(0, view === "capital" ? 7 : 0, 3);
     controls.target.copy(target);
     camera.position.copy(target).add(new T.Vector3(180, 180, 180));
-    camera.zoom = view === "city" ? 85 / extent : view === "capital" ? 2.5 : 4;
+    camera.zoom =
+      view === "city"
+        ? count === 28
+          ? 2
+          : 85 / extent
+        : view === "capital"
+          ? 2.5
+          : 4;
     camera.updateProjectionMatrix();
     controls.update();
   }

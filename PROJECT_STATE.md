@@ -1,5 +1,9 @@
 # Project State
 
+## Crafted neighborhood — experimental branch
+
+The city diorama now defaults to a 28-building block study with elevated civic paving, dense aligned frontages and a lower warehouse quay. Shared developed surfaces cover the interior; placement validates clearance, level foundations and street-facing entrances. Existing larger city options remain available. This is a bounded authored composition, not a general terrain parcel solver. See [decision 032](docs/05-decisions/032-crafted-neighborhood-blocks.md).
+
 ## Real-city street seed — experimental branch
 
 The large-city study now uses a local Ancoats/Manchester OpenStreetMap street and canal sample with attribution. It replaces concentric roads with real district geometry, closer footprint-checked frontages, canal workshops, scattered outer housing, procedural cobbles and batched steampunk lamps. The hall now uses the neighborhood brick/slate materials at 72% of its original dimensions, with side windows, a smaller square and tighter civic reservations. Civic/depot/park reservations remain; the canal is adapted around fixed landmarks. After lot placement, a graph pass removes unused street branches and retains frontage routes plus three outward approaches; the default sample retains about 37% of imported road length. This is one offline reference in the diorama, not integration into the campaign/world generator. See [decision 031](docs/05-decisions/031-real-city-street-seeds.md).

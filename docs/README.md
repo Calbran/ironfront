@@ -75,3 +75,5 @@ Mobile infantry model and accepted six-person transport direction: [027: steam j
 - [030: City capitals and large-city study](05-decisions/030-city-capitals-and-large-city-study.md).
 
 Real-city settlement direction: [031 — street seeds](05-decisions/031-real-city-street-seeds.md).
+
+Crafted settlement blocks: [032 — neighborhoods and developed ground](05-decisions/032-crafted-neighborhood-blocks.md).

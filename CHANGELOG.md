@@ -1,5 +1,11 @@
 # Changelog
 
+## Experimental branch — crafted neighborhood
+
+- Add a default 28-building composition with raised civic/residential blocks and a lower warehouse quay.
+- Use continuous developed surfaces, connected paving and shared elevation for buildings, roads, props and units.
+- Validate block clearance, flat foundations and entrance orientation; preserve larger city comparison options.
+
 ## Experimental branch — street cleanup
 
 - Prune the imported street graph after selecting lots, retaining frontage access and connecting routes with three principal outward approaches.

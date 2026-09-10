@@ -11,7 +11,7 @@ declare global {
 function App() {
   const host = useRef<HTMLDivElement>(null),
     api = useRef<ReturnType<typeof cityDiorama>>(undefined);
-  const [count, setCount] = useState(160),
+  const [count, setCount] = useState(28),
     [winter, setWinter] = useState(false),
     [shadows, setShadows] = useState(true),
     [stats, setStats] = useState<{
@@ -49,18 +49,21 @@ function App() {
       <div className="reference-canvas" ref={host} />
       <aside>
         <p>
-          Ancoats-inspired industrial city: close street frontages, canal
-          warehouses, cobbled lanes and a civic square.
+          Crafted neighborhood: raised civic streets, dense market frontages and
+          a lower warehouse quay. Choose 28 buildings for this study; larger
+          counts retain the city experiment.
         </p>
-        <p>
-          <a href="https://www.openstreetmap.org/copyright">
-            © OpenStreetMap contributors
-          </a>{" "}
-          ·{" "}
-          <a href="https://www.openstreetmap.org/#map=16/53.482/-2.2275">
-            Street reference
-          </a>
-        </p>
+        {count !== 28 && (
+          <p>
+            <a href="https://www.openstreetmap.org/copyright">
+              © OpenStreetMap contributors
+            </a>{" "}
+            ·{" "}
+            <a href="https://www.openstreetmap.org/#map=16/53.482/-2.2275">
+              Street reference
+            </a>
+          </p>
+        )}
         <div className="views">
           {(["city", "capital", "depot", "street"] as const).map((v) => (
             <button key={v} onClick={() => api.current?.focus(v)}>
@@ -86,7 +89,7 @@ function App() {
               api.current?.generate(n);
             }}
           >
-            {[128, 160, 256, 512, 1024].map((n) => (
+            {[28, 128, 160, 256, 512, 1024].map((n) => (
               <option key={n}>{n}</option>
             ))}
           </select>

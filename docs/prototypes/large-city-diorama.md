@@ -1,6 +1,6 @@
 # Large-city diorama and building-density benchmark
 
-Open `/city-diorama.html`. The default is 160 buildings, including a custom capital building, plus 144 static infantry figures and two existing jeep models. City, Capital, Depot and Street presets provide scale comparisons. Building counts can be changed to 128, 256, 512 and 1,024. The large densities expand the land occupied by the city; model and unit scales stay unchanged. Winter is a visual treatment, not a new biome.
+Open `/city-diorama.html`. The original default was 160 buildings, including a custom capital building, plus 144 static infantry figures and two existing jeep models. City, Capital, Depot and Street presets provide scale comparisons. Building counts can be changed to 128, 256, 512 and 1,024. The large densities expand the land occupied by the city; model and unit scales stay unchanged. Winter is a visual treatment, not a new biome.
 
 The original composition reserves a civic precinct and supply yard, places houses/shops/workshops in street-facing blocks, adds gardens, fences, crates, lamps and a river-edge bridge, and uses a raised clock-tower capital as its landmark. It is authored presentation geometry, separate from the world generator and campaign authority. Further architectural refinement and integration into the town planner require visual review.
 
@@ -42,3 +42,7 @@ The updated local run recorded p50 frame intervals of about 16.7 ms and p95 of 1
 ### Street cleanup after hall integration
 
 The default 160-building layout now retains approximately 1,564 of 4,174 scene units of source street length (62.5% removed). Shortest routes connect occupied frontage nodes to civic-facing roots within each source component, plus three principal outward approaches. Unused components disappear. Vegetation is placed against the retained roads. This is visual pruning; source components are not joined across arbitrary terrain. The earlier density benchmark predates this pass and the hall integration. Browser city/capital captures were checked without page errors, alongside typecheck, the full 112-test suite and an additional passing connected-spur test, and build.
+
+## Crafted block study
+
+The current default is 28 buildings, including the hall. This authored composition establishes an elevated civic/residential area, shared developed ground and a lower warehouse quay. Count selections from 128 upward retain the larger Ancoats experiment. See decision 032 for scope. A short local 28-building sample recorded p95 17.1 ms, 59 calls and 104,300 triangles with 144 static infantry. This was a three-second smoke measurement, not a full hardware benchmark. Summer/winter and switching 28→128→28 were checked without browser errors. All 114 tests passed; focused block validation and typecheck/build passed after surface refinements.

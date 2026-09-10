@@ -55,3 +55,7 @@ User requested that the hall blend into the town. Reduced its dimensions to 72%,
 ## Prune unused imported streets
 
 User flagged excessive roads and empty stubs. Added pure street-graph pruning after lot selection: nearest frontage terminals, shortest connecting routes within source components, three outward approaches, and run reconstruction before lamps/vegetation. The default sample removes 62.5% of imported street length; all building centers remain within 4.76 scene units of a retained street. Browser overview/capital checked without errors. Typecheck, full 112-test suite, additional spur regression and production build passed. Earlier performance records are labeled as predating this change.
+
+## Crafted block prototype
+
+User authorized a focused neighborhood with elevation, coherent block placement and developed ground replacing interior grass. Added the 28-building default study with a shared elevation profile, paved civic/residential blocks, lower warehouse quay, connected streets, frontage/overlap/foundation rejection and exterior vegetation. Kept larger experiments available. Browser review caught paving intersecting elevated terrain; subdivision corrected the surface. Verified summer/winter and count switching, with no page errors; local short sample p95 17.1 ms. Full suite passed 114 tests, with focused block checks and typecheck/build repeated after refinements. General block fitting and terrain-aware world rollout remain future work.
