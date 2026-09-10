@@ -21,3 +21,7 @@ User approved continuing the generated-region study. Added bounded river-corner 
 ## Riverfront placement correction
 
 User identified buildings overlapping a river. Added conservative model-footprint clearance and deterministic dry-lot relocation in the generated preview worker, ahead of scenery/fields. Reviewed the affected town in summer and winter; browser checks reported no errors or phone overflow.
+
+## Roads over water
+
+User identified remaining town-road ribbons crossing the river after building relocation. Added width-aware bank clipping for preview road geometry while retaining the raised bridge and leaving campaign route data unchanged.

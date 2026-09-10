@@ -1,3 +1,4 @@
+import { riverRoadClipper } from "./riverRoadClipping";
 import { presentationRivers } from "./riverPresentation";
 import {generatedLandscape} from './generatedLandscape';
 import {liveUnits,type LiveCallbacks} from './liveUnits';
@@ -95,15 +96,15 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
     scene.add(selection);
   }
   const ribbons: T.Mesh[] = [];
-  function ribbon(points: {x:number;y:number}[], width: number, mat: T.Material, y = 0.055, joined=false) {
+  function ribbon(points: {x:number;y:number}[], width: number, mat: T.Material, y = 0.055, joined=false, parts?:{x:number;y:number}[][]) {
     if(points.length<2)return;
     const positions:number[]=[];
     if(joined){
       const sides=points.map((p,i)=>{const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],dx=b.x-a.x,dz=b.y-a.y,len=Math.hypot(dx,dz)||1;return [[p.x*S-dz/len*width/2,p.y*S+dx/len*width/2],[p.x*S+dz/len*width/2,p.y*S-dx/len*width/2]];});
       for(let i=1;i<sides.length;i++)for(const p of [sides[i-1][0],sides[i-1][1],sides[i][0],sides[i][0],sides[i-1][1],sides[i][1]])positions.push(p[0],y,p[1]);
     }
-    for(let i=1;!joined&&i<points.length;i++){
-      const a=points[i-1],b=points[i],dx=b.x-a.x,dz=b.y-a.y,len=Math.hypot(dx,dz);if(len<0.001)continue;
+    for(const path of parts??[points])for(let i=1;!joined&&i<path.length;i++){
+      const a=path[i-1],b=path[i],dx=b.x-a.x,dz=b.y-a.y,len=Math.hypot(dx,dz);if(len<0.001)continue;
       const nx=-dz/len*width/2,nz=dx/len*width/2;
       for(const p of [[a.x*S+nx,a.y*S+nz],[a.x*S-nx,a.y*S-nz],[b.x*S+nx,b.y*S+nz],[b.x*S+nx,b.y*S+nz],[a.x*S-nx,a.y*S-nz],[b.x*S-nx,b.y*S-nz]]) positions.push(p[0],y,p[1]);
     }
@@ -113,8 +114,10 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
   const roadMat = new T.MeshStandardMaterial({ color: 0xb7a17a, side: T.DoubleSide, roughness: 1 });
   const riverMat = new T.MeshStandardMaterial({ color:0x4c858b,side:T.DoubleSide,roughness:0.5,metalness:0.04 });
   for(const river of live ? data.world.geography?.rivers ?? [] : presentationRivers(data)) ribbon(river.map(p=>({x:p[0],y:p[1]})),1.35,riverMat,0.035,!live);
-  for(const road of data.roads) ribbon(road.points,road.kind==="main"?0.8:0.5,roadMat);
-  for(const city of data.cities) for(const road of city.layout.roads) ribbon(road,0.8,roadMat);
+  const clipRoad=live?((points:{x:number;y:number}[])=>[points]):riverRoadClipper(data);
+  function drawRoad(points:{x:number;y:number}[],width:number){const parts=clipRoad(points,width);if(parts.length)ribbon(parts[0],width,roadMat,.055,false,parts);}
+  for(const road of data.roads)drawRoad(road.points,road.kind==="main"?.8:.5);
+  for(const city of data.cities)for(const road of city.layout.roads)drawRoad(road,.8);
 
   const modelBuildings = new T.Group(), spriteBuildings = new T.Group(); scene.add(modelBuildings,spriteBuildings); spriteBuildings.visible=false;
   const buildingRecords = data.cities.flatMap(city=>city.layout.buildings.map(b=>({...b,region:city.region})));

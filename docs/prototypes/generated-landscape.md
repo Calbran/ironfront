@@ -27,3 +27,9 @@ Follow-up measurement: p95 17.6 ms both detailed and baseline, no sampled frames
 ## Riverfront building clearance
 
 A preview-only worker pass relocates building models whose conservative footprint plus bank margin overlaps the presented river. It accounts for model eaves/porches, stays on local land, avoids town streets and other building envelopes, and searches deterministically within 180 world units. If no safe lot is available, the decorative model is omitted. Layout radius and later field/scenery generation reflect relocated buildings. Authoritative settlement features and the live campaign renderer are unchanged. Summer/winter review and local performance sampling passed (p95 17.3 ms detailed; no sampled frames over 33.4 ms).
+
+## Road clipping at riverbanks
+
+Cosmetic road strips now stop at the presented river banks, accounting for both water and road width. Sampling includes a conservative half-step margin, so a retained strip cannot cut through water between samples. Raised bridge geometry remains independent. This applies to generated-preview town streets and intercity ribbons, not authoritative routes or the live campaign renderer.
+
+Each road's retained pieces share one geometry batch. Final summer/winter, strategy and phone checks passed without browser errors; local p95 was 17.7 ms with no sampled frames above 33.4 ms and 185 draw calls in the refined view. Typecheck and production build passed (existing large-bundle advisory remains).

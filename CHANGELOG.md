@@ -1,5 +1,9 @@
 # Changelog
 
+## Experimental branch — roads over water
+
+- Clip town and intercity road ribbons at riverbanks with full-width clearance, retaining raised bridge geometry.
+
 ## Experimental branch — riverfront placement
 
 - Relocate decorative buildings off rivers using model-footprint clearance, dry-land checks and nearby street/building avoidance before generating fields and scenery.
