@@ -51,12 +51,14 @@ export function createMiniatureKit():MiniatureKit {
  // Dense street-wall kit: narrow footprints, deep parcels and three readable floors.
  for(const name of ['urbanHome','urbanRed','urbanShop'])capture(name,()=>{
    const facade=name==='urbanRed'?mat('#94674e',walls.map!):walls;
-   box(stone,0,.2,0,5,.4,11);box(facade,0,4.6,0,5,8.8,11);
-   box(roof,0,9.12,0,5.1,.25,11.1);
+   // Foundation ends where the wall begins; its ledge stays outside the facade.
+   box(stone,0,.2,0,5.12,.4,11.12);box(facade,0,4.7,0,5,8.6,11);
+   // A projecting roof slab avoids coplanar side faces with the parapet trim.
+   box(roof,0,9.125,0,5.2,.25,11.2);
    for(const z of [-5.45,5.45])box(trim,0,9.35,z,5.1,.5,.2);
    for(const y of [1.8,4.5,7.2])for(const z of [-5.55,5.55])for(const x of [-1.35,1.35]){
      box(trim,x,y,z,1.35,1.8,.12);box(litWindows,x,y,z+Math.sign(z)*.08,1.06,1.5,.08);
-     box(trim,x,y,z+Math.sign(z)*.13,.07,1.5,.04);
+     box(trim,x,y,z+Math.sign(z)*.15,.07,1.42,.04);
    }
    for(const y of [3.1,5.8,8.6])box(trim,0,y,5.56,5,.13,.15);
    box(wood,0,1,5.6,.85,1.8,.15);box(stone,0,.12,5.8,1.2,.24,.5);
@@ -71,7 +73,7 @@ export function createMiniatureKit():MiniatureKit {
    if(name==='urbanRed'){
      add(new T.ConeGeometry(1,2.5,4).rotateY(Math.PI/4),roof,0,10.3,0,5.3/Math.SQRT2,1,11.3/Math.SQRT2);
      snowCap(new T.ConeGeometry(1,2.5,4).rotateY(Math.PI/4),0,10.36,0,5.35/Math.SQRT2,1,11.35/Math.SQRT2);
-   }else snowCap(new T.BoxGeometry(5.1,.12,11.1),0,9.31,0,1,1,1);
+   }else snowCap(new T.BoxGeometry(5.22,.1,11.22),0,9.32,0,1,1,1);
  });
  capture('tree',()=>tree(0,0,4,false));capture('pine',()=>tree(0,0,4,true));
  return {variants,architecture:{walls,roof},dispose(){const materials=new Set<T.Material>();for(const parts of variants.values())for(const p of parts){p.geometry.dispose();materials.add(p.material);}materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());}};

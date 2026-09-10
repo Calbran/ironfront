@@ -1,5 +1,10 @@
 # Changelog
 
+## Experimental branch — urban surface overlap fix
+
+- Remove coplanar foundation/facade and roof/parapet faces from tall urban buildings.
+- Separate window mullion edges and adjust winter roof coverage for the revised slab.
+
 ## Experimental branch — dense steampunk districts
 
 - Grow commercial, residential and industrial blocks from the crafted neighborhood with checked placement and shared developed surfaces.
