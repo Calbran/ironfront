@@ -423,3 +423,17 @@ Added deterministic irregular crop/plowed/pasture fields around plains settlemen
 
 - Agricultural fields now fill the region footprint through polygon clipping, including partial parcels at irregular boundaries, instead of leaving large unused margins. Preserves lake holes, road/river corridors, settlement and mountain clearings, original texture scale, and narrow field verges. Added a shared display-land mask to keep textures inside the smoothed shoreline.
   - Validation: typecheck/build, clipping and terrain-accent regressions (including over 90% agricultural coverage without infrastructure), and final desktop/mobile browser checks passed.
+
+## September 10, 2026 — Steam jeep model
+
+Added a TypeScript Victorian steampunk troop vehicle with six passenger sockets, separate driver station, infantry-scale reference figures, rear step and tailgate. Added standalone browser inspection and GLB export. Recorded future server-authoritative embark/disembark requirements in decision 027. Campaign mechanics unchanged.
+
+Jeep validation: typecheck and production build passed; desktop/phone browser controls and GLB export verified. Saved a 3,964-triangle GLB with six passenger nodes. Independent preview review: ship at its bounded visual scope.
+
+## September 10, 2026 — Distance jeep optimization
+
+Reduced the default jeep from 3,964 to 692 triangles and 188 to two meshes. Vertex colors preserve the enamel/brass/copper palette with one shared material; body/gate geometry is cached across copies. Retained infantry scale, six passenger sockets and independent tailgate articulation. Updated GLB to 77,736 bytes; original detailed factory retained for comparison. Browser inspection, typecheck/build and structural/export checks passed. No crowd FPS or campaign integration claim.
+
+## 2026-09-10 — Live infantry models
+
+Integrated the benchmark infantry model with live squad positions, facing and firing. Added lazy loading, viewport/zoom culling, offscreen member-animation omission, instanced poses, contact shadows and renderer cleanup/fallback. Existing saves work on reload.

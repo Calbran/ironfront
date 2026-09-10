@@ -11,3 +11,7 @@ Small soldiers are the selected presentation direction. The prototype retains in
 The source/export are HTML study artifacts rather than application modules. A live integration should follow the project's TypeScript architecture and use measured game-state updates. The exported page can be regenerated using the visualize skill's `scripts/render.py <source-fragment> <destination-html>` command; its styling and wrapper are bundled in the checked-in export.
 
 Validation: inspected small and enlarged models, aiming, walking, timeline scrubbing and the visibility toggle in the browser. The benchmark completed through 4,000 animated soldiers with instance counts and padded viewport checks passing. No application or server behavior changed.
+
+## Steam jeep
+
+The [steam jeep study](steam-jeep.md) is available at `/jeep-preview.html`. It includes six passenger seats at the existing infantry scale and a downloadable vehicle model.

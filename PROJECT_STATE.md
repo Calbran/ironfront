@@ -1,8 +1,15 @@
 # Project State
 
+## Steam jeep model study — September 10, 2026
+
+The default jeep is simplified to 692 triangles and two merged meshes (previously 3,964 triangles and 188 meshes), with geometry/materials shared across copies. Six passenger sockets and the hinged gate remain. Crowd instancing and live campaign performance are not yet measured.
+
+A Victorian steampunk jeep preview is available at `/jeep-preview.html`, with six passenger seats, a separate driver station, rear boarding step and hinged tailgate. Static reference figures use the existing infantry model dimensions. Orbit/zoom, overhead view, passenger visibility and empty-vehicle GLB export are available. Boarding/disembarking and live campaign rendering are future work; current forces and transport rules are unchanged. See [decision 027](docs/05-decisions/027-steam-jeep-transport.md).
+
+
 ## Infantry rendering prototype
 
-A standalone 3D infantry preview and repeatable crowd benchmark are available at `/prototypes/infantry-benchmark.html`. It uses 348-triangle soldiers, instanced parts and shared cached animation over a captured map. Local overlay-only measurements reached approximately 165 FPS at 2,000 soldiers and 91 FPS at 4,000. These exclude the live map and simulation; squad movement and cover-like repositioning are staged. The campaign renderer is not integrated with this prototype. See [benchmark methodology and history](docs/prototypes/infantry-benchmark.md).
+A standalone 3D infantry preview and repeatable crowd benchmark are available at `/prototypes/infantry-benchmark.html`. It uses 348-triangle soldiers, instanced parts and shared cached animation over a captured map. Local overlay-only measurements reached approximately 165 FPS at 2,000 soldiers and 91 FPS at 4,000. These exclude the live map and simulation; squad movement and cover-like repositioning are staged. The infantry model is now integrated into the live campaign as a lazily loaded, viewport-culled Three.js overlay. The prototype measurements remain separate from whole-game performance. See [benchmark methodology and history](docs/prototypes/infantry-benchmark.md).
 
 ## Boundary-filling farmland
 
@@ -402,3 +409,7 @@ Visible mountains now have saved circular ground footprints used by server endpo
 Replaced mirrored ground sampling with cached 1024px blended materials: shuffled, rotated and offset source patches with feathered edges. Larger world-aligned repeats reduce recognizable tile symmetry without extra downloaded art. Four cached generated textures use about 16 MiB of base RGBA storage. Source swatch preview is labeled separately from the in-game blend.
 
 Verification: typecheck, 19 test files and build pass. Additional database reopen test passes. Desktop/phone biome checks pass; direct browser movement verifies the visible mountain detour and server rejection of an interior destination. Visual review confirms reduced repetition at overview and close zoom.
+
+## Live infantry integration — 2026-09-10
+
+Infantry and garrisons use the benchmark articulated model at close zoom. Shared poses and instancing follow authoritative squad motion; offscreen member animation and model submission are culled. Existing selection/orders, vehicle glyphs and fallback markers remain. See decision028 for limits and verification.

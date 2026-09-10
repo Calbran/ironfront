@@ -1,3 +1,5 @@
+import { inInfantryViewport, infantryDetail } from "./infantryVisibility";
+import type { InfantryInstance } from "./infantryLayer";
 import { visualScale } from "../../../packages/game-core/src/visualScale";
 import { gunfire } from "./gunfire";
 import { Rectangle, Graphics, type Container, type Ticker } from "pixi.js";
@@ -14,6 +16,7 @@ export function squadLayer(
   current: () => World,
   zoom: () => number,
   interaction: {
+    host?: HTMLElement;
     resyncKey?: () => number;
     strategy?: () => boolean;
     positions?: (positions: Map<string, { x: number; y: number }>) => void;
@@ -36,6 +39,12 @@ export function squadLayer(
   let lastFrame = 0;
   let resyncKey = interaction.resyncKey?.() ?? 0;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let infantry:
+    ReturnType<typeof import("./infantryLayer").infantryLayer> | undefined;
+  let loading = false,
+    disposed = false;
+  let previousPositions = new Map<string, { x: number; y: number }>();
+  const headings = new Map<string, { x: number; y: number; angle: number }>();
   const draw = () => {
     if (document.hidden) return;
     const now = performance.now();
@@ -50,6 +59,45 @@ export function squadLayer(
     const detail = Math.max(0, Math.min(1, (zoom() - 2) / 0.6));
     // Physical unit glyphs share the same world scale as scenery, independent of viewport.
     const unitScale = visualScale(w).unitGlyphScale;
+    const viewport = {
+      x: scene.x,
+      y: scene.y,
+      scale,
+      width: interaction.host?.clientWidth ?? innerWidth,
+      height: interaction.host?.clientHeight ?? innerHeight,
+    };
+    const visibleSquads = new Set(
+      t.squads
+        .filter(
+          (s) =>
+            s.strength > 0 &&
+            (inInfantryViewport(s, viewport, 160) ||
+              (previousPositions.has(s.id) &&
+                inInfantryViewport(
+                  previousPositions.get(s.id)!,
+                  viewport,
+                  160,
+                ))),
+        )
+        .map((s) => s.id),
+    );
+    const showModels = infantryDetail(
+      zoom(),
+      (4.2 / unitScale) * scale,
+      interaction.strategy?.(),
+    );
+    if (showModels && interaction.host && !infantry && !loading) {
+      loading = true;
+      import("./infantryLayer")
+        .then(({ infantryLayer }) => {
+          if (!disposed) infantry = infantryLayer(interaction.host!);
+        })
+        .catch(() => {
+          if (interaction.host)
+            interaction.host.dataset.infantryState = "fallback";
+        });
+    }
+    const modelUnits: InfantryInstance[] = [];
     const nextResync = interaction.resyncKey?.() ?? 0;
     const {
       centers: positions,
@@ -63,11 +111,18 @@ export function squadLayer(
       unitScale,
       reduced,
       nextResync !== resyncKey,
+      detail > 0 && !interaction.strategy?.()
+        ? visibleSquads
+        : new Set<string>(),
     );
+    previousPositions = positions;
     resyncKey = nextResync;
     interaction.positions?.(positions);
     const fresh = connected && w.winner === null;
-    if (interaction.strategy?.()) return;
+    if (interaction.strategy?.()) {
+      infantry?.hide();
+      return;
+    }
     for (const battle of t.engagements.filter((e) => e.status === "active")) {
       const r = w.regions[battle.region];
       const units = t.squads.filter(
@@ -86,7 +141,7 @@ export function squadLayer(
     }
     // Orders remain readable before individual soldiers fade into view.
     for (const s of t.squads) {
-      if (s.strength <= 0) continue;
+      if (s.strength <= 0 || !visibleSquads.has(s.id)) continue;
       const p = positions.get(s.id)!;
       const attackTarget = t.squads.find(
         (d) => d.id === s.localOrder?.attackTarget,
@@ -137,7 +192,7 @@ export function squadLayer(
       }
 
     for (const s of t.squads) {
-      if (s.strength <= 0) continue;
+      if (s.strength <= 0 || !visibleSquads.has(s.id)) continue;
       const p = positions.get(s.id)!;
       if (s.army !== null || s.owner !== w.vision?.owner) {
         const army = s.army;
@@ -311,7 +366,51 @@ export function squadLayer(
         const pose = poses.get(s.id)?.[index];
         if (profile && pose)
           drawVehicle(graphics, pose, profile, unitScale, color, detail);
-        else
+        else if (
+          showModels &&
+          infantry?.available() &&
+          (s.kind === "infantry" || s.kind === "garrison")
+        ) {
+          const id = `${s.id}:${index}`,
+            last = headings.get(id);
+          const moving =
+            fresh &&
+            !reduced &&
+            !!last &&
+            Math.hypot(dot.x - last.x, dot.y - last.y) > 0.015;
+          const enemy = s.target ? positions.get(s.target) : undefined;
+          const heading =
+            s.action === "firing" && enemy
+              ? Math.atan2(enemy.y - dot.y, enemy.x - dot.x)
+              : moving
+                ? Math.atan2(dot.y - last!.y, dot.x - last!.x)
+                : (last?.angle ?? -Math.PI / 2);
+          headings.set(id, { x: dot.x, y: dot.y, angle: heading });
+          const recoil =
+            fresh && !reduced && s.action === "firing"
+              ? Math.max(
+                  0,
+                  ...gunfire(
+                    s.id,
+                    (members.get(s.id) ?? []).length,
+                    now,
+                    s.fireProfile ?? "semi",
+                  )
+                    .filter((shot) => shot.member === index)
+                    .map((shot) => 1 - shot.progress),
+                )
+              : 0;
+          modelUnits.push({
+            id,
+            x: dot.x,
+            y: dot.y,
+            team: s.owner === w.vision?.owner ? 0 : 1,
+            heading,
+            moving,
+            firing: s.action === "firing",
+            recoil,
+          });
+        } else
           graphics
             .circle(
               p.x + dx,
@@ -369,9 +468,25 @@ export function squadLayer(
           });
       }
     }
+    if (infantry) {
+      if (showModels)
+        infantry.render(
+          modelUnits,
+          viewport,
+          (2.2 / unitScale) * scale,
+          now,
+          reduced || !fresh,
+        );
+      else infantry.hide();
+    }
+    const visibleMembers = new Set(modelUnits.map((u) => u.id));
+    for (const id of headings.keys())
+      if (!visibleMembers.has(id)) headings.delete(id);
   };
   ticker.add(draw);
   return () => {
+    disposed = true;
+    infantry?.destroy();
     ticker.remove(draw);
     graphics.destroy();
     for (const target of targets.values()) target.destroy();

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ironfront · Steam jeep</title>
+  </head>
+  <body>
+    <header>
+      <h1>Steam jeep</h1>
+      <p>Mobile infantry · Victorian transport study</p>
+    </header>
+    <main id="stage" aria-label="Interactive 3D vehicle model"></main>
+    <aside>
+      <p>One squad. Six passenger seats.</p>
+      <p class="quiet">
+        Scaled to the infantry model. A separate driver sits ahead of two
+        three-person benches.
+      </p>
+      <div class="controls">
+        <button id="passengers" aria-pressed="true">Hide passengers</button
+        ><button id="gate" aria-pressed="false">Lower tailgate</button
+        ><button id="view">View from above</button
+        ><button id="export">Download 3D model</button>
+      </div>
+      <p class="quiet">Drag to orbit · Scroll or pinch to zoom</p>
+      <p class="note">
+        Model preview only. Boarding, disembarking and transport orders are
+        planned.
+      </p>
+      <p id="status" role="status"></p>
+    </aside>
+    <script type="module" src="/src/prototypes/jeepPreview.ts"></script>
+  </body>
+</html>

@@ -22,6 +22,7 @@ export class SquadMotion {
     scale: number,
     reduced = false,
     resync = false,
+    detailSquads?: ReadonlySet<string>,
   ) {
     // A suspended tab or stale connection has no animation history to replay.
     const snap =
@@ -64,7 +65,10 @@ export class SquadMotion {
       center.y += (s.y - center.y) * blend;
       centers.set(s.id, center);
       const count =
-        s.unitCount ?? Math.max(1, Math.min(5, Math.ceil(s.strength / 6)));
+        detailSquads && !detailSquads.has(s.id)
+          ? 0
+          : (s.unitCount ??
+            Math.max(1, Math.min(5, Math.ceil(s.strength / 6))));
       const group: Point[] = [];
       for (let i = 0; i < count; i++) {
         const id = `${s.id}:${i}`,

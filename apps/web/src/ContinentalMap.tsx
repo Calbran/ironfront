@@ -1391,6 +1391,7 @@ export function MapView({
             () => latest.current.world,
             () => zoomRef.current,
             {
+              host: host.current!,
               select: (id) => latest.current.onSelectArmy?.(id),
               selectSquad: (id, additive) =>
                 latest.current.onSelectSquad?.(id, additive),

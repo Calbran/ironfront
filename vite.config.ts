@@ -4,5 +4,14 @@ export default defineConfig({
   root: "apps/web",
   plugins: [react()],
   server: { proxy: { "/api": "http://127.0.0.1:3000" } },
-  build: { outDir: "../../dist", emptyOutDir: true },
+  build: {
+    outDir: "../../dist",
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: "apps/web/index.html",
+        jeep: "apps/web/jeep-preview.html",
+      },
+    },
+  },
 });

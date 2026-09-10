@@ -55,3 +55,7 @@ Current city occupation rules: [022: physical settlement capture](05-decisions/0
 Map view control: [022: manual strategy/terrain toggle](05-decisions/022-manual-map-mode.md).
 
 Contextual scenery: [023: farmland, riverbanks, and vegetation groups](05-decisions/023-contextual-landscape.md).
+
+Mobile infantry model and accepted six-person transport direction: [027: steam jeep](05-decisions/027-steam-jeep-transport.md).
+
+- [028: Live infantry rendering](05-decisions/028-live-infantry-rendering.md) — model integration, culling and limits.
