@@ -441,3 +441,5 @@ Integrated the benchmark infantry model with live squad positions, facing and fi
 ## 2026-09-10 — Experimental Three.js world renderer (branch only)
 
 Added a standalone generated-world preview with retained Pixi comparison, instanced model buildings/forests, reused infantry and jeep, sprite/texture switches, winter palette and camera presets. Kept the original checkout and campaign authority intact. Typecheck/build and all 106 tests passed; desktop/mobile browser smoke passed with no page errors. Art parity, elevation and live campaign migration remain future work.
+
+Fixed the experimental camera to one isometric angle per user direction. Mouse/touch dragging pans; zoom and settlement navigation remain. Removed overhead preset.

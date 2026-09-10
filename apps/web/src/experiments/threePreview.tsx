@@ -17,8 +17,8 @@ function Study() {
   return <main><header><div><span className="eyebrow">IRONFRONT / RENDERER EXPERIMENT</span><h1>A world in miniature</h1></div><a href="/">Original game ↗</a></header>
     <section className="viewport" aria-label="Map preview">
       {data ? engine==='three'?<div className="scene" ref={host}/>:<Suspense fallback={<p className="loading">Loading Pixi…</p>}><div className="scene pixi"><PixiMap world={data.world} selected={selected} onSelect={setSelected} preview focus={selected===null?null:{region:selected,revision:selected}}/></div></Suspense>:<div className="loading" role="status">{error||'Generating the existing world, settlements and roads…'}</div>}
-      <div className="view-controls" aria-label="Camera presets">{(['continent','town','ground','top'] as const).map(mode=><button key={mode} disabled={!data||engine!=='three'} onClick={()=>scene.current?.view(mode)}>{mode}</button>)}</div>
-      <div className="map-caption">{engine==='three'?'Drag to orbit · right-drag to pan · scroll to zoom':'Original Pixi renderer · same generated world'}</div>
+      <div className="view-controls" aria-label="Camera presets">{(['continent','town','ground'] as const).map(mode=><button key={mode} disabled={!data||engine!=='three'} onClick={()=>scene.current?.view(mode)}>{mode}</button>)}</div>
+      <div className="map-caption">{engine==='three'?'Fixed isometric view · drag to pan · scroll to zoom':'Original Pixi renderer · same generated world'}</div>
     </section>
     <aside><div className="switch" aria-label="Renderer">{['three','pixi'].map(value=><button key={value} aria-pressed={engine===value} onClick={()=>setEngine(value)}>{value==='three'?'Three.js study':'Pixi baseline'}</button>)}</div>
       <p className="intro">Existing geography, city layouts and artwork, explored with depth, light and miniature models.</p>

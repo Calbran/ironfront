@@ -4,6 +4,8 @@
 
 The user requested an experimental branch to explore a miniature-world Three.js migration while preserving existing work. They explicitly asked to skip Impeccable for this task. Existing assets, authoritative simulation, saved coordinates and React interfaces should remain reusable.
 
+The user subsequently chose a fixed isometric camera. Keep the same angle across all distance presets, with pan and zoom; free rotation and overhead mode are removed. Models remain useful for consistent depth, lighting and asset reuse.
+
 ## Provisional
 
 Three.js as the production world renderer; miniature scale ratios; replacement building volumes; terrain appearance; winter biome treatment. This experiment does not validate final art direction, campaign performance or cover integration.

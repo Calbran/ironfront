@@ -12,7 +12,7 @@ Run `npm install` if dependencies are absent, then `npm run dev -- --host 127.0.
 
 - Existing seeded world generator, geography, shared map contours, settlement layouts, roads and scenery placements drive a standalone Three.js view.
 - The same generated world object can be inspected in the existing Pixi renderer.
-- Orthographic orbit/pan/zoom, settlement selection, continent/town/ground/top presets, political borders and rendering counters.
+- Fixed orthographic isometric camera with mouse/touch pan and zoom, settlement selection, continent/town/ground presets, political borders and rendering counters.
 - Instanced building volumes and trees; existing infantry model and jeep on a staged route. Building sprites and ground textures can be restored for direct comparison.
 - Muted plain ground by default; winter palette changes ground, foliage, roof and lighting colors. This is not a new gameplay biome.
 - Worker generation, renderer cleanup, asynchronous artwork loading and responsive controls. No campaign API calls or persistence writes.

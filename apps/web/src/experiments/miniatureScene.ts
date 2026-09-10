@@ -14,13 +14,15 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
   renderer.outputColorSpace = T.SRGBColorSpace; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.16;
-  renderer.domElement.setAttribute("aria-label", "Three-dimensional map. Drag to orbit, right-drag to pan, scroll to zoom. Use territory selection and view buttons for keyboard access.");
+  renderer.domElement.setAttribute("aria-label", "Three-dimensional map. Drag to pan, scroll to zoom. Camera angle is fixed. Use territory selection and view buttons for keyboard access.");
   host.append(renderer.domElement);
   const scene = new T.Scene(); scene.background = new T.Color(0x253e40);
   const camera = new T.OrthographicCamera(-50, 50, 35, -35, 0.1, 8000);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.12;
-  controls.minPolarAngle = 0.08; controls.maxPolarAngle = 1.16;
+  controls.enableRotate = false;
+  controls.mouseButtons = { LEFT: T.MOUSE.PAN, MIDDLE: T.MOUSE.DOLLY, RIGHT: T.MOUSE.PAN };
+  controls.touches = { ONE: T.TOUCH.PAN, TWO: T.TOUCH.DOLLY_PAN };
   controls.minZoom = 0.05; controls.maxZoom = 10;
   controls.screenSpacePanning = false;
   const hemi = new T.HemisphereLight(0xf0efdc, 0x485646, 2.3); scene.add(hemi);
@@ -176,17 +178,17 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
     const t=(actorTime*.012+.6)%1;jeep.root.position.set(start.x*S+dx*t+.9,.07,start.y*S+dz*t);jeep.root.rotation.y=heading;
   };
   const target=new T.Vector3();
-  function focus(x:number,z:number,span:number,overhead=false){
-    target.set(x,0,z);controls.target.copy(target);camera.position.copy(target).add(new T.Vector3(0,overhead?500:240,overhead?.001:260));
+  function focus(x:number,z:number,span:number){
+    target.set(x,0,z);controls.target.copy(target);camera.position.copy(target).add(new T.Vector3(260,260,260));
     camera.zoom=100/span;camera.updateProjectionMatrix();controls.update();
   }
-  function view(mode:"continent"|"town"|"ground"|"top"){
+  function view(mode:"continent"|"town"|"ground"){
     if(mode==="continent"){
       const bounds=new T.Box3().setFromObject(land),center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());
       const aspect=host.clientWidth/host.clientHeight;
-      focus(center.x,center.z,Math.max(size.z,size.x/aspect)*1.18,true);
+      focus(center.x,center.z,Math.max((size.x+size.z)/Math.sqrt(6),(size.x+size.z)/Math.sqrt(2)/aspect)*1.18);
     }
-    else if(studyCity)focus(studyCity.feature.x*S,studyCity.feature.y*S,mode==="ground"?28:mode==="town"?85:100,mode==="top");
+    else if(studyCity)focus(studyCity.feature.x*S,studyCity.feature.y*S,mode==="ground"?28:85);
   }
   function chooseCity(id:string){const city=data.cities.find(c=>c.feature.id===id);if(!city)return;studyCity=city;staging=city.layout.roads.find(r=>r.length>=2)??[];actorTime=0;select(city.region);view("town");}
   function configure(next:StudySettings){
