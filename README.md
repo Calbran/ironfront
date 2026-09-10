@@ -32,6 +32,17 @@ Production serves the built browser application and API together at http://local
 
 This is an early persistent multiplayer proof, not the complete game. Authentication uses private bearer session keys, not recoverable accounts. Treat invite codes as playtest invitations and save your session key before changing devices.
 
+## Miniature city and Three.js development
+
+Pixi remains the default renderer. The repository also includes these development studies:
+
+- `/city-diorama.html`: dense district city (160 buildings by default); select 28 for the crafted neighborhood.
+- `/reference-preview.html`: crafted summer/winter art reference.
+- `/three-preview.html`: generated-world comparison and performance tools.
+- `?renderer=three` on the campaign application: opt-in live Three.js adapter; interaction parity is still incomplete.
+
+Run `npm run dev` and open the desired entry on the Vite URL printed in the terminal. The preview pages are included in the production build, but their presence does not enable experimental gameplay. See the [miniature city roadmap](docs/04-roadmap/miniature-city-development.md) for current scope, ordered next work and validation criteria, and the [city study](docs/prototypes/large-city-diorama.md) for stage-specific measurements.
+
 ## Browser verification
 
 With the production server running, install Playwright Chromium (`npx playwright install chromium`) and run `npm run test:browser`. Set `CHROMIUM_PATH` to reuse an installed compatible Chromium. The smoke flow creates disposable campaigns in the active local database and saves screenshots under `.impeccable/review/`. Use a separate `DB_PATH` when running it against a database you want to keep clean.

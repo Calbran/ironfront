@@ -18,6 +18,8 @@ The [steam jeep study](steam-jeep.md) is available at `/jeep-preview.html`. It i
 
 - [Three.js migration experiment](threejs-migration.md) — isolated miniature-world renderer study.
 
-- [Crafted miniature art scene](crafted-miniature-scene.md) — summer/winter reference diorama, branch only.
+- [Crafted miniature art scene](crafted-miniature-scene.md) — summer/winter reference diorama, standalone development study.
 
-- [Full-world miniature performance]( world-performance.md) — chunked kit rendering and synthetic workload measurements.
+- [Full-world miniature performance](world-performance.md) — chunked kit rendering and synthetic workload measurements.
+
+Current development plan: [miniature city roadmap](../04-roadmap/miniature-city-development.md).

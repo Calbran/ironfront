@@ -1,0 +1,38 @@
+# Miniature city and world development roadmap
+
+## Current baseline
+
+The default game remains Pixi. Three.js campaign rendering is opt-in with `?renderer=three`; it consumes authoritative snapshots and commands. Standalone entries are `/three-preview.html` (generated-world comparison), `/reference-preview.html` (crafted miniature reference), and `/city-diorama.html` (160-building district study, with the original 28-building neighborhood selectable). These studies are included in the repository; merging their code does not make them the default game renderer.
+
+Implemented: shared instanced infantry/vehicle/building kits; fixed isometric camera; generated town/river clearance; district block composition on prescribed terrain; narrow urban models and varied heights; developed paving/yard surfaces; construction shells, cranes, selected alley links, clutter, emissive windows and capped smoke. The tall-building kit has distinct foundation/roof/trim boundaries to avoid coplanar flicker. City prototypes do not change capture, supply, construction, collision or cover authority.
+
+Accepted direction: a crowded, overdeveloped Victorian/steampunk city with commercial, residential and industrial character, dirty service areas and maintained civic/commercial spaces. Cities should resemble crafted miniatures, with terrain-aware connected surfaces and coordinated blocks. A capital building is the intended city ownership anchor. Larger continental scale should make travel and logistics meaningful in a 2–4-week game. Exact land-area multiplier, city limits, travel times and balance are not validated.
+
+## Ordered next work
+
+| Stage | Work | Exit criteria |
+|---|---|---|
+| 1. Urban kit and composition | Add compatible corner buildings, tenements, shops, larger mills/warehouses, service structures and several roof/facade families. Establish dimensions, entrances, foundation bounds, roof attachments and LODs. Improve construction/cranes/walkways as distinct assets. | Review one dense mixed district at unit scale; continuous frontages, intentional alleys/courtyards, no overlapping roofs or pasted-on surfaces. Art direction accepted before multiplying assets. |
+| 2. District/block variety | Replace repeated rectangular recipes with multiple block shapes, partial blocks, corner treatment, frontage depth and height distributions. Separate district zoning from individual block instances. Tune maintained-versus-grimy surfaces and bounded clutter. | Repeated seeds are deterministic but visibly varied; requested counts, density, street access and footprint clearance pass. No leftover empty-road grids or accidental interior grass. |
+| 3. Terrain-first city planner | Terrain/water → settlement suitability → regional entrances/bridges → connected street grades → districts → parcels/blocks → foundations → developed surfaces → vegetation/props. Fit blocks to actual slopes and river corridors; reject or downsize unsafe candidates. | Riverbanks remain clear; roads and bridges meet; entrances and paving align in position, direction and height. Moderate slopes produce explicit terraces/retaining structures; steep sites reject placement. Repeated-seed and pathological-terrain tests pass. |
+| 4. Generated-world rollout | Feed district plans into the existing generation worker and miniature renderer. Share footprint/entrance metadata, cache spatial queries, preserve safe legacy fallbacks and saved-map compatibility. Add district-level culling and LOD. | A seed gallery covers small villages through large cities across terrain types; generation time/memory measured; no client mutation of campaign authority. One-city visibility is not assumed. |
+| 5. Campaign interaction and city capital | Complete Three.js interaction parity. Design how city capitals relate to existing physical settlement capture, garrisons and regional ownership before implementing rules. Define any building cover/collision/destruction interfaces separately from decorative models. | Server-validated orders, persistence/restart, fog, selection, camera and capture regressions pass. Existing land-area victory remains; no weighted key-zone scoring. Elevated visual walkways are not assumed traversable. |
+| 6. Continental scale and logistics | Establish physical map units and city/army scale; expand contiguous landmass, then tune travel, depots and construction for the intended campaign duration. Keep management light and asynchronous. | Measured journeys and supply decisions support a long campaign without excessive micromanagement. Starting positions, routes and saved data remain valid at larger extents. No arbitrary 10× coordinate multiplier without timing/rendering checks. |
+| 7. Production readiness | Compare Pixi and Three.js on a populated campaign, multiple visible cities, moving/fighting units, shadows, smoke, winter, selection and strategy overlays. Exercise low-end devices and long sessions. | Explicit hardware/frame-time, generation-time, memory and interaction budgets; no resource growth on regeneration; reconnect and long-soak checks pass. Only then decide whether to change the default renderer. |
+
+## Performance and art constraints
+
+Reuse meshes/materials and batch static props. Keep decorative smoke capped (currently 12 chimneys × four instanced puffs). Emissive windows do not cast light; add real lights selectively only after measuring their value and cost. Shadow-casting lights, transparent smoke overdraw, larger texture libraries and unique models require new profiling. Current 128–1,024-building samples use repeated assets and mostly static units; they are not a production building cap or mobile guarantee.
+
+Record p50/p95/p99 frame intervals, draw calls/triangles, loading/generation time and available memory measures. Distinguish short static samples, live campaign checks and long soaks. Rerun a relevant baseline when assets, shadows, LOD, terrain geometry or effects change; preserve old reports as dated stage evidence rather than overwrite their meaning.
+
+## Entry points and validation
+
+- Planning: `packages/game-core/src/craftedNeighborhood.ts`, `districtCity.ts`, `miniatureTown.ts`, `organicCity.ts`, `cityStreetPruning.ts`.
+- Presentation: `apps/web/src/experiments/cityDiorama.ts`, `referenceAssets.ts`, `buildMiniatureData.ts`, `miniatureScene.ts`, `worldDetail.ts`.
+- Tests: `tests/crafted-neighborhood.test.ts`, `district-city.test.ts`, `organic-city.test.ts`, `city-street-pruning.test.ts`, plus the existing generation/gameplay suite.
+- Run `npm run typecheck`, `npm test`, `npm run build`; verify changed interfaces in the browser. `scripts/city-diorama-browser.ts` currently targets local Vite port 5187 and a local macOS Chromium path—adjust those before running on another machine. Browser scripts and historical performance reports are not portable CI guarantees yet.
+- Source records: decisions [029](../05-decisions/029-threejs-renderer-experiment.md), [030](../05-decisions/030-city-capitals-and-large-city-study.md), [031](../05-decisions/031-real-city-street-seeds.md), [032](../05-decisions/032-crafted-neighborhood-blocks.md), [033](../05-decisions/033-dense-steampunk-districts.md); [city results](../prototypes/large-city-diorama.md), [generation audit](../prototypes/town-generation-audit.md), [live soak](../prototypes/live-campaign-performance.md).
+- OpenStreetMap-derived samples stay separately attributed/licensed in `packages/game-core/data/city-samples/README.md`. Current district recipes are authored and do not fetch map data at runtime.
+
+Dates and effort estimates are intentionally unassigned. This is the proposed implementation sequence around accepted direction; individual balance values and production adoption still require validation.

@@ -1,5 +1,7 @@
 # Crafted miniature reference-scene plan
 
+> Historical art-stage plan. The current consolidated roadmap is [miniature city development](../04-roadmap/miniature-city-development.md).
+
 Status: first bounded scene implemented; further art refinement and generator integration remain proposed, based on the user's supplied summer/winter concept B. This is not a shipped generator or a promise of exact concept-image reproduction.
 
 ## First milestone

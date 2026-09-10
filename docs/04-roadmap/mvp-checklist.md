@@ -1,5 +1,7 @@
 # Roadmap
 
+The parallel [miniature city/world roadmap](miniature-city-development.md) covers the Three.js studies, dense districts, terrain-first generation and eventual production adoption. Its visual work does not replace the gameplay milestones below.
+
 ## Milestone 1 — Persistent playable proof (current)
 
 Generated continent, map inspection, faction choice, create/join, automated empty seats, basic resources/buildings, persistent orders, combat/capture, land scoring, SQLite storage, and accelerated test clock. See PROJECT_STATE.md for actual validation.

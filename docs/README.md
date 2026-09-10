@@ -62,9 +62,9 @@ Mobile infantry model and accepted six-person transport direction: [027: steam j
 
 - [Three.js migration experiment](prototypes/threejs-migration.md) — isolated miniature-world renderer study.
 
-- [Crafted miniature art scene](prototypes/crafted-miniature-scene.md) — summer/winter reference diorama, branch only.
+- [Crafted miniature art scene](prototypes/crafted-miniature-scene.md) — summer/winter reference diorama, standalone development study.
 
-- [Full-world miniature performance]( prototypes/world-performance.md) — chunked kit rendering and synthetic workload measurements.
+- [Full-world miniature performance](prototypes/world-performance.md) — chunked kit rendering and synthetic workload measurements.
 
 - [Live campaign integration and soak](prototypes/live-campaign-performance.md).
 - [Generated-region landscape study](prototypes/generated-landscape.md).
@@ -79,3 +79,5 @@ Real-city settlement direction: [031 — street seeds](05-decisions/031-real-cit
 Crafted settlement blocks: [032 — neighborhoods and developed ground](05-decisions/032-crafted-neighborhood-blocks.md).
 
 Dense district direction: [033 — steampunk districts](05-decisions/033-dense-steampunk-districts.md).
+
+Current development plan: [miniature city roadmap](04-roadmap/miniature-city-development.md).

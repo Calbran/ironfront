@@ -1,5 +1,11 @@
 # Changelog
 
+## Documentation and main integration
+
+- Consolidate the miniature-city roadmap with ordered stages, acceptance criteria, code/test entry points and performance limits.
+- Correct stale default-layout and branch-only descriptions; document preview URLs and the opt-in campaign renderer.
+- Integrate the development studies without changing Pixi as the default or enabling prototype gameplay rules.
+
 ## Experimental branch — urban surface overlap fix
 
 - Remove coplanar foundation/facade and roof/parapet faces from tall urban buildings.

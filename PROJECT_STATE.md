@@ -1,40 +1,44 @@
 # Project State
 
-## Dense district city — experimental branch
+## Current entry points and next work
+
+Pixi remains the default campaign renderer. The Three.js renderer is opt-in; city/reference/world studies are development previews, not a completed gameplay migration. `/city-diorama.html` defaults to the 160-building district city; choose 28 for the earlier crafted neighborhood. The Ancoats street-seed study remains in source but is no longer the default layout. [Development roadmap](docs/04-roadmap/miniature-city-development.md) gives the ordered remaining work, acceptance criteria, performance limits and code/test entry points. Historical sections below record earlier stages and are not alternate current defaults.
+
+## Dense district city — development study
 
 The city diorama defaults to 160 buildings organized into commercial, residential and industrial blocks around the crafted civic neighborhood. Urban roof/parapet and foundation/facade faces now have distinct boundaries to prevent coplanar flicker. New narrow/deep urban models, varied heights, construction shells, cranes, selected alley walkways, clutter, emissive windows and capped instanced smoke establish a denser steampunk direction. The 28-building study remains available. District planning is restricted to the study terrain, not integrated with campaign generation. See [decision 033](docs/05-decisions/033-dense-steampunk-districts.md).
 
-## Crafted neighborhood — experimental branch
+## Crafted neighborhood — development study
 
-The city diorama now defaults to a 28-building block study with elevated civic paving, dense aligned frontages and a lower warehouse quay. Shared developed surfaces cover the interior; placement validates clearance, level foundations and street-facing entrances. Existing larger city options remain available. This is a bounded authored composition, not a general terrain parcel solver. See [decision 032](docs/05-decisions/032-crafted-neighborhood-blocks.md).
+The selectable 28-building block study with elevated civic paving, dense aligned frontages and a lower warehouse quay. Shared developed surfaces cover the interior; placement validates clearance, level foundations and street-facing entrances. Existing larger city options remain available. This is a bounded authored composition, not a general terrain parcel solver. See [decision 032](docs/05-decisions/032-crafted-neighborhood-blocks.md).
 
-## Real-city street seed — experimental branch
+## Real-city street seed — development study
 
-The large-city study now uses a local Ancoats/Manchester OpenStreetMap street and canal sample with attribution. It replaces concentric roads with real district geometry, closer footprint-checked frontages, canal workshops, scattered outer housing, procedural cobbles and batched steampunk lamps. The hall now uses the neighborhood brick/slate materials at 72% of its original dimensions, with side windows, a smaller square and tighter civic reservations. Civic/depot/park reservations remain; the canal is adapted around fixed landmarks. After lot placement, a graph pass removes unused street branches and retains frontage routes plus three outward approaches; the default sample retains about 37% of imported road length. This is one offline reference in the diorama, not integration into the campaign/world generator. See [decision 031](docs/05-decisions/031-real-city-street-seeds.md).
+The earlier large-city study used a local Ancoats/Manchester OpenStreetMap street and canal sample with attribution. It replaces concentric roads with real district geometry, closer footprint-checked frontages, canal workshops, scattered outer housing, procedural cobbles and batched steampunk lamps. The hall now uses the neighborhood brick/slate materials at 72% of its original dimensions, with side windows, a smaller square and tighter civic reservations. Civic/depot/park reservations remain; the canal is adapted around fixed landmarks. After lot placement, a graph pass removes unused street branches and retains frontage routes plus three outward approaches; the default sample retains about 37% of imported road length. This is one offline reference in the diorama, not integration into the campaign/world generator. See [decision 031](docs/05-decisions/031-real-city-street-seeds.md).
 
-## Large-city diorama — experimental branch
+## Large-city diorama — development study
 
 `/city-diorama.html` contains a 160-building candidate with a capital/clock tower, civic square, residential and market blocks, workshops, supply yard, 144 infantry scale figures and two jeeps. Building-density tests cover 128–1,024 buildings at fixed model scale. Capital-based capture is accepted direction but not implemented; existing capture rules remain unchanged. See [diorama and benchmark](docs/prototypes/large-city-diorama.md) and [decision 030](docs/05-decisions/030-city-capitals-and-large-city-study.md).
 
-## Terrain-aware town and generation audit — experimental branch
+## Terrain-aware town and generation audit — development study
 
 The preview now attempts terrain-aware planning across settlements, with riverside, farming and industrial patterns, size-dependent density and recorded regional-road entrances. Unsafe or undersized plans retain labeled legacy layouts. The art tour selects one sculpted example, with connected streets, street-facing lots and distinct civic/home/shop/workshop models. Fields and vegetation follow completed footprints. The worker records stage times, caches river presentation paths and avoids repeated global river checks in legacy town repair. Pure planner invariants and repeat-seed generation audits are included. Continuous-slope planning and eliminating legacy fallbacks remain future work. See [generator audit](docs/prototypes/town-generation-audit.md).
 
-## Live campaign adapter and generated landscape — experimental branch
+## Live campaign adapter and generated landscape — development study
 
 The regular game can opt into Three.js with `?renderer=three`; Pixi remains the default. Existing server snapshots drive live squad models and existing commands handle selection, movement and attacks. Full Pixi interaction parity remains unfinished. See [live integration and soak methodology](docs/prototypes/live-campaign-performance.md).
 
 The generated preview now offers **Visit refined region**: one actual river-adjacent settlement region with sculpted ground, wear, grain, bank rocks, vegetation, field furrows, fences and bridge decks. River bends now use continuous rounded strips; ground height, color and texture fade into the surrounding region material. Preview road strips stop at riverbanks, with raised bridges retained. Preview buildings overlapping riverbanks now relocate to nearby dry lots with model-footprint clearance. It is a bounded art study, not a continent-wide or live terrain replacement. See [landscape notes](docs/prototypes/generated-landscape.md).
 
-## Full-world miniature stress test — experimental branch
+## Full-world miniature stress test — development study
 
 The Three.js world preview now shares the art scene’s building/tree kit, with chunked instancing, zoom-dependent detail, tactical shadows and bounded offscreen chunk retention. A stress panel and repeatable browser runner measure distributed/concentrated synthetic troop loads, pan/zoom scales and winter. This remains a rendering test, not live campaign or minimum-device validation. See [performance methodology and results](docs/prototypes/world-performance.md).
 
-## Crafted miniature art scene — experimental branch
+## Crafted miniature art scene — development study
 
 `/reference-preview.html` contains an authored summer/winter diorama with sculpted terrain, river channel, bridge, modular town, forest, rocky hill and field. It reuses infantry/jeep models and retains fixed-camera navigation and reference-squad selection. This is an art study, not campaign-wide generation or gameplay migration. See [scene notes](docs/prototypes/crafted-miniature-scene.md).
 
-## Three.js renderer experiment — branch only
+## Three.js renderer experiment — opt-in study
 
 `/three-preview.html` explores the existing generated world in Three.js with miniature building volumes, reused infantry/jeep models, sprites, winter colors and a Pixi comparison. The camera now stays at a fixed isometric angle, with pan/zoom and distance presets. The original game remains available. Friendly army box/additive selection, Escape clearing, right/middle/touch and WASD panning, roster focus and a manual ownership strategy view are now available. Generated force selection is read-only; campaign orders and new biome mechanics are not shipped. See [prototype notes](docs/prototypes/threejs-migration.md) and decision 029.
 

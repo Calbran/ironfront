@@ -69,3 +69,7 @@ Validation: 115 tests, typecheck and build passed. Nine local browser samples th
 ## Tall-building flicker correction
 
 User reported flickering on tall buildings. Found coplanar facade/foundation side faces and roof-slab/parapet side faces in the urban kit. Ended walls at foundation height, gave foundations and roof slabs distinct outer extents, separated window mullion top/bottom edges and updated snow slab coverage. Typecheck/build passed. Browser street-view pan/zoom and winter captures completed without page errors; no broad benchmark rerun for this geometry-only fix.
+
+## Documentation audit and main integration
+
+User authorized documentation/roadmap completion and pushing the experiment to main. Audited current defaults, historical stage descriptions, preview entry points and roadmap links. Added `docs/04-roadmap/miniature-city-development.md` with ordered work, completion criteria, accepted versus provisional choices and test/performance gates. Main checkout had 24 changed/untracked files matching the experiment baseline plus three unrelated local files; those separate files were backed up for restoration, and the full local state is retained in an integration stash. Remote main had no divergent commits. Final validation passed typecheck, 115 tests and build; preview entry browser checks accompany integration. Pixi remains the default; city prototypes do not enable gameplay authority.
