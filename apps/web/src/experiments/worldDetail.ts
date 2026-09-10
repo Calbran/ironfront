@@ -8,7 +8,7 @@ export function worldDetail(scene:T.Scene,data:MiniatureData){
  type Placement={x:number;z:number;scale:number;angle:number;variant:string};
  const placements=new Map<string,Placement[]>();
  function push(p:Placement){const key=`${Math.floor(p.x/chunkSize)},${Math.floor(p.z/chunkSize)}`;const list=placements.get(key)??[];list.push(p);placements.set(key,list);}
- data.cities.forEach(c=>c.layout.buildings.forEach((b,i)=>push({x:b.x*S,z:b.y*S,scale:b.width*S/7,angle:b.angle,variant:b.role==='landmark'?'hall':b.role==='industry'?'factory':i%4===0?'shop':'home'})));
+ data.cities.forEach(c=>c.layout.buildings.forEach((b,i)=>push({x:b.x*S,z:b.y*S,scale:b.width*S/7,angle:-b.angle,variant:(b as typeof b & {model?:string}).model??(b.role==='landmark'?'hall':b.role==='industry'?'factory':i%4===0?'shop':'home')})));
  data.scenery.filter(t=>t.kind==='tree').forEach((t,i)=>push({x:t.x*S,z:t.y*S,scale:t.width*S/4*.9,angle:i*.71,variant:i%4===0?'pine':'tree'}));
  const resident=new Map<string,{group:T.Group;last:number}>(),frustum=new T.Frustum(),matrix=new T.Matrix4(),dummy=new T.Object3D(),box=new T.Box3();
  let tick=0,created=0,mode='regional';

@@ -1,5 +1,12 @@
 # Changelog
 
+## Experimental branch — terrain-aware town generation
+
+- Plan one riverside town from existing road access, connected streets, safe lots and street-facing model roles.
+- Order preview routes/crossings before towns and fields before final vegetation clearance; cache presentation rivers and instrument worker stages.
+- Reduce legacy riverfront repair work through local segment filtering and cached dry-building checks.
+- Add deterministic, dry-lot, frontage and overlap checks plus repeatable generation profiling.
+
 ## Experimental branch — roads over water
 
 - Clip town and intercity road ribbons at riverbanks with full-width clearance, retaining raised bridge geometry.

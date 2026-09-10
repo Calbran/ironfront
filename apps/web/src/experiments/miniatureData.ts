@@ -15,6 +15,9 @@ export interface MiniatureData {
   roads: CityRoad[];
   fields?: import("../../../../packages/game-core/src/landscape").FieldParcel[];
   generatedMs: number;
+  riverPaths?: [number,number][][];
+  studyCityId?:string;
+  timings?:Record<string,number>;
 }
 export function initialCity(data: MiniatureData): StudyCity | undefined {
   const capital = data.world.nations[0].capital;

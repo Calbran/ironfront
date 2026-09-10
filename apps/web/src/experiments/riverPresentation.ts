@@ -2,8 +2,9 @@ import type { MiniatureData } from "./miniatureData";
 type Point = [number, number];
 /** Round visual bends inside the original polyline's corridor; preserve mouths and bridge approaches. */
 export function presentationRivers(data: MiniatureData): Point[][] {
+  if(data.riverPaths)return data.riverPaths;
   const bridges = data.roads.flatMap((r) => r.bridges);
-  return (data.world.geography?.rivers ?? []).map((river) => {
+  return data.riverPaths=(data.world.geography?.rivers ?? []).map((river) => {
     if (river.length < 3) return river.map((p) => [p[0], p[1]]);
     const result: Point[] = [[...river[0]]];
     for (let i = 1; i < river.length - 1; i++) {

@@ -141,10 +141,10 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
   });
   buildingRecords.forEach((b,i)=>{
     const x=b.x*S,z=b.y*S,w=b.width*S,d=b.height*S,h=Math.max(0.85,Math.min(w,d)*(b.role==="landmark"?0.65:0.4));
-    place(foundations,i,x,.08,z,w*1.1,.16,d*1.1,b.angle);
-    place(bodies,i,x,h/2+.15,z,w,h,d,b.angle);
-    place(roofs,i,x,h+.15,z,w*1.12,w*.65,d*1.14,b.angle);
-    place(chimneys,i,x-w*.24,h+.45,z+d*.22,w*.13,h*.9,w*.13,b.angle);
+    place(foundations,i,x,.08,z,w*1.1,.16,d*1.1,-b.angle);
+    place(bodies,i,x,h/2+.15,z,w,h,d,-b.angle);
+    place(roofs,i,x,h+.15,z,w*1.12,w*.65,d*1.14,-b.angle);
+    place(chimneys,i,x-w*.24,h+.45,z+d*.22,w*.13,h*.9,w*.13,-b.angle);
     for(let j=0;j<4;j++) place(windows,i*4+j,x+(j%2===0?-1:1)*w*.24,h*.57,z+(j<2?-1:1)*(d*.5+.02),w*.16,h*.32,.05);
     bodies.setColorAt(i,new T.Color().setHSL(.065+(i%5)*.008,.19,.55+(i%4)*.025));
   });
@@ -232,7 +232,7 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
     }
     else if(studyCity)focus(studyCity.feature.x*S,studyCity.feature.y*S,mode==="ground"?28:mode==="regional"?300:85);
   }
-  function chooseCity(id:string){const city=data.cities.find(c=>c.feature.id===id);if(!city)return;studyCity=city;actorTime=0;select(city.region);view("town");}
+  function chooseCity(id:string){const city=data.cities.find(c=>c.feature.id===id);if(!city)return;studyCity=city;actorTime=0;select(city.region);onSelect(city.region);if(city.feature.id===data.studyCityId)focus(city.layout.plaza.x*S,city.layout.plaza.y*S,48);else view("town");}
   function configure(next:StudySettings){
     settings={...next};borderGroup.visible=settings.borders||settings.strategy;modelBuildings.visible=!settings.strategy&&!settings.sprites;spriteBuildings.visible=!settings.strategy&&settings.sprites;
     for(const mesh of terrainMeshes)mesh.material=settings.strategy?politicalMats.get(mesh.userData.region)!:originalGrounds.get(mesh)!;

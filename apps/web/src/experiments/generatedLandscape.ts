@@ -35,7 +35,7 @@ export function generatedLandscape(
   );
   const nearest = (p: P, lines: readonly (readonly [P, P])[]) =>
     lines.reduce((n, [a, b]) => Math.min(n, distance(p, a, b)), 1e6);
-  const city =
+  const city = data.cities.find(c=>c.feature.id===data.studyCityId)??
     [...data.cities]
       .filter((c) => c.layout.buildings.length >= 6)
       .sort(

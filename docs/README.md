@@ -68,3 +68,5 @@ Mobile infantry model and accepted six-person transport direction: [027: steam j
 
 - [Live campaign integration and soak](prototypes/live-campaign-performance.md).
 - [Generated-region landscape study](prototypes/generated-landscape.md).
+
+- [Town generation and pipeline audit](prototypes/town-generation-audit.md).

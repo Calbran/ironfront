@@ -1,5 +1,9 @@
 # Project State
 
+## Terrain-aware town and generation audit — experimental branch
+
+The art tour now selects one town planned from regional road access and dry terrain: connected streets, street-facing lots and distinct civic/home/shop/workshop models. Fields and vegetation follow completed footprints. The worker records stage times, caches river presentation paths and avoids repeated global river checks in legacy town repair. Pure planner invariants and repeat-seed generation audits are included. Continuous-slope planning and migration of every town remain future work. See [generator audit](docs/prototypes/town-generation-audit.md).
+
 ## Live campaign adapter and generated landscape — experimental branch
 
 The regular game can opt into Three.js with `?renderer=three`; Pixi remains the default. Existing server snapshots drive live squad models and existing commands handle selection, movement and attacks. Full Pixi interaction parity remains unfinished. See [live integration and soak methodology](docs/prototypes/live-campaign-performance.md).

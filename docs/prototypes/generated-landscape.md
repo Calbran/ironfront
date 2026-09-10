@@ -33,3 +33,5 @@ A preview-only worker pass relocates building models whose conservative footprin
 Cosmetic road strips now stop at the presented river banks, accounting for both water and road width. Sampling includes a conservative half-step margin, so a retained strip cannot cut through water between samples. Raised bridge geometry remains independent. This applies to generated-preview town streets and intercity ribbons, not authoritative routes or the live campaign renderer.
 
 Each road's retained pieces share one geometry batch. Final summer/winter, strategy and phone checks passed without browser errors; local p95 was 17.7 ms with no sampled frames above 33.4 ms and 185 draw calls in the refined view. Typecheck and production build passed (existing large-bundle advisory remains).
+
+The later terrain-aware town pass changes the default art-tour region to the selected planned town (Marshford for Meridian); counts above describe earlier captures. See [town generation audit](town-generation-audit.md) for the current planner, pipeline ordering, measurements and limitations.

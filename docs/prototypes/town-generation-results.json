@@ -1,0 +1,71 @@
+[
+  {
+    "seed": "Meridian",
+    "seats": 4,
+    "regions": 96,
+    "settlements": 64,
+    "town": "Marshford",
+    "buildings": 8,
+    "streets": 4,
+    "totalMs": 1156.3903750000002,
+    "timings": {
+      "world": 345.16891699999996,
+      "regionalRoads": 361.495208,
+      "riverPresentation": 0.7718750000000227,
+      "terrainTown": 3.891958999999929,
+      "otherTownLayouts": 23.9937920000001,
+      "legacyRiverClearance": 21.65124999999989,
+      "fields": 276.326333,
+      "vegetation": 22.854708000000073,
+      "sceneryClearance": 100.12037499999997
+    },
+    "repeatTotalMs": 1092.5557909999998,
+    "deterministic": true
+  },
+  {
+    "seed": "Atlas",
+    "seats": 4,
+    "regions": 96,
+    "settlements": 74,
+    "town": "Ironhaven",
+    "buildings": 6,
+    "streets": 4,
+    "totalMs": 2252.0482500000003,
+    "timings": {
+      "world": 545.471583,
+      "regionalRoads": 859.408375,
+      "riverPresentation": 1.0830829999999878,
+      "terrainTown": 3.9037499999999454,
+      "otherTownLayouts": 44.776792000000114,
+      "legacyRiverClearance": 68.75104199999987,
+      "fields": 378.7061670000003,
+      "vegetation": 33.613791999999194,
+      "sceneryClearance": 316.26729200000045
+    },
+    "repeatTotalMs": 2182.260333,
+    "deterministic": true
+  },
+  {
+    "seed": "Meridian",
+    "seats": 8,
+    "regions": 192,
+    "settlements": 82,
+    "town": "Alderhaven",
+    "buildings": 7,
+    "streets": 4,
+    "totalMs": 2771.3327500000005,
+    "timings": {
+      "world": 758.7284999999993,
+      "regionalRoads": 521.9312920000002,
+      "riverPresentation": 1.7712920000003578,
+      "terrainTown": 7.251666999999543,
+      "otherTownLayouts": 63.07141599999977,
+      "legacyRiverClearance": 174.8559580000001,
+      "fields": 881.0562919999993,
+      "vegetation": 20.779999999998836,
+      "sceneryClearance": 341.79712499999914
+    },
+    "repeatTotalMs": 2804.904875,
+    "deterministic": true
+  }
+]

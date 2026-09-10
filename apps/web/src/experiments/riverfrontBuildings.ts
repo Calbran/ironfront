@@ -34,11 +34,24 @@ export function clearRiverfrontBuildings(data: MiniatureData) {
     // Shared miniature variants include eaves, porches and wider factory silhouettes.
     const extent = (b: (typeof buildings)[number]) =>
       Math.max(b.width, b.height) * 0.95;
+    const margin = 180 + Math.max(0, ...buildings.map(extent)) + 13;
+    const minX = Math.min(...buildings.map((b) => b.x)) - margin,
+      maxX = Math.max(...buildings.map((b) => b.x)) + margin,
+      minY = Math.min(...buildings.map((b) => b.y)) - margin,
+      maxY = Math.max(...buildings.map((b) => b.y)) + margin;
+    const nearby = segments.filter(
+      ([a, b]) =>
+        Math.max(a[0], b[0]) >= minX &&
+        Math.min(a[0], b[0]) <= maxX &&
+        Math.max(a[1], b[1]) >= minY &&
+        Math.min(a[1], b[1]) <= maxY,
+    );
     const dry = (b: (typeof buildings)[number]) =>
-      segments.every(([a, c]) => distance(b.x, b.y, a, c) > extent(b) + 13);
+      nearby.every(([a, c]) => distance(b.x, b.y, a, c) > extent(b) + 13);
+    const fixed = buildings.filter(dry);
     const kept: typeof buildings = [];
     for (const original of buildings) {
-      if (dry(original)) {
+      if (fixed.includes(original)) {
         kept.push(original);
         continue;
       }
@@ -64,10 +77,7 @@ export function clearRiverfrontBuildings(data: MiniatureData) {
           )
             continue;
           if (
-            [
-              ...kept,
-              ...buildings.filter((b) => b !== original && dry(b)),
-            ].some((b) =>
+            [...kept, ...fixed].some((b) =>
               buildingsOverlap(
                 envelope,
                 { ...b, width: extent(b) * 2, height: extent(b) * 2 },

@@ -25,3 +25,7 @@ User identified buildings overlapping a river. Added conservative model-footprin
 ## Roads over water
 
 User identified remaining town-road ribbons crossing the river after building relocation. Added width-aware bank clipping for preview road geometry while retaining the raised bridge and leaving campaign route data unchanged.
+
+## Terrain-aware town and generator review
+
+Reviewed authoritative geography and preview dependencies. Implemented a pure bounded town planner in game-core, reordered preview regional roads before town layouts, shared presentation river paths, and placed fields before final scenery clearance. Removed repeated global river scans from legacy building repair. Added planner invariants and repeat-seed four/eight-seat timing audits. See town-generation-audit.md for measured costs and remaining slope/planning limitations.
