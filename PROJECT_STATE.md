@@ -1,5 +1,9 @@
 # Project State
 
+## Full-world miniature stress test — experimental branch
+
+The Three.js world preview now shares the art scene’s building/tree kit, with chunked instancing, zoom-dependent detail, tactical shadows and bounded offscreen chunk retention. A stress panel and repeatable browser runner measure distributed/concentrated synthetic troop loads, pan/zoom scales and winter. This remains a rendering test, not live campaign or minimum-device validation. See [performance methodology and results](docs/prototypes/world-performance.md).
+
 ## Crafted miniature art scene — experimental branch
 
 `/reference-preview.html` contains an authored summer/winter diorama with sculpted terrain, river channel, bridge, modular town, forest, rocky hill and field. It reuses infantry/jeep models and retains fixed-camera navigation and reference-squad selection. This is an art study, not campaign-wide generation or gameplay migration. See [scene notes](docs/prototypes/crafted-miniature-scene.md).

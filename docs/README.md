@@ -63,3 +63,5 @@ Mobile infantry model and accepted six-person transport direction: [027: steam j
 - [Three.js migration experiment](prototypes/threejs-migration.md) — isolated miniature-world renderer study.
 
 - [Crafted miniature art scene](prototypes/crafted-miniature-scene.md) — summer/winter reference diorama, branch only.
+
+- [Full-world miniature performance]( prototypes/world-performance.md) — chunked kit rendering and synthetic workload measurements.

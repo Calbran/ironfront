@@ -1,3 +1,4 @@
+import {worldDetail} from './worldDetail';
 import * as T from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -8,7 +9,7 @@ import { createJeep } from "../prototypes/jeepModel";
 import { initialCity, WORLD_TO_MODEL as S, type MiniatureData, type StudyCity } from "./miniatureData";
 
 export interface StudySettings { strategy: boolean; textures: boolean; snow: boolean; sprites: boolean; borders: boolean; motion: boolean; shadows: boolean }
-export interface StudyStats { fps: number; calls: number; triangles: number; trees: number; buildings: number; view: string }
+export interface StudyStats { residentChunks?:number; visibleSoldiers?:number; mode?:string; fps: number; calls: number; triangles: number; trees: number; buildings: number; view: string }
 export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect: (id: number) => void, onStats: (s: StudyStats) => void, onError: (text: string) => void, onArmies: (ids: number[]) => void) {
   const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
@@ -199,18 +200,19 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
   }
   const originalGrounds=new Map(terrainMeshes.map(mesh=>[mesh,mesh.material]));
   const politicalMats=new Map(data.world.regions.map(r=>[r.id,new T.MeshBasicMaterial({color:r.owner===null?0x969e8a:data.world.nations[r.owner].color})]));
+  const detailed=worldDetail(scene,data);let fullDetail=false;
   const target=new T.Vector3();
   function focus(x:number,z:number,span:number){
     target.set(x,0,z);controls.target.copy(target);camera.position.copy(target).add(new T.Vector3(5000,5000,5000));
     camera.zoom=100/span;camera.updateProjectionMatrix();controls.update();
   }
-  function view(mode:"continent"|"town"|"ground"){
+  function view(mode:"continent"|"town"|"ground"|"regional"){
     if(mode==="continent"){
       const bounds=new T.Box3().setFromObject(land),center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());
       const aspect=host.clientWidth/host.clientHeight;
       focus(center.x,center.z,Math.max((size.x+size.z)/Math.sqrt(6),(size.x+size.z)/Math.sqrt(2)/aspect)*1.18);
     }
-    else if(studyCity)focus(studyCity.feature.x*S,studyCity.feature.y*S,mode==="ground"?28:85);
+    else if(studyCity)focus(studyCity.feature.x*S,studyCity.feature.y*S,mode==="ground"?28:mode==="regional"?300:85);
   }
   function chooseCity(id:string){const city=data.cities.find(c=>c.feature.id===id);if(!city)return;studyCity=city;actorTime=0;select(city.region);view("town");}
   function configure(next:StudySettings){
@@ -242,13 +244,20 @@ renderer.shadowMap.enabled=settings.shadows;
   renderer.domElement.addEventListener("pointerdown",onDown);renderer.domElement.addEventListener("pointermove",onMove);renderer.domElement.addEventListener("pointerup",onUp);renderer.domElement.addEventListener("pointercancel",onUp);
   const resize=()=>{const {width,height}=host.getBoundingClientRect();if(!width||!height)return;renderer.setSize(width,height);camera.left=-50*width/height;camera.right=50*width/height;camera.top=50;camera.bottom=-50;camera.updateProjectionMatrix();};
   const observer=new ResizeObserver(resize);observer.observe(host);resize();view("town");
+  function memory(){const geometries=new Set<T.BufferGeometry>();scene.traverse(o=>{if(o instanceof T.Mesh)geometries.add(o.geometry);});let geometryBytes=0;for(const g of geometries){for(const a of Object.values(g.attributes))geometryBytes+=a.array.byteLength;geometryBytes+=g.index?.array.byteLength??0;}scene.traverse(o=>{if(o instanceof T.InstancedMesh)geometryBytes+=o.instanceMatrix.array.byteLength;});return {geometryMiB:geometryBytes/1048576,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,jsHeapMiB:(performance as Performance & {memory?:{usedJSHeapSize:number}}).memory?.usedJSHeapSize! /1048576||null};}
+  let sample: {frames:number[];last:number;end:number;calls:number;triangles:number;peakVisibleSoldiers:number;resolve:(v:unknown)=>void}|undefined;
   let previous=performance.now(),sampleAt=previous,frames=0,raf=0;
   const render=()=>{if(disposed)return;const now=performance.now(),dt=Math.min(.05,(now-previous)/1000);previous=now;if(!document.hidden){if(keys.size&&!editable()){const speed=40/camera.zoom*dt;const x=(Number(keys.has("d"))-Number(keys.has("a")))*speed,z=(Number(keys.has("s"))-Number(keys.has("w")))*speed;const delta=new T.Vector3(x+z,0,z-x).multiplyScalar(Math.SQRT1_2);camera.position.add(delta);controls.target.add(delta);}controls.update();updateActors(dt);updateOverlay();
     sun.target.position.copy(controls.target);sun.position.copy(controls.target).add(new T.Vector3(-85,160,90));
+    const lod=detailed.update(camera,settings.snow,settings.strategy,fullDetail,now,controls.target,settings.sprites);
+    if(!settings.strategy){modelBuildings.visible=lod==='regional'&&!settings.sprites;spriteBuildings.visible=settings.sprites&&lod!=='continent';treeGroups.forEach(g=>g.visible=lod==='regional');ribbons.forEach(m=>m.visible=lod!=='continent');rockMesh.visible=lod!=='continent';}
+    renderer.shadowMap.enabled=settings.shadows&&!settings.strategy&&(lod==='tactical'||lod==='full');
     renderer.render(scene,camera);frames++;
-    if(now-sampleAt>1200){onStats({fps:Math.round(frames*1000/(now-sampleAt)),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,trees:trees.length,buildings:count,view:camera.zoom<.3?"Continent":camera.zoom>2?"Ground":"Regional"});sampleAt=now;frames=0;}
+    if(sample){sample.frames.push(now-sample.last);sample.last=now;sample.peakVisibleSoldiers=Math.max(sample.peakVisibleSoldiers,detailed.stats().visibleSoldiers);sample.calls=Math.max(sample.calls,renderer.info.render.calls);sample.triangles=Math.max(sample.triangles,renderer.info.render.triangles);if(now>=sample.end){const current=sample;sample=undefined;const sorted=current.frames.slice(1).sort((a,b)=>a-b);const q=(p:number)=>sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))]??0;current.resolve({p50:q(.5),p95:q(.95),p99:q(.99),over33:sorted.filter(t=>t>33.4).length,frames:sorted.length,maxCalls:current.calls,maxTriangles:current.triangles,peakVisibleSoldiers:current.peakVisibleSoldiers,...detailed.stats(),...memory()});}}
+
+    if(now-sampleAt>1200){onStats({...detailed.stats(),fps:Math.round(frames*1000/(now-sampleAt)),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,trees:trees.length,buildings:count,view:camera.zoom<.3?"Continent":camera.zoom>2?"Ground":"Regional"});sampleAt=now;frames=0;}
   }else{sampleAt=now;frames=0;}raf=requestAnimationFrame(render);};render();
-  return {view,chooseCity,configure,select,selectArmies,focusArmy(id:number){const f=forces.find(f=>f.army.id===id);if(f)focus(f.x,f.z,28);},dispose(){disposed=true;cancelAnimationFrame(raf);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointerup",onUp);
+  return {view,chooseCity,configure,select,selectArmies,setLoad:detailed.setLoad,setFullDetail(value:boolean){fullDetail=value;},pan(dx:number,dz:number){camera.position.x+=dx;camera.position.z+=dz;controls.target.x+=dx;controls.target.z+=dz;},benchmark(ms=4000){if(sample)throw Error('Benchmark already running');return new Promise(resolve=>{sample={frames:[],last:performance.now(),end:performance.now()+ms,calls:0,triangles:0,peakVisibleSoldiers:0,resolve};});},focusArmy(id:number){const f=forces.find(f=>f.army.id===id);if(f)focus(f.x,f.z,28);},dispose(){disposed=true;sample?.resolve({cancelled:true});sample=undefined;detailed.dispose();cancelAnimationFrame(raf);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointerup",onUp);
     overlay.remove();marquee.remove();window.removeEventListener("keydown",onKey);window.removeEventListener("keyup",onKeyUp);window.removeEventListener("blur",onBlur);renderer.domElement.removeEventListener("pointermove",onMove);renderer.domElement.removeEventListener("pointercancel",onUp);politicalMats.forEach(m=>m.dispose());
     const geos=new Set<T.BufferGeometry>(),mats=new Set<T.Material>();scene.traverse(o=>{if(o instanceof T.Mesh || o instanceof T.Line || o instanceof T.Sprite){if("geometry" in o)geos.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);}});geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());resources.forEach(t=>t.dispose());snowLeafMat.dispose();atlasMaterials.forEach(m=>m.dispose());renderer.dispose();renderer.domElement.remove();
   }};

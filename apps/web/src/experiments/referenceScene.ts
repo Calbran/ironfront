@@ -2,6 +2,7 @@ import * as T from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { bakeInfantry } from '../infantryModel';
+import { createMiniatureKit } from './referenceAssets';
 import { createJeep } from '../prototypes/jeepModel';
 
 export interface ReferenceOptions { winter:boolean; strategy:boolean; shadows:boolean }
@@ -84,24 +85,14 @@ export function referenceScene(host:HTMLElement, report:(stats:ReferenceStats)=>
   for(let z=-51;z<52;z+=1.7+rand()*1.8){if(Math.abs(z-bridgeZ)<4)continue;for(const side of [-1,1])rock(riverX(z)+side*(4.1+rand()*1.7),z,.45+rand()*.75);}
   for(let i=0;i<22;i++){const a=rand()*Math.PI*2,r=Math.sqrt(rand())*8;rock(25+Math.cos(a)*r,-27+Math.sin(a)*r,1.5+rand()*2.8);}
   for(let i=0;i<55;i++){const x=rand()*98-49,z=rand()*98-49;if(Math.abs(x-riverX(z))>7&&Math.abs(z-roadZ(x))>6&&!(x>2&&z>10))rock(x,z,.25+rand()*.55);}
-  function tree(x:number,z:number,size:number,pine=false){const y=groundHeight(x,z);cylinder(trunk,x,y+size*.5,z,size*.085,size);
-    if(pine){for(let k=0;k<4;k++){const h=size*(1.0-k*.15),r=size*(.43-k*.075),cy=y+size*(.55+k*.23);add(new T.ConeGeometry(r,h,9),leaves,x,cy,z);snowCap(new T.ConeGeometry(r*.89,h*.84,9),x,cy+h*.12,z,1,1,1);}}
-    else{for(let k=0;k<9;k++){const a=k*2.399,rad=k===0?0:size*.3,cx=x+Math.cos(a)*rad,cz=z+Math.sin(a)*rad,cy=y+size*(.96+(k%3)*.13),r=size*(.32+rand()*.08);add(new T.IcosahedronGeometry(r,2),leaves,cx,cy,cz,1,.95,1);snowCap(new T.SphereGeometry(r,7,4,0,Math.PI*2,0,Math.PI*.43),cx,cy+.06,cz,1,1,1);}}
-  }
+  const sharedKit=createMiniatureKit();
+  function kitObject(name:string,x:number,y:number,z:number,scale=1){for(const part of sharedKit.variants.get(name)!){const geo=part.geometry.clone();geo.scale(scale,scale,scale);geo.translate(x,y,z);if(part.snow)snowPieces.push(geo);else{const list=batches.get(part.material)??[];list.push(geo);batches.set(part.material,list);}}}
+
+  function tree(x:number,z:number,size:number,pine=false){kitObject(pine?'pine':'tree',x,groundHeight(x,z),z,size/4);}
   for(let x=-49;x<-29;x+=4.5)for(let z=-48;z<42;z+=4.6){const tx=x+rand()*2,tz=z+rand()*2;if(Math.abs(tz-roadZ(tx))>6&&Math.abs(tx-riverX(tz))>8)tree(tx,tz,3.4+rand()*1.8,rand()<.25);}
   for(let i=0;i<42;i++){const x=rand()*95-47,z=rand()*94-47;if(Math.abs(x-riverX(z))<7||Math.abs(z-roadZ(x))<5||x>0&&z>8||x>8&&x<30&&z<2)continue;tree(x,z,2+rand()*2,rand()<.4);}
   // Five modular building silhouettes share roof/wall materials and small trim parts.
-  function building(b:typeof townSites[number]){const {x,z,w,d,h,type}=b,y=groundHeight(x,z);box(stone,x,y+.22,z,w+.45,.45,d+.45);box(walls,x,y+h/2+.4,z,w,h,d);
-    const gable=(cx:number,cz:number,width:number,depth:number,baseY:number,rise:number)=>{const shape=new T.Shape();shape.moveTo(-width/2,0);shape.lineTo(0,rise);shape.lineTo(width/2,0);shape.closePath();const g=new T.ExtrudeGeometry(shape,{depth,bevelEnabled:false});g.translate(0,0,-depth/2);add(g,roof,cx,baseY,cz);
-      for(const side of [-1,1]){const snowG=new T.PlaneGeometry(Math.hypot(width/2,rise),depth+.12);snowG.rotateX(-Math.PI/2);snowG.rotateZ(-side*Math.atan2(rise,width/2));snowG.translate(cx+side*width/4,baseY+rise/2+.08,cz);snowPieces.push(snowG);}}
-    if(type==='factory')for(let i=0;i<3;i++)gable(x-w/2+w/6+i*w/3,z,w/3+.12,d+.5,y+h+.4,1.1);else gable(x,z,w+.7,d+.7,y+h+.4,type==='hall'?2.7:1.8);
-    for(const side of [-1,1]){box(trim,x+side*(w/2-.13),y+h/2+.4,z,.23,h,d+.03);for(let j=0;j<3;j++){const wx=x-w*.32+j*w*.32;box(trim,wx,y+h*.60,z+side*(d/2+.04),.98,1.4,.12);box(glass,wx,y+h*.60,z+side*(d/2+.12),.72,1.13,.05);box(trim,wx,y+h*.60,z+side*(d/2+.16),.06,1.1,.04);}}
-    box(wood,x,y+1.0,z+d/2+.14,1.2,1.9,.2);box(trim,x,y+.12,z+d/2+.65,1.8,.22,1.1);
-    box(walls,x+w*.28,y+h+1.7,z-d*.2,.66,2.5,.72);box(stone,x+w*.28,y+h+3,z-d*.2,.83,.18,.88);
-    if(type==='hall'){box(walls,x-w*.28,y+h+1.5,z+d*.1,2.1,3.2,2.2);gable(x-w*.28,z+d*.1,2.5,2.6,y+h+3.1,1.7);add(new T.CylinderGeometry(.46,.46,.1,20),brass,x-w*.28,y+h+2.3,z+d*.1+1.15,1,1,1,0);}
-    if(type==='shop'){for(let i=0;i<7;i++)box(i%2?trim:mat('#9b5544'),x-w*.4+i*w*.133,y+2.3,z+d/2+1,w*.133,.15,1.8);for(const side of [-1,1])box(wood,x+side*w*.45,y+1.1,z+d/2+1.7,.13,2.2,.13);}
-  }
-  townSites.forEach(building);
+  townSites.forEach(b=>kitObject(b.type,b.x,groundHeight(b.x,b.z),b.z));
   // Industrial fittings, yard barrels and fenced crop rows add localized detail.
   const fy=groundHeight(35,16);cylinder(walls,38,fy+4.1,17,1,8);cylinder(brass,38,fy+8.1,17,1.2,.3);cylinder(brass,34,fy+1.2,17,1.3,2.4);box(wood,34,fy+.2,17,3.4,.4,3.4);
   for(let i=0;i<9;i++){const x=29+(i%3)*.9,z=37+Math.floor(i/3)*.9,y=groundHeight(x,z);cylinder(wood,x,y+.45,z,.35,.9);cylinder(brass,x,y+.72,z,.36,.06);}
@@ -110,7 +101,7 @@ export function referenceScene(host:HTMLElement, report:(stats:ReferenceStats)=>
   fence(10,-17,27,-17);fence(27,-17,27,-1);fence(10,-17,10,-1);fence(10,-1,27,-1);
   // Merge static pieces by material to keep this detailed scene inexpensive to submit.
   for(const [material,geometries]of batches){const normalized=geometries.map(g=>g.index?g.toNonIndexed():g);const merged=mergeGeometries(normalized,false)!;const mesh=new T.Mesh(merged,material);mesh.castShadow=true;mesh.receiveShadow=true;detail.add(mesh);new Set([...geometries,...normalized]).forEach(g=>g.dispose());}
-  const snowGeometry=mergeGeometries(snowPieces,false)!;const snowMesh=new T.Mesh(snowGeometry,snowMat);snowMesh.castShadow=true;snowMesh.receiveShadow=true;snow.add(snowMesh);snowPieces.forEach(g=>g.dispose());
+  const normalizedSnow=snowPieces.map(g=>g.index?g.toNonIndexed():g);const snowGeometry=mergeGeometries(normalizedSnow,false)!;normalizedSnow.forEach(g=>g.dispose());const snowMesh=new T.Mesh(snowGeometry,snowMat);snowMesh.castShadow=true;snowMesh.receiveShadow=true;snow.add(snowMesh);snowPieces.forEach(g=>g.dispose());
   const rig=bakeInfantry(0),troopMat=new T.MeshStandardMaterial({vertexColors:true,roughness:.9}),troops=new T.Group();scene.add(troops);
   const unitPositions=[new T.Vector3(1,groundHeight(1,8),8),new T.Vector3(5,groundHeight(5,10),10)];
   for(let squad=0;squad<2;squad++)for(let i=0;i<6;i++){const root=new T.Group();root.position.copy(unitPositions[squad]).add(new T.Vector3((i%3)*.6,0,Math.floor(i/3)*.65));root.scale.setScalar(.55);rig.parts.forEach((part,k)=>{const mesh=new T.Mesh(part.geometry,troopMat);mesh.matrix.fromArray(rig.walk[0][k]);mesh.matrixAutoUpdate=false;mesh.castShadow=true;root.add(mesh);});troops.add(root);}
@@ -128,5 +119,5 @@ export function referenceScene(host:HTMLElement, report:(stats:ReferenceStats)=>
   function focus(mode:'scene'|'town'|'bridge'){const target=mode==='town'?new T.Vector3(20,0,24):mode==='bridge'?new T.Vector3(bridgeX,0,bridgeZ):new T.Vector3(0,0,0);controls.target.copy(target);camera.position.copy(target).add(new T.Vector3(150,150,150));camera.zoom=mode==='scene'?1:mode==='town'?2.4:3.2;camera.updateProjectionMatrix();controls.update();}
   function resize(){const {width,height}=host.getBoundingClientRect();renderer.setSize(width,height);const aspect=width/height;camera.left=-65*aspect;camera.right=65*aspect;const span=Math.max(65,80/aspect);camera.left=-span*aspect;camera.right=span*aspect;camera.top=span;camera.bottom=-span;camera.updateProjectionMatrix();}const observer=new ResizeObserver(resize);observer.observe(host);resize();focus('scene');
   let raf=0,last=performance.now(),frames=0;const render=()=>{if(disposed)return;controls.update();const now=performance.now();shimmerMat.opacity=.23+Math.sin(now*.0006)*.035;if(!document.hidden){renderer.render(scene,camera);frames++;}if(now-last>1500){report({fps:Math.round(frames*1000/(now-last)),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures});last=now;frames=0;}raf=requestAnimationFrame(render);};render();
-  return {configure,focus,select,dispose(){disposed=true;cancelAnimationFrame(raf);observer.disconnect();controls.dispose();window.removeEventListener('keydown',key);renderer.domElement.removeEventListener('pointerdown',down);renderer.domElement.removeEventListener('pointermove',move);renderer.domElement.removeEventListener('pointerup',up);renderer.domElement.removeEventListener('pointercancel',up);marquee.remove();const geos=new Set<T.BufferGeometry>(),mats=new Set<T.Material>();scene.traverse(o=>{if(o instanceof T.Mesh||o instanceof T.LineSegments){geos.add(o.geometry);(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>mats.add(m));}});geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());renderer.dispose();renderer.domElement.remove();}};
+  return {configure,focus,select,dispose(){disposed=true;cancelAnimationFrame(raf);observer.disconnect();controls.dispose();window.removeEventListener('keydown',key);renderer.domElement.removeEventListener('pointerdown',down);renderer.domElement.removeEventListener('pointermove',move);renderer.domElement.removeEventListener('pointerup',up);renderer.domElement.removeEventListener('pointercancel',up);marquee.remove();const geos=new Set<T.BufferGeometry>(),mats=new Set<T.Material>();scene.traverse(o=>{if(o instanceof T.Mesh||o instanceof T.LineSegments){geos.add(o.geometry);(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>mats.add(m));}});geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());sharedKit.dispose();renderer.dispose();renderer.domElement.remove();}};
 }

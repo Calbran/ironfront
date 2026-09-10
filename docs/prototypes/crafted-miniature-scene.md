@@ -17,3 +17,5 @@ Typecheck and production build pass. `scripts/reference-preview-browser.ts` chec
 This is a first working art-quality reference, still visibly simpler than the concept illustration. Trees, rocks and surface shading need further refinement. River motion is only a subtle ripple-opacity effect; there is no fluid simulation. Terrain is authored using analytic height functions, not connected to generated drainage. Snow caps are geometric approximations, not a weather system. Strategy colors are illustrative. No movement, collision, cover, capture or persistence rules change. The chosen reference troops are static and do not receive orders. There is no campaign-wide asset placement or LOD integration yet.
 
 Next decision: review composition, scale, material character and seasonal coverage here, then adapt approved pieces into the existing generator instead of copying this fixed layout across the continent.
+
+Building and tree factories are now shared with the [world stress test](world-performance.md). The reference scene still batches its static placements. This integration does not yet extend the authored terrain/water treatment to generated worlds.

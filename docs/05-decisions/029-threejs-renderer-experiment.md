@@ -17,3 +17,5 @@ A standalone `/three-preview.html` entry reuses generated world data and existin
 The user requested restoration of Pixi interactions. The experiment now supports friendly generated-army selection and a manual strategy mode following the existing control conventions. This remains a read-only generated preview, not live campaign command integration.
 
 The user approved building one crafted-miniature reference scene before extending the art across the generated world. `/reference-preview.html` implements that bounded summer/winter study. Its final art quality and adoption into campaign generation remain subject to review; see the scene notes for limitations.
+
+The user accepted the reference scene as sufficient for now and requested scaling/performance work before further art detail. Implemented shared building/tree assets, spatial instance chunks, zoom-based detail and synthetic whole-world benchmarks. No minimum hardware or campaign-performance guarantee has been accepted.

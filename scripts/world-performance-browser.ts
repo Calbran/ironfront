@@ -1,0 +1,34 @@
+import {chromium} from 'playwright';
+import {mkdir,writeFile} from 'node:fs/promises';
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH??'/Users/brutus-mac/Library/Caches/ms-playwright/chromium-1228/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'});
+const page=await browser.newPage({viewport:{width:1440,height:960},deviceScaleFactor:1});const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://127.0.0.1:5187/three-preview.html');await page.waitForFunction(()=>!!window.__worldStudy,{timeout:120000});
+await mkdir('/private/tmp/ironfront-world-performance',{recursive:true});
+const gpu=await page.evaluate(()=>{const gl=document.querySelector('canvas')!.getContext('webgl2');const ext=gl?.getExtension('WEBGL_debug_renderer_info');return ext?gl!.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unavailable';});
+const size=await page.evaluate(()=>window.__worldSize),results:unknown[]=[];
+async function run(name:string,view:'ground'|'town'|'continent'|'regional',load:number,battle=false,pan=false,full=false){
+ await page.evaluate(({view,load,battle,full})=>{window.__worldStudy!.setLoad(load,battle);window.__worldStudy!.setFullDetail(full);window.__worldStudy!.view(view);},{view,load,battle,full});
+ await page.waitForTimeout(2000);
+ const result=await page.evaluate(async({pan})=>{let id:number|undefined;if(pan)id=window.setInterval(()=>window.__worldStudy!.pan(4,1),50);try{return await window.__worldStudy!.benchmark(4000);}finally{clearInterval(id);}},{pan});
+ results.push({name,...result as object});console.log(JSON.stringify({name,...result as object}));
+ await page.screenshot({path:`/private/tmp/ironfront-world-performance/${name}.png`});
+}
+await run('tactical-2000','ground',2000);
+await run('regional-2000','regional',2000);
+await run('continent-8000','continent',8000);
+await run('pan-8000','ground',8000,false,true);
+await run('battle-2000','ground',2000,true);
+await run('battle-8000','town',8000,true);
+await page.evaluate(()=>window.__worldStudy!.configure({strategy:false,textures:false,snow:true,sprites:false,borders:false,motion:true,shadows:true}));
+await run('winter-battle-8000','town',8000,true);
+await page.evaluate(()=>window.__worldStudy!.configure({strategy:false,textures:false,snow:false,sprites:false,borders:false,motion:true,shadows:true}));
+const client=await page.context().newCDPSession(page);await client.send('Emulation.setCPUThrottlingRate',{rate:4});
+await run('cpu4x-pan-8000','ground',8000,false,true);
+await run('cpu4x-battle-8000','town',8000,true);
+await client.send('Emulation.setCPUThrottlingRate',{rate:1});
+await run('continent-full-detail','continent',0,false,false,true);
+await page.evaluate(()=>{window.__worldStudy!.setFullDetail(false);window.__worldStudy!.view('ground');});await page.waitForTimeout(5000);
+await run('return-tactical','ground',2000);
+await page.setViewportSize({width:390,height:844});await run('phone-viewport','ground',2000);
+const report={size,errors,environment:{gpu,viewport:'1440x960, DPR1 (last case390x844)',browser:await browser.version(),note:'Local headless Chrome. CPU4x is a CPU approximation, not a weaker GPU/device. Frame times include requestAnimationFrame pacing; geometryMiB excludes textures/driver buffers. Not a live campaign.'},results};
+await writeFile('/private/tmp/ironfront-world-performance/results.json',JSON.stringify(report,null,2));console.log(JSON.stringify({size,errors}));await browser.close();if(errors.length)process.exitCode=1;
