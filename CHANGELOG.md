@@ -1,5 +1,12 @@
 # Changelog
 
+## Experimental branch — settlement patterns and road entrances
+
+- Attempt terrain-aware plans across preview settlements, with farming/riverside/industrial patterns and size-dependent density.
+- Record regional-road entrances, constrain main streets to existing road segments and keep neighboring planned lots apart.
+- Retry bounded dry centers before using a labeled legacy fallback; expose rollout counts and pattern labels in the preview.
+- Extend pattern, frontage, entrance and multi-town overlap checks, with repeat-seed audits and browser captures.
+
 ## Experimental branch — terrain-aware town generation
 
 - Plan one riverside town from existing road access, connected streets, safe lots and street-facing model roles.

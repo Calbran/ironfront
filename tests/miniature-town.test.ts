@@ -15,7 +15,7 @@ region.polygon = [
   [400, 400],
   [-400, 400],
 ];
-region.contours = [region.polygon as [number,number][]];
+region.contours = [region.polygon as [number, number][]];
 region.mountainObstacles = [];
 const site = {
   id: "study",
@@ -76,4 +76,36 @@ test("unbuildable terrain produces no town instead of invalid lots", () => {
   const blocked = structuredClone(world);
   blocked.regions[0].terrain = "mountains";
   assert.equal(planMiniatureTown(blocked, 0, site, roads, rivers), null);
+});
+
+test("patterns and settlement size affect density and roles, with an explicit regional entrance", () => {
+  const w = structuredClone(world);
+  w.regions[0].building = null;
+  w.regions[0].landUse = "agricultural";
+  const small = planMiniatureTown(w, 0, { ...site, size: "hamlet" }, roads, []);
+  const large = planMiniatureTown(w, 0, { ...site, size: "city" }, roads, []);
+  assert(small && large);
+  assert.equal(large.pattern, "farming");
+  assert(large.buildings.length > small.buildings.length);
+  assert(!large.buildings.some((b) => b.model === "factory"));
+  assert.equal(large.entrance.point.y, 0);
+  assert.equal(large.entrance.from, "a");
+  assert.equal(large.entrance.to, "b");
+  assert.deepEqual(large.entrance.point, large.plaza);
+  w.regions[0].building = "factory";
+  const industrial = planMiniatureTown(
+    w,
+    0,
+    { ...site, size: "city" },
+    roads,
+    [],
+  );
+  assert(industrial);
+  assert.equal(industrial.pattern, "industrial");
+  assert(industrial.buildings.filter((b) => b.model === "factory").length >= 2);
+  w.regions[0].building = null;
+  assert.equal(
+    planMiniatureTown(w, 0, site, roads, rivers)?.pattern,
+    "riverside",
+  );
 });

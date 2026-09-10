@@ -61,3 +61,23 @@ The following continuation was proposed, but has not yet been authorized for imp
 4. Add door paths, courtyards, walls, fences and work yards.
 
 The recommended first increment combines settlement patterns with regional-road integration. Before broad adoption, check several seeds for disconnected streets, overlapping lots and unsuitable terrain, then repeat large-world rendering measurements. Continuous-slope handling, full Pixi interaction parity and real minimum-device validation remain separate outstanding work.
+
+## Multi-settlement patterns and regional entrances
+
+The user authorized continuing planner development. The preview now attempts a plan for every settlement, rather than only the art-tour town. Planned settlements use one of three provisional patterns: riverside streets with bank clearance; farming layouts with wider lot spacing and fewer side branches; industrial layouts with a larger share of workshop models. Regional factory presence and highland town size select industrial treatment; proximity to water selects riverside treatment; other eligible sites receive farming treatment. This is cosmetic classification, not a new economy rule.
+
+Settlement size sets search radius, street length and building caps (4/8/12/18/24 for hamlet through metropolis). A hamlet needs two valid lots; larger settlements need four. Each site can try up to eight separated center positions before retaining its legacy layout. The minimum-distance rule between neighboring site domains keeps independently planned model envelopes from overlapping across towns.
+
+Each town records the regional road it joins and its exact entrance point. Main street extensions follow that road's current segment and stop at its bends; secondary streets grow from the connected entrance. Existing regional paths continue beyond those bends and provide the existing bridge approaches. New bridge creation and full street-network rerouting are not included. The selector identifies each pattern or legacy fallback and shows total planned/fallback counts. All planned towns focus their own center; only the art-tour region currently has sculpted detail.
+
+Tests now cover pattern roles, settlement-size density and an entrance lying on the connected regional road, in addition to the prior dry-footprint, frontage, overlap and determinism checks. The repeat-seed audit additionally checks model-envelope overlap between independently planned towns. `scripts/town-patterns-browser.ts` captures all three patterns and winter. Broader adoption remains conservative: legacy fallbacks are explicitly retained, not reported as migrated.
+
+### Pattern rollout measurements
+
+Final repeated generation audits matched deterministically and found no model-envelope overlaps between planned towns. Meridian/4 planned 30 of 64 settlements (11 riverside, 6 industrial, 13 farming) in 1,168 ms; Atlas/4 planned 49 of 74 (14/16/19) in 2,203 ms; Meridian/8 planned 43 of 82 (17/12/14) in 2,638 ms. Remaining sites keep legacy layouts. Whole-world planning itself took 49–79 ms. Density caps are upper bounds: terrain and neighboring settlements can produce fewer buildings, including sparse large settlements. See [pattern generation results](town-pattern-generation-results.json).
+
+Browser captures verified Marshford/riverside, Southwick/farming and Kestrelford/industrial, including winter, without page errors. The next planner improvements should address legacy fallback causes and richer street networks before adding unconstrained density.
+
+The repeated 12-case full-world rendering benchmark passed with no page errors or sampled frames above 33.4 ms. Normal-view p95 intervals were 17.5–17.7 ms; the CPU4x concentrated 8,000-soldier case reached p95 17.9 ms and p99 26.5 ms. These are local headless measurements with synthetic soldiers, not an 8,000-squad server test or real phone certification. See [rendering results](town-pattern-rendering-results.json). Typecheck and production build passed; the existing Vite large-bundle advisory remains.
+
+Final regression run: all 109 tests passed. The existing browser runner also passed selection, strategy, Pixi/Three switching, phone-width overflow and Atlas regeneration without page errors.

@@ -232,7 +232,7 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
     }
     else if(studyCity)focus(studyCity.feature.x*S,studyCity.feature.y*S,mode==="ground"?28:mode==="regional"?300:85);
   }
-  function chooseCity(id:string){const city=data.cities.find(c=>c.feature.id===id);if(!city)return;studyCity=city;actorTime=0;select(city.region);onSelect(city.region);if(city.feature.id===data.studyCityId)focus(city.layout.plaza.x*S,city.layout.plaza.y*S,48);else view("town");}
+  function chooseCity(id:string){const city=data.cities.find(c=>c.feature.id===id);if(!city)return;studyCity=city;actorTime=0;select(city.region);onSelect(city.region);if("pattern" in city.layout)focus(city.layout.plaza.x*S,city.layout.plaza.y*S,Math.max(48,Math.sqrt(city.layout.buildings.length)*15));else view("town");}
   function configure(next:StudySettings){
     settings={...next};borderGroup.visible=settings.borders||settings.strategy;modelBuildings.visible=!settings.strategy&&!settings.sprites;spriteBuildings.visible=!settings.strategy&&settings.sprites;
     for(const mesh of terrainMeshes)mesh.material=settings.strategy?politicalMats.get(mesh.userData.region)!:originalGrounds.get(mesh)!;

@@ -1,0 +1,98 @@
+[
+  {
+    "seed": "Meridian",
+    "seats": 4,
+    "regions": 96,
+    "settlements": 64,
+    "town": "Marshford",
+    "townSummary": {
+      "planned": 30,
+      "fallback": 34,
+      "patterns": {
+        "riverside": 11,
+        "industrial": 6,
+        "farming": 13
+      }
+    },
+    "buildings": 6,
+    "streets": 3,
+    "totalMs": 1168.024958,
+    "timings": {
+      "world": 340.087917,
+      "regionalRoads": 362.91104099999995,
+      "riverPresentation": 0.7887079999999287,
+      "terrainTown": 48.54095799999993,
+      "otherTownLayouts": 13.948375000000055,
+      "legacyRiverClearance": 15.18120799999997,
+      "fields": 267.069625,
+      "vegetation": 23.98941600000012,
+      "sceneryClearance": 95.33337499999993
+    },
+    "repeatTotalMs": 1126.907333,
+    "deterministic": true
+  },
+  {
+    "seed": "Atlas",
+    "seats": 4,
+    "regions": 96,
+    "settlements": 74,
+    "town": "Ironhaven",
+    "townSummary": {
+      "planned": 49,
+      "fallback": 25,
+      "patterns": {
+        "riverside": 14,
+        "industrial": 16,
+        "farming": 19
+      }
+    },
+    "buildings": 4,
+    "streets": 3,
+    "totalMs": 2203.140667,
+    "timings": {
+      "world": 545.1709169999999,
+      "regionalRoads": 854.7103339999999,
+      "riverPresentation": 1.06775000000016,
+      "terrainTown": 74.03983299999982,
+      "otherTownLayouts": 12.486167000000023,
+      "legacyRiverClearance": 3.191291000000092,
+      "fields": 370.52537500000017,
+      "vegetation": 29.657750000000306,
+      "sceneryClearance": 312.2352499999997
+    },
+    "repeatTotalMs": 2175.0427919999993,
+    "deterministic": true
+  },
+  {
+    "seed": "Meridian",
+    "seats": 8,
+    "regions": 192,
+    "settlements": 82,
+    "town": "Palevale",
+    "townSummary": {
+      "planned": 43,
+      "fallback": 39,
+      "patterns": {
+        "industrial": 12,
+        "riverside": 17,
+        "farming": 14
+      }
+    },
+    "buildings": 4,
+    "streets": 2,
+    "totalMs": 2638.271541000001,
+    "timings": {
+      "world": 720.8688339999999,
+      "regionalRoads": 518.2432919999992,
+      "riverPresentation": 1.6042500000003201,
+      "terrainTown": 79.05833299999995,
+      "otherTownLayouts": 31.423125000000255,
+      "legacyRiverClearance": 31.061792000000423,
+      "fields": 863.215791999999,
+      "vegetation": 21.166708999999173,
+      "sceneryClearance": 371.54312500000015
+    },
+    "repeatTotalMs": 2793.304083000001,
+    "deterministic": true
+  }
+]

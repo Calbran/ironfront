@@ -33,3 +33,7 @@ Reviewed authoritative geography and preview dependencies. Implemented a pure bo
 ## Documentation follow-up
 
 Verified implementation, test and performance records after the user asked whether everything was documented. Recorded the user’s acceptance of the current baseline and the proposed next steps separately from authorized work in the town-generation audit and decision 029.
+
+## Multi-settlement planner continuation
+
+Authorized continuation adds farming/riverside/industrial patterns, size-based density, explicit regional entrances, bounded candidate retries and neighboring-site lot clearance. The worker attempts all settlements and labels fallbacks. Expanded tests and browser/audit scripts cover patterns, entrances, deterministic seeds and independent town overlap.

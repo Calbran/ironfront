@@ -17,6 +17,7 @@ export interface MiniatureData {
   generatedMs: number;
   riverPaths?: [number,number][][];
   studyCityId?:string;
+  townSummary?:{planned:number;fallback:number;patterns:Record<string,number>};
   timings?:Record<string,number>;
 }
 export function initialCity(data: MiniatureData): StudyCity | undefined {

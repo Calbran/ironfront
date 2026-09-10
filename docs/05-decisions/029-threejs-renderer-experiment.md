@@ -25,3 +25,5 @@ The user authorized live campaign integration and a 30-minute real-server soak, 
 The user approved a terrain-aware riverside town and a review of generator ordering/efficiency. One experimental town now plans connected streets and street-facing lots from existing routes and terrain constraints. Ordering, model dimensions and town tuning remain provisional; continuous slope handling and campaign-wide adoption are not yet implemented.
 
 The user subsequently accepted the current town visually as a working baseline. Broader settlement patterns and regional-road integration are proposed next steps, not yet authorized implementation; see the town-generation audit.
+
+The user then authorized continuing development. Settlement-pattern expansion and regional-road entrances are now implemented in the preview with explicit legacy fallbacks. This supersedes their earlier proposed-only status; further asset-kit expansion and yard detail remain proposed.

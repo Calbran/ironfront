@@ -1,4 +1,4 @@
-import {landscapeClearance} from "../../../../packages/game-core/src/landscapeClearance";
+import { landscapeClearance } from "../../../../packages/game-core/src/landscapeClearance";
 import {
   createWorld,
   type World,
@@ -15,7 +15,7 @@ import type { MiniatureData } from "./miniatureData";
 export function buildMiniatureData(
   seed: string,
   suppliedWorld?: World,
-  seats=4,
+  seats = 4,
 ): MiniatureData {
   const started = performance.now(),
     timings: Record<string, number> = {};
@@ -38,13 +38,14 @@ export function buildMiniatureData(
     generatedMs: 0,
     timings,
   };
-  if(!suppliedWorld)stage("riverPresentation", () => presentationRivers(data));
+  if (!suppliedWorld)
+    stage("riverPresentation", () => presentationRivers(data));
   const sites = world.regions.flatMap((r) =>
     (r.features ?? [])
       .filter((f) => f.kind === "settlement")
       .map((feature) => ({ region: r.id, feature })),
   );
-  let planned: string | undefined;
+  const planned = new Set<string>();
   if (!suppliedWorld)
     stage("terrainTown", () => {
       const bridges = roads.flatMap((r) => r.bridges);
@@ -59,7 +60,11 @@ export function buildMiniatureData(
           ),
         }))
         .sort((a, b) => a.distance - b.distance);
-      for (const s of ranked.slice(0, 8)) {
+      const ordered = [
+        ...ranked,
+        ...sites.filter((s) => s.feature.size === "hamlet"),
+      ];
+      for (const s of ordered) {
         const layout = planMiniatureTown(
           world,
           s.region,
@@ -69,25 +74,37 @@ export function buildMiniatureData(
         );
         if (layout) {
           data.cities.push({ ...s, layout });
-          planned = s.feature.id;
-          data.studyCityId = planned;
-          break;
+          planned.add(s.feature.id);
+          data.studyCityId ??= s.feature.id;
         }
       }
     });
   stage("otherTownLayouts", () => {
     for (const s of sites)
-      if (s.feature.id !== planned)
+      if (!planned.has(s.feature.id))
         data.cities.push({
           ...s,
           layout: generateCityLayout(world, world.regions[s.region], s.feature),
         });
   });
+  if (!suppliedWorld) {
+    const patterns: Record<string, number> = {};
+    for (const c of data.cities) {
+      const pattern = (c.layout as typeof c.layout & { pattern?: string })
+        .pattern;
+      if (pattern) patterns[pattern] = (patterns[pattern] ?? 0) + 1;
+    }
+    data.townSummary = {
+      planned: planned.size,
+      fallback: sites.length - planned.size,
+      patterns,
+    };
+  }
   if (!suppliedWorld)
     stage("legacyRiverClearance", () =>
       clearRiverfrontBuildings({
         ...data,
-        cities: data.cities.filter((c) => c.feature.id !== planned),
+        cities: data.cities.filter((c) => !planned.has(c.feature.id)),
       }),
     );
   data.fields = stage("fields", () =>
@@ -114,7 +131,11 @@ export function buildMiniatureData(
       })),
     ),
   );
-  if(!suppliedWorld)stage("sceneryClearance",()=>{const clear=landscapeClearance(data.fields??[],roads,3);data.scenery=data.scenery.filter(p=>clear(p,p.width*.4));});
+  if (!suppliedWorld)
+    stage("sceneryClearance", () => {
+      const clear = landscapeClearance(data.fields ?? [], roads, 3);
+      data.scenery = data.scenery.filter((p) => clear(p, p.width * 0.4));
+    });
   data.generatedMs = performance.now() - started;
   return data;
 }
