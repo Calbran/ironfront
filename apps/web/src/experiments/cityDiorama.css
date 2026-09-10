@@ -1,2 +1,43 @@
-.city-study .views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-.city-study select{margin-left:auto;background:#32443a;color:#eae7d8;border:1px solid #65715d;padding:5px 8px;border-radius:3px}
+.city-study .views {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.city-study select {
+  margin-left: auto;
+  background: #32443a;
+  color: #eae7d8;
+  border: 1px solid #65715d;
+  padding: 5px 8px;
+  border-radius: 3px;
+}
+
+.city-study aside fieldset {
+  min-width: 0;
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid #65735e;
+}
+.city-study aside fieldset button {
+  display: block;
+  width: 100%;
+  margin: 5px 0;
+}
+.city-study aside fieldset output {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+
+@media (min-width: 701px) {
+  .city-study {
+    height: 100vh;
+    overflow: hidden;
+  }
+  .city-study aside {
+    position: fixed;
+    max-height: calc(100vh - 138px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}

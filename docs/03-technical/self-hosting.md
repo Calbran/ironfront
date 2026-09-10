@@ -8,6 +8,8 @@ Install Node.js 24.13+ or Node 25, then run npm install, npm run build, npm star
 
 After Tailscale is installed and authenticated on the host, `tailscale serve --bg 3000` makes the application available privately to the tailnet. For ordinary browser visitors outside it, `tailscale funnel --bg 3000` exposes the application publicly over HTTPS. Enable the corresponding tailnet policy/HTTPS requirements first. Use the production server, not Vite's development server.
 
+Temporary Vite previews require their exact Tailscale hostname in `server.allowedHosts`; otherwise Funnel reaches Vite but receives HTTP 403. The current local model-review Funnel proxies port 5181 at `brutus.tail250251.ts.net`. This preview route is public and lasts only while that Vite process is running.
+
 Funnel has fixed bandwidth limits and uses a ts.net domain. See [Serve](https://tailscale.com/docs/features/tailscale-serve) and [Funnel](https://tailscale.com/kb/1223/funnel). Neither feature creates in-game accounts. Initial invite-only playtests are the intended exposure level.
 
 ## Containers

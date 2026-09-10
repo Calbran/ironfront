@@ -85,7 +85,12 @@ export function bakeInfantry(team: number) {
       soldier,
     );
     head.position.y = 0.53;
-    const legs: {leg:THREE.Group;knee:THREE.Group;foot:THREE.Group;side:number}[] = [];
+    const legs: {
+      leg: THREE.Group;
+      knee: THREE.Group;
+      foot: THREE.Group;
+      side: number;
+    }[] = [];
     for (const side of [-1, 1]) {
       const leg = part(
         body,
@@ -195,8 +200,16 @@ export function bakeInfantry(team: number) {
       l.knee.rotation.x = kneeBend;
       l.foot.rotation.x = pitch - l.leg.rotation.x - l.knee.rotation.x;
     }
-    function animate(mode: "walk" | "aim", u: number, recoil = 0) {
-      const walking = mode === "walk",
+    function animate(
+      mode: "walk" | "run" | "aim",
+      u: number,
+      recoil = 0,
+      crouch = 0,
+      lean = 0,
+      reload = -1,
+    ) {
+      const running = mode === "run";
+      const walking = mode === "walk" || running,
         aiming = mode === "aim";
       const p = u * Math.PI * 2;
       const aim = aiming ? smooth((u - 0.1) / 0.5) : 0,
@@ -207,13 +220,21 @@ export function bakeInfantry(team: number) {
       body.position.y = walking
         ? -0.058 + 0.013 * Math.cos(p * 2)
         : -0.015 - 0.045 * brace;
-      hips.rotation.y = walking ? 0.065 * Math.sin(p) : -0.07 * brace;
+      body.position.y -= Math.min(crouch, walking ? 0.45 : 1) * 0.4;
+      if (running) body.position.y = -0.16 + 0.035 * Math.cos(p * 2);
+      hips.rotation.y = walking
+        ? (running ? 0.2 : 0.065) * Math.sin(p)
+        : -0.07 * brace;
       upper.rotation.set(
         walking ? 0.07 + 0.016 * Math.cos(p * 2) : 0.09 * aim + breath,
-        walking ? -0.11 * Math.sin(p) : -0.14 * aim,
-        walking ? 0.028 * Math.sin(p) : -0.025 * aim,
+        walking ? -(running ? 0.28 : 0.11) * Math.sin(p) : -0.14 * aim,
+        walking ? (running ? 0.07 : 0.028) * Math.sin(p) : -0.025 * aim,
       );
       upper.position.x = walking ? 0.018 * Math.sin(p) : 0.016 * brace;
+      upper.position.x += lean * 0.24;
+      upper.rotation.z -= lean * 0.22;
+      upper.rotation.x += crouch * 0.2 + (running ? 0.16 : 0);
+      if (running) upper.position.x += 0.025 * Math.sin(p);
       weapon.position.set(
         mix(0.03, 0.17, aim),
         mix(1.19, 1.43, aim) -
@@ -222,6 +243,14 @@ export function bakeInfantry(team: number) {
         mix(0.4, 0.35, aim),
       );
       weapon.rotation.set(0, mix(-0.14, -Math.PI / 2, aim), mix(-0.17, 0, aim));
+      if (running) {
+        weapon.position.y += 0.035 * Math.cos(p * 2);
+        weapon.position.z += 0.045 * Math.sin(p);
+        weapon.rotation.z += 0.045 * Math.sin(p);
+      }
+      const loading = reload >= 0 ? Math.sin(Math.PI * reload) ** 2 : 0;
+      weapon.position.y -= loading * 0.18;
+      weapon.rotation.z -= loading * 0.32;
       weapon.updateMatrix();
       for (const rig of armRig) {
         const side = rig.side,
@@ -238,6 +267,13 @@ export function bakeInfantry(team: number) {
           0,
         ).applyMatrix4(weapon.matrix);
         grip.y += 1.04;
+        if (side < 0 && loading > 0) {
+          // Support hand dips to the ammunition pouch and returns to the breech.
+          const fetch = Math.sin(Math.PI * Math.min(1, reload * 2)) ** 2;
+          grip.x = mix(grip.x, -0.24, loading);
+          grip.y = mix(grip.y, 1.19 - fetch * 0.34, loading);
+          grip.z = mix(grip.z, 0.27, loading);
+        }
         const hand = [grip.x, grip.y, grip.z];
         rig.shoulder.position.set(shoulder[0], shoulder[1], shoulder[2]);
         setLink(rig.upper, shoulder, elbow);
@@ -248,7 +284,23 @@ export function bakeInfantry(team: number) {
         let z = leg.side * 0.1 * brace,
           lift = 0,
           pitch = 0;
-        if (walking) {
+        if (running) {
+          const cycle = (((u + (leg.side < 0 ? 0.5 : 0)) % 1) + 1) % 1;
+          // Contact/down/push occupy 40%; heel recovery and airborne reach the rest.
+          if (cycle < 0.4) {
+            z = 0.416 - cycle * 2.08;
+            pitch =
+              -0.14 * (1 - smooth(cycle / 0.12)) +
+              0.38 * smooth((cycle - 0.27) / 0.13);
+          } else {
+            const swing = (cycle - 0.4) / 0.6;
+            z = mix(-0.416, 0.416, smooth(swing));
+            lift = 0.28 * Math.sin(Math.PI * swing);
+            pitch =
+              mix(0.38, -0.14, smooth(swing)) -
+              0.45 * Math.sin(Math.PI * swing);
+          }
+        } else if (walking) {
           const cycle = (u + (leg.side < 0 ? 0.5 : 0)) % 1;
           if (cycle < 0.6) {
             const t = cycle / 0.6;
@@ -281,14 +333,22 @@ export function bakeInfantry(team: number) {
   }
 
   const rig = createSoldier(team);
-  const capture = (mode: "walk" | "aim", phase: number, recoil = 0) => {
-    rig.animate(mode, phase, recoil);
+  const capture = (
+    mode: "walk" | "run" | "aim",
+    phase: number,
+    recoil = 0,
+    crouch = 0,
+    lean = 0,
+    reload = -1,
+  ) => {
+    rig.animate(mode, phase, recoil, crouch, lean, reload);
     rig.soldier.updateMatrixWorld(true);
     return entries.map((e) => new Float32Array(e.joint.matrixWorld.elements));
   };
   const walk = Array.from({ length: 65 }, (_, i) => capture("walk", i / 64));
   const aim = Array.from({ length: 5 }, (_, i) => capture("aim", 0.6, i / 4));
   return {
+    pose: capture,
     parts: entries.map((e) => ({ key: e.key, geometry: e.geometry })),
     walk,
     aim,

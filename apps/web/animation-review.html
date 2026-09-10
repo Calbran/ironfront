@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ironfront · Animation review</title>
+  </head>
+  <body>
+    <header>
+      <strong>IRONFRONT · ANIMATION REVIEW</strong
+      ><label
+        >Focus
+        <select id="focus">
+          <option value="all">Whole diorama</option>
+          <option value="rifle">Infantry & cover</option>
+          <option value="guards">Armored Guards</option>
+          <option value="lmg">LMG squad</option>
+          <option value="antitank">Anti-tank rocket team</option>
+          <option value="engineers">Engineers</option>
+          <option value="armor">Tanks & artillery</option>
+          <option value="air">Airship & gunship</option>
+          <option value="jeep">Steam jeep</option>
+        </select></label
+      ><button id="reset-camera">Reset camera</button>
+    </header>
+    <main id="stage" aria-label="Animated military diorama"></main>
+    <footer>
+      <div class="controls">
+        <button id="play" aria-pressed="true">Pause</button
+        ><button id="restart">Restart</button
+        ><button id="step">Step 1/30s</button
+        ><label
+          >Speed
+          <select id="speed">
+            <option value="0.25">¼×</option>
+            <option value="0.5">½×</option>
+            <option selected value="1">1×</option>
+          </select></label
+        ><label
+          >Infantry clip
+          <select id="clip">
+            <option value="sequence">Full cover sequence</option>
+            <option value="walk">Walk</option>
+            <option value="run">Run</option>
+            <option value="aim">Aim</option>
+          <option value="fire">Fire</option>
+          <option value="reload">Reload</option>
+            <option value="crouch">Crouch</option>
+            <option value="over">Rise over cover</option>
+            <option value="around">Step around cover</option>
+            <option value="lean">Lean out</option>
+          </select></label
+        >
+      </div>
+      <div class="timeline">
+        <output id="time">0.00 / 24 s</output
+        ><input
+          id="timeline"
+          aria-label="Animation time"
+          type="range"
+          min="0"
+          max="23.999"
+          step="0.001"
+          value="0"
+        />
+      </div>
+      <div id="status" role="status">Loading review scene…</div>
+      <small
+        >Staged animation study · Original infantry scale · Drag to orbit /
+        scroll to zoom · No campaign simulation</small
+      >
+    </footer>
+    <script type="module" src="/src/prototypes/animationReview.ts"></script>
+  </body>
+</html>

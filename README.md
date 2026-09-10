@@ -36,6 +36,7 @@ This is an early persistent multiplayer proof, not the complete game. Authentica
 
 Pixi remains the default renderer. The repository also includes these development studies:
 
+- `/military-preview.html`: ten infantry-scaled military models with GLB export.
 - `/city-diorama.html`: dense district city (160 buildings by default); select 28 for the crafted neighborhood.
 - `/reference-preview.html`: crafted summer/winter art reference.
 - `/three-preview.html`: generated-world comparison and performance tools.

@@ -1,0 +1,91 @@
+{
+  "geometry": [
+    {
+      "name": "hall",
+      "full": 1276,
+      "low": 208
+    },
+    {
+      "name": "home",
+      "full": 968,
+      "low": 140
+    },
+    {
+      "name": "factory",
+      "full": 1032,
+      "low": 204
+    },
+    {
+      "name": "shop",
+      "full": 1292,
+      "low": 140
+    },
+    {
+      "name": "urbanBuild",
+      "full": 1044,
+      "low": 144
+    },
+    {
+      "name": "urbanHome",
+      "full": 1788,
+      "low": 204
+    },
+    {
+      "name": "urbanRed",
+      "full": 1963,
+      "low": 343
+    },
+    {
+      "name": "urbanShop",
+      "full": 1896,
+      "low": 204
+    },
+    {
+      "name": "urbanCorner",
+      "full": 3912,
+      "low": 204
+    },
+    {
+      "name": "urbanTenement",
+      "full": 2364,
+      "low": 276
+    },
+    {
+      "name": "warehouse",
+      "full": 1704,
+      "low": 228
+    },
+    {
+      "name": "mill",
+      "full": 2388,
+      "low": 768
+    },
+    {
+      "name": "boilerHouse",
+      "full": 912,
+      "low": 804
+    },
+    {
+      "name": "commercialTower",
+      "full": 7447,
+      "low": 1171
+    }
+  ],
+  "metrics": [
+    {
+      "view": "overview",
+      "buildings": 1024,
+      "units": 144,
+      "p50": 277.5,
+      "p95": 287.30000000074506,
+      "p99": 287.30000000074506,
+      "over33": 6,
+      "frames": 6,
+      "calls": 87,
+      "triangles": 708612,
+      "geometries": 85,
+      "textures": 5
+    }
+  ],
+  "errors": []
+}

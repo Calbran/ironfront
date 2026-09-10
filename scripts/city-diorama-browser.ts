@@ -1,11 +1,10 @@
 import { chromium } from "playwright";
 import { mkdir, writeFile } from "node:fs/promises";
-const out = "/private/tmp/ironfront-city-diorama";
+const out = process.env.CITY_REVIEW_DIR ?? ".impeccable/review/city-diorama";
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({
   headless: true,
-  executablePath:
-    "/Users/brutus-mac/Library/Caches/ms-playwright/chromium-1228/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+  executablePath: process.env.CHROMIUM_PATH,
 });
 try {
   const page = await browser.newPage({
@@ -17,7 +16,9 @@ try {
     if (m.type() === "error" && !m.text().includes("404"))
       errors.push(m.text());
   });
-  await page.goto("http://127.0.0.1:5187/city-diorama.html");
+  await page.goto(
+    `${process.env.CITY_TEST_URL ?? "http://127.0.0.1:5173"}/city-diorama.html`,
+  );
   await page.waitForFunction(() => !!window.__cityDiorama, { timeout: 60000 });
   await page.waitForTimeout(700);
   await page.screenshot({ path: out + "/city.png" });
@@ -26,6 +27,16 @@ try {
     await page.waitForTimeout(300);
     await page.screenshot({ path: `${out}/${view}.png` });
   }
+  const effects = await page.evaluate(() => window.__cityDiorama!.effects());
+  if (!effects.smokeSources || effects.particles > 72 || effects.lights !== 3)
+    throw new Error(`Invalid effects: ${JSON.stringify(effects)}`);
+  await page.getByLabel("Dusk lighting", { exact: true }).check();
+  await page.getByRole("button", { name: "capital", exact: true }).click();
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${out}/dusk.png` });
+  if (!(await page.evaluate(() => window.__cityDiorama!.effects().dusk)))
+    throw new Error("Dusk toggle did not update lighting");
+  await page.getByLabel("Dusk lighting", { exact: true }).uncheck();
   const results = [];
   for (const count of [128, 256, 512, 1024]) {
     await page
@@ -42,8 +53,18 @@ try {
       console.log(JSON.stringify(results.at(-1)));
     }
   }
-  await page.getByLabel("Buildings",{exact:true}).selectOption("256");
-  const cdp=await page.context().newCDPSession(page);await cdp.send("Emulation.setCPUThrottlingRate",{rate:4});await page.evaluate(()=>window.__cityDiorama!.focus("city"));await page.waitForTimeout(500);results.push({view:"city-cpu4x",...await page.evaluate(()=>window.__cityDiorama!.benchmark(4000)) as object});await cdp.send("Emulation.setCPUThrottlingRate",{rate:1});
+  await page.getByLabel("Buildings", { exact: true }).selectOption("256");
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  await page.evaluate(() => window.__cityDiorama!.focus("city"));
+  await page.waitForTimeout(500);
+  results.push({
+    view: "city-cpu4x",
+    ...((await page.evaluate(() =>
+      window.__cityDiorama!.benchmark(4000),
+    )) as object),
+  });
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
   await page.getByLabel("Buildings", { exact: true }).selectOption("160");
   await page.getByRole("button", { name: "capital", exact: true }).click();
   await page.getByLabel("Winter", { exact: true }).check();

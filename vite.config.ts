@@ -3,7 +3,10 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   root: "apps/web",
   plugins: [react()],
-  server: { proxy: { "/api": "http://127.0.0.1:3000" } },
+  server: {
+    allowedHosts: ["brutus.tail250251.ts.net"],
+    proxy: { "/api": "http://127.0.0.1:3000" },
+  },
   build: {
     outDir: "../../dist",
     emptyOutDir: true,
@@ -11,7 +14,10 @@ export default defineConfig({
       input: {
         main: "apps/web/index.html",
         jeep: "apps/web/jeep-preview.html",
+        military: "apps/web/military-preview.html",
+        animations: "apps/web/animation-review.html",
         three: "apps/web/three-preview.html",
+        seeds: "apps/web/city-seeds.html",
         city: "apps/web/city-diorama.html",
         reference: "apps/web/reference-preview.html",
       },

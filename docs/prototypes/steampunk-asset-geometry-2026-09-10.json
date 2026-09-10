@@ -1,0 +1,182 @@
+[
+  {
+    "name": "hall",
+    "full": 1276,
+    "low": 208
+  },
+  {
+    "name": "home",
+    "full": 968,
+    "low": 140
+  },
+  {
+    "name": "factory",
+    "full": 1032,
+    "low": 204
+  },
+  {
+    "name": "shop",
+    "full": 1292,
+    "low": 140
+  },
+  {
+    "name": "urbanBuild",
+    "full": 1044,
+    "low": 144
+  },
+  {
+    "name": "urbanHome",
+    "full": 1788,
+    "low": 204
+  },
+  {
+    "name": "urbanRed",
+    "full": 2143,
+    "low": 343
+  },
+  {
+    "name": "urbanShop",
+    "full": 1896,
+    "low": 204
+  },
+  {
+    "name": "urbanCorner",
+    "full": 2940,
+    "low": 204
+  },
+  {
+    "name": "urbanCornerLeft",
+    "full": 2940,
+    "low": 204
+  },
+  {
+    "name": "urbanTenement",
+    "full": 2364,
+    "low": 276
+  },
+  {
+    "name": "warehouse",
+    "full": 1704,
+    "low": 228
+  },
+  {
+    "name": "mill",
+    "full": 2388,
+    "low": 768
+  },
+  {
+    "name": "boilerHouse",
+    "full": 912,
+    "low": 804
+  },
+  {
+    "name": "commercialTower",
+    "full": 7447,
+    "low": 1171
+  },
+  {
+    "name": "urbanCourt",
+    "full": 1788,
+    "low": 204
+  },
+  {
+    "name": "workshopRow",
+    "full": 492,
+    "low": 132
+  },
+  {
+    "name": "commercialTowerCopper",
+    "full": 7284,
+    "low": 1308
+  },
+  {
+    "name": "commercialTowerClock",
+    "full": 5712,
+    "low": 168
+  },
+  {
+    "name": "commercialTowerIron",
+    "full": 7728,
+    "low": 336
+  },
+  {
+    "name": "commercialTowerCrown",
+    "full": 5832,
+    "low": 360
+  },
+  {
+    "name": "urbanMansard",
+    "full": 2052,
+    "low": 348
+  },
+  {
+    "name": "urbanGable",
+    "full": 1572,
+    "low": 228
+  },
+  {
+    "name": "urbanArcade",
+    "full": 2304,
+    "low": 204
+  },
+  {
+    "name": "urbanCopper",
+    "full": 2364,
+    "low": 564
+  },
+  {
+    "name": "urbanBay",
+    "full": 2448,
+    "low": 204
+  },
+  {
+    "name": "warehouseFoundry",
+    "full": 600,
+    "low": 312
+  },
+  {
+    "name": "warehouseEngine",
+    "full": 624,
+    "low": 300
+  },
+  {
+    "name": "workshopRowCanopy",
+    "full": 1008,
+    "low": 108
+  },
+  {
+    "name": "streetCarSaloon",
+    "full": 888,
+    "low": 108
+  },
+  {
+    "name": "streetCarVan",
+    "full": 888,
+    "low": 108
+  },
+  {
+    "name": "streetKiosk",
+    "full": 144,
+    "low": 36
+  },
+  {
+    "name": "streetClock",
+    "full": 780,
+    "low": 0
+  },
+  {
+    "name": "streetHydrant",
+    "full": 456,
+    "low": 0
+  },
+  {
+    "name": "streetBollard",
+    "full": 240,
+    "low": 0
+  },
+  {
+    "name": "streetBoiler",
+    "full": 552,
+    "low": 420
+  }
+]

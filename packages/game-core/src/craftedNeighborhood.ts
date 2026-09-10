@@ -13,7 +13,7 @@ export function planCraftedNeighborhood() {
   const streets: CityStreet[] = [
     {
       points: [
-        { x: -24, z: -27 },
+        { x: -24, z: -41 },
         { x: -24, z: 19 },
         { x: -24, z: 42 },
       ],
@@ -22,7 +22,7 @@ export function planCraftedNeighborhood() {
     },
     {
       points: [
-        { x: 24, z: -27 },
+        { x: 24, z: -41 },
         { x: 24, z: 19 },
         { x: 24, z: 42 },
       ],
@@ -54,6 +54,14 @@ export function planCraftedNeighborhood() {
       alley: false,
     },
   ];
+  streets.push({
+    points: [
+      { x: -24, z: -41 },
+      { x: 24, z: -41 },
+    ],
+    width: 3,
+    alley: false,
+  });
   for (const street of streets) {
     const points = street.points;
     street.points = [];
@@ -71,11 +79,14 @@ export function planCraftedNeighborhood() {
   }
   const lots: CityLot[] = [];
   const place = (p: CityLot) => {
+    p.fullEnvelope = true;
     if (
       lots.some((q) => lotsOverlap(p, q)) ||
       streets.some((s) => lotIntersectsStreet(p, s))
     )
-      throw new Error("Crafted block violates frontage clearance");
+      throw new Error(
+        "Crafted block violates frontage clearance " + JSON.stringify(p),
+      );
     const depth = (p.variant === "factory" ? 7 : 6) * p.scale;
     if (
       Math.abs(
@@ -104,13 +115,19 @@ export function planCraftedNeighborhood() {
     for (let i = 0; i < 7; i++)
       place({
         x: side * 30,
-        z: -24 + i * 6,
+        z: -26.4 + i * 6.4,
         angle: (-side * Math.PI) / 2,
         scale: 0.85,
         variant: i === 5 ? "shop" : "home",
       });
   for (let i = 0; i < 5; i++)
-    place({ x: -14 + i * 7, z: -25, angle: 0, scale: 0.85, variant: "shop" });
+    place({
+      x: -14 + i * 7,
+      z: -23.75,
+      angle: 0,
+      scale: 0.85,
+      variant: "shop",
+    });
   for (let i = 0; i < 4; i++)
     place({
       x: -17 + i * 11,
@@ -123,8 +140,8 @@ export function planCraftedNeighborhood() {
     for (let i = 0; i < 2; i++)
       place({
         x: side * (7 + i * 9),
-        z: 12,
-        angle: 0,
+        z: -35.25,
+        angle: Math.PI,
         scale: 0.8,
         variant: "shop",
       });

@@ -1,3 +1,9 @@
+import type { TerrainProfile } from "../../../../packages/game-core/src/combinedDistrict";
+import {
+  seedCases,
+  seedCaseOptions,
+  type SeedCase,
+} from "../../../../packages/game-core/src/citySeedAudit";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { cityDiorama } from "./cityDiorama";
@@ -11,7 +17,33 @@ declare global {
 function App() {
   const host = useRef<HTMLDivElement>(null),
     api = useRef<ReturnType<typeof cityDiorama>>(undefined);
+  const [unitStatus, setUnitStatus] =
+    useState<ReturnType<ReturnType<typeof cityDiorama>["testUnitState"]>>();
+  useEffect(() => {
+    const timer = window.setInterval(
+      () => setUnitStatus(api.current?.testUnitState()),
+      250,
+    );
+    return () => window.clearInterval(timer);
+  }, []);
+  const [tacticalResult, setTacticalResult] = useState("");
+  const inspectTactics = (mover: "infantry" | "vehicle") => {
+    const result = api.current?.showTactics(true, mover);
+    setTacticalResult(
+      result
+        ? `${result.obstacles} obstacles · ${result.cover} cover candidates · ${result.routePoints ? "approach route found" : "no approach route found"}`
+        : "Select the full-city study to inspect routes.",
+    );
+  };
+  const [profile, setProfile] = useState<TerrainProfile>("normal");
+  const [fullTile, setFullTile] = useState(false);
+  const [combined, setCombined] = useState(false);
+  const [riverThrough, setRiverThrough] = useState(false);
+  const [terrainFit, setTerrainFit] = useState(false);
+  const [angled, setAngled] = useState(false);
+  const [seed, setSeed] = useState(731);
   const [count, setCount] = useState(160),
+    [dusk, setDusk] = useState(false),
     [winter, setWinter] = useState(false),
     [shadows, setShadows] = useState(true),
     [stats, setStats] = useState<{
@@ -29,6 +61,29 @@ function App() {
     try {
       api.current = cityDiorama(host.current, setStats);
       window.__cityDiorama = api.current;
+      const query = new URLSearchParams(location.search),
+        requested = query.get("case");
+      if (requested && seedCases.includes(requested as SeedCase)) {
+        const seed = Number(query.get("seed") ?? 731) >>> 0,
+          o = seedCaseOptions(requested as SeedCase);
+        setSeed(seed);
+        setCount(o.count);
+        setCombined(o.combined);
+        setFullTile(o.fullTile);
+        setProfile(o.profile);
+        setAngled(o.combined);
+        api.current.generate(
+          o.count,
+          seed,
+          o.combined,
+          false,
+          false,
+          o.combined,
+          o.profile,
+          o.fullTile,
+        );
+      }
+
       return () => {
         api.current?.dispose();
         window.__cityDiorama = undefined;
@@ -37,22 +92,45 @@ function App() {
       setError(String(e));
     }
   }, []);
-  useEffect(() => api.current?.configure(winter, shadows), [winter, shadows]);
+  useEffect(() => setTacticalResult(""), [seed, fullTile, combined, profile]);
+  useEffect(
+    () => api.current?.configure(winter, shadows, dusk),
+    [winter, shadows, dusk],
+  );
   return (
     <main className="city-study">
       <header>
         <div>
           <span>IRONFRONT · LARGE CITY SCALE STUDY</span>
-          <h1>Capital & countryside</h1>
+          <h1>
+            {fullTile && combined ? "City planner" : "Capital & countryside"}
+          </h1>
         </div>
-        <a href="/three-preview.html">Generated world ↗</a>
+        <nav>
+          <a href="/city-seeds.html">Seed gallery ↗</a> ·{" "}
+          <a href="/three-preview.html">Generated world ↗</a>
+        </nav>
       </header>
       <div className="reference-canvas" ref={host} />
-      <aside>
+      <aside
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("button"))
+            host.current
+              ?.querySelector("canvas")
+              ?.focus({ preventScroll: true });
+        }}
+        onChange={(e) => {
+          const t = e.target as HTMLElement;
+          if (t.matches('select,input[type="checkbox"],input[type="radio"]'))
+            host.current
+              ?.querySelector("canvas")
+              ?.focus({ preventScroll: true });
+        }}
+      >
         <p>
-          District city study: commercial frontages near the civic core,
-          residential blocks beyond them, and industry along the lower quay.
-          Select 28 for the original neighborhood.
+          {fullTile && combined
+            ? "Full city: a central civic square and commercial skyline, connected residential blocks, and waterfront industry."
+            : "District city study: commercial frontages near the civic core, residential blocks beyond them, and industry along the lower quay. Select 28 for the original neighborhood."}
         </p>
         {stats?.districts?.length ? (
           <p>
@@ -65,7 +143,18 @@ function App() {
           </p>
         ) : null}
         <div className="views">
-          {(["city", "capital", "depot", "street"] as const).map((v) => (
+          {(
+            [
+              "city",
+              "capital",
+              "depot",
+              "street",
+              "industry",
+              "skyline",
+              "angled",
+              "waterfront",
+            ] as const
+          ).map((v) => (
             <button key={v} onClick={() => api.current?.focus(v)}>
               {v}
             </button>
@@ -77,16 +166,242 @@ function App() {
           Intended city capture and ownership anchor. Visual study; capture
           rules are not connected.
         </p>
+        <button
+          onClick={() => {
+            const next = seed + 1;
+            setSeed(next);
+            api.current?.generate(
+              count,
+              next,
+              angled,
+              terrainFit,
+              riverThrough,
+              combined,
+              profile,
+              fullTile,
+            );
+          }}
+        >
+          Vary blocks · {seed}
+        </button>
+        <label>
+          <input
+            type="checkbox"
+            checked={angled}
+            onChange={(e) => {
+              setCombined(false);
+              setFullTile(false);
+              setAngled(e.target.checked);
+              setTerrainFit(false);
+              setRiverThrough(false);
+              api.current?.generate(count, seed, e.target.checked);
+            }}
+          />{" "}
+          Angled streets
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={terrainFit}
+            onChange={(e) => {
+              setCombined(false);
+              setFullTile(false);
+              setTerrainFit(e.target.checked);
+              setRiverThrough(false);
+              setAngled(true);
+              api.current?.generate(count, seed, true, e.target.checked);
+            }}
+          />{" "}
+          Fit to hills & river
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={riverThrough}
+            onChange={(e) => {
+              setCombined(false);
+              setFullTile(false);
+              setRiverThrough(e.target.checked);
+              setTerrainFit(false);
+              setAngled(true);
+              api.current?.generate(count, seed, true, false, e.target.checked);
+            }}
+          />{" "}
+          River through district
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={combined}
+            onChange={(e) => {
+              setCombined(e.target.checked);
+              setAngled(true);
+              setTerrainFit(false);
+              setRiverThrough(false);
+              api.current?.generate(
+                count,
+                seed,
+                true,
+                false,
+                false,
+                e.target.checked,
+                profile,
+                fullTile,
+              );
+            }}
+          />{" "}
+          Combined terrain & river
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={fullTile && combined}
+            onChange={(e) => {
+              const enabled = e.target.checked;
+              setFullTile(enabled);
+              setCombined(true);
+              setAngled(true);
+              setTerrainFit(false);
+              setRiverThrough(false);
+              api.current?.generate(
+                count,
+                seed,
+                true,
+                false,
+                false,
+                true,
+                profile,
+                enabled,
+              );
+              api.current?.focus("city");
+            }}
+          />{" "}
+          Full city
+        </label>
+        {combined && (
+          <label>
+            Terrain profile
+            <select
+              aria-label="Terrain profile"
+              value={profile}
+              onChange={(e) => {
+                const next = e.target.value as TerrainProfile;
+                setProfile(next);
+                api.current?.generate(
+                  count,
+                  seed,
+                  true,
+                  false,
+                  false,
+                  true,
+                  next,
+                  fullTile,
+                );
+              }}
+            >
+              {["normal", "tight-bend", "steep", "worldgen"].map((p) => (
+                <option key={p}>{p}</option>
+              ))}
+            </select>
+          </label>
+        )}
+        {angled && (
+          <p>
+            Street-first district · {stats?.buildings ?? "…"} buildings fitted
+            to irregular blocks. Narrow corners stay paved; larger interiors
+            become gardens.
+          </p>
+        )}
+        {fullTile && combined && (
+          <fieldset>
+            <legend>Test soldiers</legend>
+            <p>
+              Left-drag to box-select; Shift adds soldiers. Right-click to
+              order; right-drag sets destination and facing. Middle-drag orbits
+              around the clicked point. WASD pans. Escape deselects.
+            </p>
+            {[1, 2, 3, 4, 5].map((id) => (
+              <button
+                key={id}
+                aria-pressed={unitStatus?.selectedIds.includes(id)}
+                onClick={() => api.current?.selectTestUnit(id)}
+              >
+                {id === 4
+                  ? "Select tank"
+                  : id === 5
+                    ? "Select jeep"
+                    : `Select soldier ${id}`}
+              </button>
+            ))}
+            <button
+              disabled={!unitStatus?.selected}
+              onClick={() => api.current?.stopTestUnit()}
+            >
+              Stop selected units
+            </button>
+            {unitStatus?.units
+              .filter((u) => unitStatus.selectedIds.includes(u.id))
+              .map((u) => (
+                <p key={u.id}>
+                  {u.kind === "vehicle"
+                    ? u.vehicleType === "jeep"
+                      ? "Jeep"
+                      : "Tank"
+                    : `Soldier ${u.id}`}
+                  : {u.cover} cover · {u.health}/100 test health
+                </p>
+              ))}
+            <p>
+              Stopped infantry crouch behind low cover or brace against
+              buildings. Cover protects only from fire passing through it.
+            </p>
+            <button
+              disabled={!unitStatus?.selected}
+              onClick={() => api.current?.testCoverShot(false)}
+            >
+              Test shot across cover
+            </button>
+            <button
+              disabled={!unitStatus?.selected}
+              onClick={() => api.current?.testCoverShot(true)}
+            >
+              Test shot from exposed side
+            </button>
+            <button onClick={() => api.current?.resetTestHealth()}>
+              Reset test health
+            </button>
+            <output aria-live="polite">
+              {unitStatus?.message ?? "Preparing test soldiers…"}
+            </output>
+            <p>
+              While right-dragging: blue ghosts have no cover, gold partial
+              cover, green full cover; red positions are blocked. Release to
+              commit. Reachability is checked on release.
+            </p>
+            <p>
+              Local movement and cover tests; orders do not affect a campaign.
+            </p>
+          </fieldset>
+        )}
         <label>
           Buildings
           <select
             aria-label="Buildings"
             value={count}
-            disabled={busy}
+            disabled={busy || angled}
             onChange={(e) => {
               const n = Number(e.target.value);
               setCount(n);
-              api.current?.generate(n);
+              api.current?.generate(
+                n,
+                seed,
+                angled,
+                terrainFit,
+                riverThrough,
+                combined,
+                profile,
+                fullTile,
+              );
             }}
           >
             {[28, 128, 160, 256, 512, 1024].map((n) => (
@@ -94,6 +409,34 @@ function App() {
             ))}
           </select>
         </label>
+        {fullTile && combined && (
+          <fieldset>
+            <legend>Tactical geometry study</legend>
+            <button onClick={() => inspectTactics("infantry")}>
+              Inspect infantry routes
+            </button>
+            <button onClick={() => inspectTactics("vehicle")}>
+              Inspect vehicle routes
+            </button>
+            <button
+              onClick={() => {
+                api.current?.showTactics(false);
+                setTacticalResult("");
+              }}
+            >
+              Hide tactical overlay
+            </button>
+            <p>
+              Coral: obstacles · cyan: candidate cover · gold: town-hall control
+              area · green: sample route.
+            </p>
+            <p>
+              Geometry preview only. Vehicle routes follow roads; infantry can
+              enter the square. No campaign combat or ownership changes.
+            </p>
+            {tacticalResult && <output>{tacticalResult}</output>}
+          </fieldset>
+        )}
         <label>
           <input
             type="checkbox"
@@ -110,9 +453,23 @@ function App() {
           />
           Sun shadows
         </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={dusk}
+            onChange={(e) => setDusk(e.target.checked)}
+          />
+          Dusk lighting
+        </label>
         <p>
-          144 infantry and two jeeps establish scale. Building counts include
-          the capital.
+          Smoke rises from active chimneys. Dusk reveals warm light around the
+          civic street lamps.
+        </p>
+        <p>
+          {fullTile
+            ? "Three running soldiers, a tank and a jeep establish scale."
+            : "144 infantry and two jeeps establish scale."}{" "}
+          Building counts include the capital.
         </p>
         <button
           disabled={busy}
@@ -140,10 +497,11 @@ function App() {
         {error && <p role="alert">{error}</p>}
       </aside>
       <footer>
-        FIXED ISOMETRIC CAMERA
+        360° CITY CAMERA
         <span>
-          Drag to pan · scroll to zoom · buildings and units retain their scale
-          across density tests
+          Left-drag selects · right-click orders · right-drag faces ·
+          middle-drag orbits · WASD pans · scroll zooms · buildings and units
+          retain their scale across density tests
         </span>
       </footer>
     </main>

@@ -1,0 +1,1210 @@
+{
+  "results": [
+    {
+      "view": "city",
+      "buildings": 128,
+      "districts": [
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 8
+        }
+      ],
+      "units": 144,
+      "p50": 128.30000000074506,
+      "p95": 135.90000000037253,
+      "p99": 138,
+      "over33": 31,
+      "frames": 31,
+      "calls": 106,
+      "triangles": 237180,
+      "geometries": 104,
+      "textures": 5
+    },
+    {
+      "view": "street",
+      "buildings": 128,
+      "districts": [
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 8
+        }
+      ],
+      "units": 144,
+      "p50": 182.5,
+      "p95": 186.09999999962747,
+      "p99": 186.59999999962747,
+      "over33": 23,
+      "frames": 23,
+      "calls": 79,
+      "triangles": 184176,
+      "geometries": 104,
+      "textures": 5
+    },
+    {
+      "view": "city",
+      "buildings": 256,
+      "districts": [
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 12
+        }
+      ],
+      "units": 144,
+      "p50": 163.69999999925494,
+      "p95": 171.30000000074506,
+      "p99": 174,
+      "over33": 25,
+      "frames": 25,
+      "calls": 106,
+      "triangles": 386240,
+      "geometries": 104,
+      "textures": 5
+    },
+    {
+      "view": "street",
+      "buildings": 256,
+      "districts": [
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 12
+        }
+      ],
+      "units": 144,
+      "p50": 232.30000000074506,
+      "p95": 238.5,
+      "p99": 238.5,
+      "over33": 18,
+      "frames": 18,
+      "calls": 83,
+      "triangles": 333932,
+      "geometries": 104,
+      "textures": 5
+    },
+    {
+      "view": "city",
+      "buildings": 512,
+      "districts": [
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 12
+        }
+      ],
+      "units": 144,
+      "p50": 255.69999999925494,
+      "p95": 259.09999999962747,
+      "p99": 259.09999999962747,
+      "over33": 16,
+      "frames": 16,
+      "calls": 106,
+      "triangles": 668924,
+      "geometries": 104,
+      "textures": 5
+    },
+    {
+      "view": "street",
+      "buildings": 512,
+      "districts": [
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 12
+        }
+      ],
+      "units": 144,
+      "p50": 288.80000000074506,
+      "p95": 297.2999999988824,
+      "p99": 297.2999999988824,
+      "over33": 14,
+      "frames": 14,
+      "calls": 83,
+      "triangles": 616616,
+      "geometries": 104,
+      "textures": 5
+    },
+    {
+      "view": "city",
+      "buildings": 1024,
+      "districts": [
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        }
+      ],
+      "units": 144,
+      "p50": 427.90000000037253,
+      "p95": 434.80000000074506,
+      "p99": 434.80000000074506,
+      "over33": 10,
+      "frames": 10,
+      "calls": 106,
+      "triangles": 1228516,
+      "geometries": 104,
+      "textures": 5
+    },
+    {
+      "view": "street",
+      "buildings": 1024,
+      "districts": [
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        }
+      ],
+      "units": 144,
+      "p50": 400.2000000011176,
+      "p95": 427.5,
+      "p99": 427.5,
+      "over33": 10,
+      "frames": 10,
+      "calls": 83,
+      "triangles": 1176208,
+      "geometries": 104,
+      "textures": 5
+    },
+    {
+      "view": "city-cpu4x",
+      "buildings": 256,
+      "districts": [
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "industrial",
+          "buildings": 6
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "commercial",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 16
+        },
+        {
+          "kind": "residential",
+          "buildings": 12
+        }
+      ],
+      "units": 144,
+      "p50": 170.59999999962747,
+      "p95": 179.5,
+      "p99": 181.69999999925494,
+      "over33": 24,
+      "frames": 24,
+      "calls": 106,
+      "triangles": 386240,
+      "geometries": 104,
+      "textures": 5
+    }
+  ],
+  "errors": [],
+  "scope": "Local headless Chrome, DPR1, 144 infantry, two jeeps, shared instanced kit, shadows. Not campaign simulation or low-end device certification."
+}

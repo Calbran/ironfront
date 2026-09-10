@@ -1,3 +1,4 @@
+import { cityBuildingFootprint, cityBuildingEnvelope } from "./cityBuildingKit";
 import { pruneCityStreets } from "./cityStreetPruning";
 import { ancoatsSample } from "../data/city-samples/ancoats";
 /** Experimental large-city layout. Coordinates are miniature scene units, not campaign distances. */
@@ -8,6 +9,9 @@ export type CityLot = CityPoint & {
   scale: number;
   variant: string;
   heightScale?: number;
+  /** Explicit rigid frontage bearing after terrain fitting. */
+  worldAngle?: number;
+  fullEnvelope?: boolean;
 };
 export function segmentDistance(p: CityPoint, a: CityPoint, b: CityPoint) {
   const dx = b.x - a.x,
@@ -32,27 +36,21 @@ export function lineDistance(p: CityPoint, points: CityPoint[]) {
 export function lotsOverlap(a: CityLot, b: CityLot) {
   const dims = (p: CityLot) => ({
     w:
-      ((p.variant.startsWith("urban")
-        ? 5
-        : p.variant === "factory"
-          ? 10
-          : p.variant === "home"
-            ? 6
-            : 7) *
+      ((p.fullEnvelope
+        ? cityBuildingEnvelope(p.variant)
+        : cityBuildingFootprint(p.variant)
+      ).width *
         p.scale) /
         2 +
-      0.2,
+      (p.fullEnvelope ? 0.025 : 0.2),
     d:
-      ((p.variant.startsWith("urban")
-        ? 11
-        : p.variant === "factory"
-          ? 7
-          : p.variant === "home"
-            ? 5
-            : 6) *
+      ((p.fullEnvelope
+        ? cityBuildingEnvelope(p.variant)
+        : cityBuildingFootprint(p.variant)
+      ).depth *
         p.scale) /
         2 +
-      0.2,
+      (p.fullEnvelope ? 0.025 : 0.2),
   });
   const ad = dims(a),
     bd = dims(b);
@@ -76,30 +74,12 @@ export function lotsOverlap(a: CityLot, b: CityLot) {
 
 /** Conservative segment-vs-oriented-building clearance for road widths and roof eaves. */
 export function lotIntersectsStreet(lot: CityLot, street: CityStreet) {
-  const w =
-    ((lot.variant.startsWith("urban")
-      ? 5
-      : lot.variant === "factory"
-        ? 10
-        : lot.variant === "home"
-          ? 6
-          : 7) *
-      lot.scale) /
-      2 +
-    0.2 +
-    street.width / 2;
-  const d =
-    ((lot.variant.startsWith("urban")
-      ? 11
-      : lot.variant === "factory"
-        ? 7
-        : lot.variant === "home"
-          ? 5
-          : 6) *
-      lot.scale) /
-      2 +
-    0.2 +
-    street.width / 2;
+  const footprint = lot.fullEnvelope
+    ? cityBuildingEnvelope(lot.variant)
+    : cityBuildingFootprint(lot.variant);
+  const padding = lot.fullEnvelope ? 0.025 : 0.2;
+  const w = (footprint.width * lot.scale) / 2 + padding + street.width / 2;
+  const d = (footprint.depth * lot.scale) / 2 + padding + street.width / 2;
   const c = Math.cos(lot.angle),
     s = Math.sin(lot.angle);
   const local = (p: CityPoint) => ({

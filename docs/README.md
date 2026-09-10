@@ -81,3 +81,39 @@ Crafted settlement blocks: [032 — neighborhoods and developed ground](05-decis
 Dense district direction: [033 — steampunk districts](05-decisions/033-dense-steampunk-districts.md).
 
 Current development plan: [miniature city roadmap](04-roadmap/miniature-city-development.md).
+
+Urban kit continuation: [034 — footprint contract](05-decisions/034-urban-kit-footprints.md).
+
+Civic-square treatment: [035 — Victorian civic square](05-decisions/035-victorian-civic-square.md).
+
+Industrial and skyline kit: [036 — mills and steampunk towers](05-decisions/036-industrial-kit-and-steampunk-skyline.md).
+
+City detail and block recipes: [037 — envelopes and detail levels](05-decisions/037-city-envelopes-detail-and-block-recipes.md).
+
+- [Angled street parcel study](05-decisions/038-angled-street-parcel-study.md): bounded street-first comparison, fitting rules and remaining terrain work.
+
+- [Terrain fitting study](05-decisions/039-terrain-fitting-study.md): level foundations, graded surfaces, protected northern crossing and scope limits.
+
+- [River-cut district](05-decisions/040-river-cut-district.md): parcel clipping, connected crossings and waterfront comparison limits.
+
+- [Combined terrain and river](05-decisions/041-combined-terrain-river.md): shared corridor transform, rigid fit checks and remaining world integration.
+
+- [City seed gallery and bounded audit](05-decisions/042-city-seed-gallery.md)
+
+- [Seeded integrated city composition](05-decisions/043-seeded-city-composition.md)
+
+- [World-generated river samples](05-decisions/044-world-river-samples.md)
+
+- [District infill and fitted foundations](05-decisions/045-city-infill-and-foundations.md)
+
+- [Dense full-tile city direction](05-decisions/046-full-tile-city-direction.md)
+
+- [047 — City-wide planner](05-decisions/047-city-wide-planner.md): full-tile grid, civic core, district allocation and remaining tactical work.
+
+Military models: [047 — infantry-scaled kit](05-decisions/047-military-model-kit.md), [GLB asset catalog](../apps/web/public/art/military/README.md).
+
+Faction model proofs: [048 — signature units and engineers](05-decisions/048-faction-model-studies.md).
+- [048 — Varied city and asset library](05-decisions/048-varied-city-and-asset-library.md): angled blocks, civic variants, free camera and 19 shared low-poly models.
+- [049 — Urban civic frontages](05-decisions/049-urban-civic-frontages.md): fitted square surroundings, road bridge decks and steam utilities.
+
+- [050 — City tactical geometry inspection](05-decisions/050-city-tactical-geometry.md): prototype movement/obstacle queries, cover candidates and town-hall boundary.

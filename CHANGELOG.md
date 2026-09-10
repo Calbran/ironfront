@@ -1,5 +1,56 @@
 # Changelog
 
+## 2026-09-10 — Infantry-referenced city props
+
+- Correct oversized benches and civic walls/pillars, including shared obstacle widths.
+- Normalize street furniture, parked cars, hedges, lamps and small industrial props against city infantry; preserve manhole surface height.
+- Record the scale audit and shared prop dimensions.
+
+## 2026-09-10 — City camera mouse binding
+
+- Moved click-anchored city-camera orbit to middle-drag, including while units are selected.
+- Kept right-click/right-drag exclusively for movement and facing orders; city-camera panning remains on WASD with no mouse-pan binding.
+
+## 2026-09-10 — Inverted diorama zoom
+
+Reversed zoom direction in the city and animation dioramas: scrolling down zooms in, scrolling up zooms out.
+Increased city maximum zoom from 8 to 12 and reduced the animation camera's closest distance from 5 to 3 for closer model inspection.
+
+## 2026-09-10 — Tracked city tank turns
+
+- Replace infantry-style tank steering with limited-rate track pivots followed by forward acceleration.
+- Animate left/right tread links from actual forward travel and heading change, including counter-rotation while pivoting.
+
+## 2026-09-10 — Anti-tank rocket team
+
+- Added a launcher-equipped infantry actor and two-person rocket-team station to the animation diorama, with projectile/trail, launch smoke and reload presentation.
+- Added a focused camera and retained original infantry scale.
+
+## 2026-09-10 — Longer running strides
+
+- Rebuilt the review run with longer contact/push-off strides, higher heel recovery, airborne intervals and stronger hip/shoulder counter-rotation.
+- Slowed the cycle from 0.48 to 0.8 seconds while increasing travel from 1.44 to 2.6 model units/second; kept the armed grip.
+
+## 2026-09-10 — Cover firing and tank shot weight
+
+- Keep low-cover infantry in position and fire over sandbags; reserve edge peeks for tall cover, with muzzle-clearance regression checks.
+- Increase tank barrel recoil, add a small recovering hull kick and expand shot smoke with a lingering fade.
+
+## 2026-09-10 — LMG automatic-fire presentation
+
+- Replaced rifle-paced LMG shots in the diorama with rapid eight-round bursts and short pauses, braced recoil, stronger muzzle flashes and tracers.
+- Enlarged the review weapon's receiver, cooling shroud and drum; retained soldier scale and reload behavior.
+
+## 2026-09-10 — Military animation diorama
+
+- Added a standalone, infantry-scaled animation review with all military model types, cover props and a jeep.
+- Added reusable infantry pose sampling for run/crouch/lean/reload, LMG drum changes, moving tank tread links and separate recoil pivots.
+- Added timeline scrubbing, frame stepping, slow motion and focused cameras; existing campaign animation tables retain their default inputs.
+
+## 2026-09-10 — Tailscale preview access
+
+Pointed the existing Tailscale Funnel at the live model preview on port 5181 and allowed the Funnel hostname in Vite. The public military-preview page and its JavaScript module now return HTTP 200 instead of Vite's host-validation 403.
+
 ## Documentation and main integration
 
 - Consolidate the miniature-city roadmap with ordered stages, acceptance criteria, code/test entry points and performance limits.
@@ -528,3 +579,203 @@ Restored experimental friendly army box selection, Shift-add, Escape, roster sel
 Added an authored crafted-miniature reference scene at `/reference-preview.html`: continuous terrain and river channel, bridge, five modular building silhouettes, shared runtime materials, forest/rocks/field props and separate winter snow surfaces. Reused infantry/jeep sources with static reference selection. Fixed camera, responsive views and seasonal controls verified in browser; typecheck/build pass. Main/Pixi and campaign authority remain unchanged. See docs/prototypes/crafted-miniature-scene.md for scope, local measurements and remaining art limitations.
 
 Added shared miniature building/tree assets to the generated world with chunked instancing, detail levels, tactical-only shadows and synthetic troop stress controls. Measured a 96-region / 64-settlement / 2,135-tree world through 12 scenarios, including 8,000 visible soldiers, winter and CPU throttling. Normal cases were near 60 FPS locally; CPU-throttled battle near 55 FPS. No sampled interval over 33.4ms or page errors. Automatic continent mode reduced submitted triangles from 2.83M to 39.9k. Scope excludes dense reference terrain, live simulation and real minimum-device validation. Raw results/methodology committed in docs/prototypes.
+
+## 2026-09-10 — Urban kit roadmap continuation
+
+- Pulled main through `0adb6aa`, including the experimental Three.js renderer and city roadmap.
+- Added reserved commercial corner shops, seeded tenements and industrial warehouses to the district study. Shared nominal dimensions replace duplicated planner footprint switches.
+- Preserved model scale across city counts, exact budgets and deterministic validated placement. Made the city browser runner portable.
+- Kept Pixi as default; campaign capture, collision and authority are unchanged. Stage 1 remains in progress.
+- Validation passed: typecheck, 32 test files, build, desktop/winter/phone browser checks. Linux headless performance samples are recorded separately; performance remains unvalidated for production.
+
+## 2026-09-10 — Visible diorama effects
+
+- Soft smoke plumes replace faint low-poly particles; fixed rotated chimney anchors and added selected urban sources.
+- Three actual civic lamp lights and a dusk toggle make the distinction from emissive-only windows clear. Bounded cosmetic effects remain outside campaign authority.
+
+## 2026-09-10 — Window brightness variation
+
+- Urban window panes now have deterministic off/dim/medium/bright states unique to rooms and building positions, using the existing instanced material batch.
+- Reviewed the city roadmap: complete stage-1 asset/envelope/LOD work next, followed by district/block variety.
+
+- Daylight correction: uniform non-emissive window glass during the day; seeded brightness and off states appear only at dusk. Switching time of day preserves the room pattern without rebuilding geometry.
+
+## 2026-09-10 — Victorian civic square
+
+- Framed the hall with low stone walls, shrubs and benches; retained clear central and side approaches inside the civic reservation.
+- Added a pediment, dormers, copper rooftop equipment, pipes and clock trim at the existing hall scale.
+- Normalized mixed geometry before batching extruded details. Added a focused 28/160-building day/dusk/winter/phone browser check.
+
+## 2026-09-10 — Full civic block reservation
+
+- Relocated the four front shops to a connected rear market street while preserving building budgets. Expanded hall gardens and walls to the surrounding street verges, retaining front/rear/side entrances.
+- Added a regression that keeps non-civic building footprints outside the whole civic block.
+
+## 2026-09-10 — Mills and steampunk skyline
+
+- Added wide multi-storey mills, boiler houses with coal bunkers, and nine-storey commercial towers with copper domes and setback crowns.
+- Industrial slots widen for mills; towers reserve two urban frontage slots while retaining exact building budgets and fixed scale.
+- Added Industry/Skyline camera presets; existing dusk window variation and bounded chimney smoke apply to the new models.
+
+## 2026-09-10 — City bounds, detail levels and block variety
+
+- Added tested horizontal model envelopes for study placement, including attachments; adjusted shop spacing and rear market alignment.
+- Added full/distant instanced kits with projected-size hysteresis in the diorama.
+- Added seeded courtyard and stepped-frontage recipes, preserving civic reservation and building counts, plus a Vary blocks control.
+
+## 2026-09-10 — Courtyard fit and roof flicker
+
+- Shallow courtyard wings preserve facade scale and provide clear internal space. Added planted courts and treatment of unused frontage slots.
+- Raised pitched-roof tanks onto supports and separated brass lids from tank tops to remove intersecting/coplanar surfaces.
+
+### City block composition — 2026-09-10
+- Added outward entrance-to-street records and paths, with clearance regression coverage.
+- Added terraced rear-garden blocks and handed corner shops with blank adjoining walls.
+- Reserved pocket gardens on partial blocks, checking building and other garden bounds.
+
+### Angled street study — 2026-09-10
+- Added a separate diorama comparison with a diagonal boulevard, seeded side streets and six triangular/trapezoid parcels.
+- Fit full building envelopes along street edges; reject blocked entrances and unsuitable corners.
+- Added polygon paving, inset gardens, benches and trees, plus an Angled camera preset.
+
+### Terrain fitting comparison — 2026-09-10
+- Added Fit to hills & river to the angled diorama: graded streets and tessellated parcel surfaces, level foundation pads and stepped approaches.
+- Added a protected northern river channel and bridge to its far bank.
+- Rejects building candidates exceeding footprint relief or entrance-rise limits; preserves fixed building scale.
+
+### Hillside doorway steps — 2026-09-10
+- Replaced long pale stair strips extending to road centers with short, ground-supported stoops inside the sidewalk.
+- Tread count follows elevation change; near-level doors use existing paving. Treads remain horizontal and use the surrounding masonry palette.
+
+### River-cut district — 2026-09-10
+- Added River through district comparison: clips parcels before building placement, creates bank streets and retains only two connected bridge crossings.
+- Added quay paving and retaining walls with bridge openings, preserving dry building envelopes and clear entrances.
+
+### Developed waterfront — 2026-09-10
+- Raised channel water toward the quay edge and added masonry walls with stone coping.
+- Replaced straight study bridges with shallow arched masonry decks, paved tops and capped parapets.
+- Added an open moored rowboat, oar, bollards, rope and cargo accents; Waterfront camera preset provides a close view.
+- Rowboat follow-up: the pointed interior floor now covers the water plane above the waterline while the lower hull remains submerged.
+
+### Street-facing lamps — 2026-09-10
+- Lamp arms, lanterns and shades now face the local street centerline instead of a fixed world direction; nearby point lights follow the lantern position.
+
+### Street surfaces and lamp variety — 2026-09-10
+- Reduced lamp frequency from every 12 to every 24 sampled road segments, removing nearby duplicates and lamps in junctions.
+- Added post-top, straight-bracket and curved-neck Victorian lantern styles using shared materials.
+- Added dark cobbled carriageways, raised curbs and sidewalk strips with junction openings.
+- Shortened entrance paving to curb edges and kept road cobbles world-aligned for consistent texture scale.
+
+### Continuous curb corners — 2026-09-10
+- Replaced sampled curb cutoffs with joined outlines of the combined road footprint.
+- Curbs and sidewalk bands share corner joins; duplicate road strips no longer introduce internal seams. Square-ended road caps fill their matching outlines.
+
+### Combined terrain and curved river — 2026-09-10
+- Added a selectable combined study with a seeded river bend and terrain rising away from the banks.
+- Streets, quays, gardens and bridge approaches share the terrain transform; buildings remain rigid on level foundations.
+- Rechecks transformed road/building clearance, dry footprints and entrances, rejecting unsafe candidates.
+
+## 2026-09-10 — City seed gallery
+
+Added twelve-seed visual comparisons, six study cases, geometry audits, JSON export and exact-seed diorama links. Tight-bend and steep profiles stress the existing fitting rules. Added reproducible audit sweep and browser checks.
+
+## 2026-09-10 — Seeded city composition
+
+Seeds now control street skeletons and growth patterns, rather than only frontage details. Combined terrain cities include commercial towers, residential variants and riverside industry using existing models. Broad sites are reserved before small frontages; fitting checks remain active. Whole-city overview framing and gallery composition labels expose the differences. The hill-only reference keeps its northern river corridor protected.
+
+## 2026-09-10 — World river samples
+
+Added a worldgen gallery case using actual generated river polylines, with source bearing restored and river provenance in audit exports. Reach selection excludes unsupported reversals without replacing curves with sine waves. Whole-city framing and detail targets follow the source bearing.
+
+## 2026-09-10 — Rounded city river bends
+
+Smoothed worldgen river samples before city fitting/rendering. Endpoint-preserving corner rounding removes hard drainage-grid turns; the shared curve keeps bank, street and building-clearance calculations aligned. Raw source geometry is retained.
+
+## 2026-09-10 — Fixed inland block edges
+
+Localized river influence to the waterfront band, preserving smoothed water and bank geometry while holding inland perimeter roads fixed. Added inverse terrain lookup for rigid foundation sampling and regression coverage for fixed boundaries, full bank displacement and non-folding transitions.
+
+## 2026-09-10 — Waterfront road deformation
+
+Rebuilt combined-study carriageways, end caps and joined curb bands in transformed coordinates to preserve road/sidewalk widths. Terrain sampling converts back through the corridor transform, avoiding double deformation.
+
+Curved road strips now share joined cross sections instead of repeating square caps at every sampled point, eliminating small curb steps.
+
+## 2026-09-10 — Angled junction protrusions
+
+Removed square-cap overhangs where roads terminate on other roads and bounded acute curb miters. Added a regression for a diagonal T junction and maximum corner extension.
+
+## 2026-09-10 — District infill and foundation alignment
+
+Added smaller-building and inset-placement retries for rejected frontage sites, with updated entrances and parcel/court clearance. Clear residual industrial/commercial areas receive cargo, tanks or seating/planters. Added a paved civic transition. Rebuilt elevated foundations under the rigid model footprint with brick skirts, eliminating warped oversized slabs.
+
+## 2026-09-10 — Road-aligned frontage and detail fixes
+
+Aligned rigid building bearings and doors to final street tangents, added a second frontage packing pass and compact industrial workshop model, and tested direct doorway-to-road alignment. Steps now use transformed doorway geometry without a second bend. Smoke billboards compensate for rotated cities; seating is smaller with slab bases removed.
+
+### 2026-09-10 — Full city planning
+
+- Added a seeded full-tile city case with a preserved civic precinct, central commercial skyline, surrounding housing and waterfront industry.
+- Joined block edges into connected streets, retained two river crossings, and extended quay surfaces across the developed frontage.
+- Reused final-space frontage/foundation/entrance checks and added coverage, civic-clearance and skyline regression checks.
+- Added the Full city preview switch and made full cities the seed gallery default. Tactical mechanics remain unchanged.
+
+## 2026-09-10 — Military model kit
+
+Reviewed the current city-generation direction and articulated infantry reference. Added infantry-scaled tank, airship, artillery emplacement, modular sandbags, barbed wire and LMG squad models with a standalone 3D inspection/export page and six GLB assets. Retained named articulation/join nodes and documented matching city-scale integration. These are model assets, with no campaign rule or deployment changes.
+
+### 2026-09-10 — Public preview preparation
+
+- Added a compiled-only public preview preparation script and Tailscale Funnel operating instructions in docs/public-city-preview.md.
+- Prepared a static city preview landing page without forwarding the development server or campaign API. Tailscale host sign-in is required before activation.
+
+- Activated the city-only Tailscale Funnel at https://brutus.tail250251.ts.net/ after host sign-in. Added a dedicated build config to exclude unrelated pages from the public bundle.
+
+## 2026-09-10 — Faction signatures and engineers
+
+Added Iron Directorate heavy landship, Crownward Armored Guards, Aether twin-turbine gunship and shared engineer squad models. Extended the military preview and exported GLB catalog to ten models, preserving original infantry scale and named articulation nodes. No gameplay rules changed.
+
+### 2026-09-10 — City variation and steampunk assets
+
+- Removed the inherited canal, dock yard and factory reservation from full-city layouts; developed that space around the civic square.
+- Added shared-junction street angles, diagonal corner parcels, seeded civic layouts and a 360-degree orbit camera.
+- Added 19 shared low-poly models, district-aware building selection and bounded roadside accent/car placement with clearance checks.
+
+- Added dark two-lane carriageways with dashed center markings while retaining paved sidewalks and alleys.
+- Added camera-relative WASD panning with input-focus and key-release handling.
+
+### 2026-09-10 — Urban square and steam utilities
+
+- Replaced the oversized civic template and small canopy buildings with fitted urban frontage parcels around the town hall square.
+- Continued road surfacing and center markings across arched bridge decks.
+- Added instanced manhole covers, valve stands and vent cabinets, with bounded street-level steam effects.
+
+### 2026-09-10 — City tactical geometry foundation
+
+- Added full-city obstacle, candidate-cover, precinct and bounded route queries with separate infantry/vehicle constraints.
+- Added tactical inspection controls and batched overlays, sharing civic wall dimensions with rendering.
+- Kept campaign movement, cover and capture behavior unchanged; documented remaining prop/vertical collision limitations.
+
+### 2026-09-10 — Selectable city movement trial
+
+- Populated the full-city planner with three independently selectable infantry test units, walking animation, selection rings and order paths.
+- Added right-click route orders, stop/deselect controls and regeneration cleanup; blocked destinations preserve the current valid order.
+- Switched prototype route search to A* and placed moving soldiers on arched bridge decks. Campaign combat remains unchanged.
+
+### 2026-09-10 — Natural city gait and group controls
+
+- Slowed trial infantry to a walking pace, tied poses/bobbing to distance traveled, and added subtle collision-checked route variation.
+- Added box/Shift selection and spaced group orders; right-drag now orbits and middle-drag pans, without a drag issuing a move order.
+
+### 2026-09-10 — City orders, cover previews and input refinements
+
+- Running infantry and a selectable steam tank; footprint-based infantry clearance opens lawns and narrow civic paths.
+- Directional partial/full cover, covered poses, civic sandbags and local test-shot/health inspection.
+- Right-drag placement/facing with colored destination ghosts; click-anchored orbit when unselected or using Alt.
+- Fixed sidebar/canvas scrolling and keyboard focus so panel interactions do not strand WASD.
+
+- City destination previews now flow along nearby obstacle edges instead of leaving soldiers embedded in buildings; bounded fitting preserves facing, spacing and preview/commit agreement.
+
+Added a selectable friendly jeep and dynamic vehicle cover: tank full, jeep partial, with directional hull checks and cover updates after vehicle movement.
+
+Documented future attacker-relative line-of-fire cover, flanking, dynamic vehicle hulls, authoritative integration, performance gates and regression criteria; no gameplay changes.

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ironfront · Military model kit</title>
+  </head>
+  <body>
+    <header>
+      <strong>IRONFRONT · MILITARY KIT</strong
+      ><label
+        >Model
+        <select id="model">
+          <option value="tank">Steam tank</option>
+          <option value="airship">Patrol airship</option>
+          <option value="artillery">Artillery emplacement</option>
+          <option value="sandbags">Sandbag wall</option>
+          <option value="wire">Barbed wire</option>
+          <option value="lmg">LMG gunner squad</option>
+          <option value="landship">Iron Directorate · Landship</option>
+          <option value="guards">Crownward League · Guards</option>
+          <option value="gunship">Aether Compact · Gunship</option>
+          <option value="engineers">Combat engineers</option>
+        </select></label
+      ><button id="fit">Fit model</button><button id="top">Overhead</button
+      ><button id="motion" aria-pressed="false">Animate</button
+      ><button id="export">Download GLB</button>
+    </header>
+    <main id="stage" aria-label="Military model inspection"></main>
+    <footer>
+      <a href="/animation-review.html">Open animation diorama →</a>
+      <div id="metrics"></div>
+      <div>
+        Original infantry at right · 1 grid square = 1 model unit · Drag to
+        orbit · Scroll to zoom
+      </div>
+      <div id="status" role="status">
+        Model studies; campaign deployment and defense rules are unchanged.
+      </div>
+    </footer>
+    <script type="module" src="/src/prototypes/militaryPreview.ts"></script>
+  </body>
+</html>
