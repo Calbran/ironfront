@@ -7,21 +7,21 @@ import { bakeInfantry } from "../infantryModel";
 import { createJeep } from "../prototypes/jeepModel";
 import { initialCity, WORLD_TO_MODEL as S, type MiniatureData, type StudyCity } from "./miniatureData";
 
-export interface StudySettings { textures: boolean; snow: boolean; sprites: boolean; borders: boolean; motion: boolean; shadows: boolean }
+export interface StudySettings { strategy: boolean; textures: boolean; snow: boolean; sprites: boolean; borders: boolean; motion: boolean; shadows: boolean }
 export interface StudyStats { fps: number; calls: number; triangles: number; trees: number; buildings: number; view: string }
-export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect: (id: number) => void, onStats: (s: StudyStats) => void, onError: (text: string) => void) {
+export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect: (id: number) => void, onStats: (s: StudyStats) => void, onError: (text: string) => void, onArmies: (ids: number[]) => void) {
   const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
   renderer.outputColorSpace = T.SRGBColorSpace; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.16;
-  renderer.domElement.setAttribute("aria-label", "Three-dimensional map. Drag to pan, scroll to zoom. Camera angle is fixed. Use territory selection and view buttons for keyboard access.");
+  renderer.domElement.setAttribute("aria-label", "Three-dimensional map. Left-drag selects friendly armies; Shift adds. Right/middle-drag pans, scroll zooms. Escape clears. Camera angle is fixed. Use territory selection and view buttons for keyboard access.");
   host.append(renderer.domElement);
   const scene = new T.Scene(); scene.background = new T.Color(0x253e40);
-  const camera = new T.OrthographicCamera(-50, 50, 35, -35, 0.1, 8000);
+  const camera = new T.OrthographicCamera(-50, 50, 35, -35, 0.1, 40000);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.12;
   controls.enableRotate = false;
-  controls.mouseButtons = { LEFT: T.MOUSE.PAN, MIDDLE: T.MOUSE.DOLLY, RIGHT: T.MOUSE.PAN };
+  controls.mouseButtons = { LEFT: -1 as T.MOUSE, MIDDLE: T.MOUSE.PAN, RIGHT: T.MOUSE.PAN };
   controls.touches = { ONE: T.TOUCH.PAN, TWO: T.TOUCH.DOLLY_PAN };
   controls.minZoom = 0.05; controls.maxZoom = 10;
   controls.screenSpacePanning = false;
@@ -32,7 +32,7 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
   const sunCamera = sun.shadow.camera;
   Object.assign(sunCamera, { left: -75, right: 75, top: 75, bottom: -75, near: 1, far: 650 });
   sunCamera.updateProjectionMatrix();
-  let disposed = false, settings: StudySettings = { textures: false, snow: false, sprites: false, borders: false, motion: true, shadows: true };
+  let disposed = false, settings: StudySettings = { strategy: false, textures: false, snow: false, sprites: false, borders: false, motion: true, shadows: true };
   const resources = new Set<T.Texture>();
   const loader = new T.TextureLoader();
   const load = (url: string, apply: (t: T.Texture) => void) => {
@@ -68,9 +68,10 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
     const geo = new T.ShapeGeometry(shapes); geo.rotateX(-Math.PI / 2);
     const mesh = new T.Mesh(geo, mat); mesh.position.y = y; mesh.receiveShadow = true; land.add(mesh);
     if (region !== undefined) { mesh.userData.region = region; terrainMeshes.push(mesh); }
+    return mesh;
   }
   for (const r of data.world.regions) terrain(geometries.rings[r.id], grounds[r.terrain], 0, r.id);
-  for (const patch of data.world.geography?.terrainPatches ?? []) terrain(patch.contours, grounds[patch.terrain], 0.012);
+  for (const patch of data.world.geography?.terrainPatches ?? []) { const mesh=terrain(patch.contours, grounds[patch.terrain], 0.012); if(mesh)mesh.userData.detailPatch=true; }
   for (const island of data.world.geography?.islands ?? []) terrain([island], grounds.plains, 0);
   const borderGroup = new T.Group(); scene.add(borderGroup); borderGroup.visible = false;
   for (const r of data.world.regions) {
@@ -87,6 +88,7 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
     for (const ring of geometries.rings[id] ?? []) (selection as T.Group).add(new T.Line(new T.BufferGeometry().setFromPoints([...ring,ring[0]].map(p=>new T.Vector3(p[0]*S,0.1,p[1]*S))),new T.LineBasicMaterial({color:0xf4dd97})));
     scene.add(selection);
   }
+  const ribbons: T.Mesh[] = [];
   function ribbon(points: {x:number;y:number}[], width: number, mat: T.Material, y = 0.055) {
     if(points.length<2)return;
     const positions:number[]=[];
@@ -96,7 +98,7 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
       for(const p of [[a.x*S+nx,a.y*S+nz],[a.x*S-nx,a.y*S-nz],[b.x*S+nx,b.y*S+nz],[b.x*S+nx,b.y*S+nz],[a.x*S-nx,a.y*S-nz],[b.x*S-nx,b.y*S-nz]]) positions.push(p[0],y,p[1]);
     }
     const geometry = new T.BufferGeometry();geometry.setAttribute("position",new T.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();
-    const mesh=new T.Mesh(geometry,mat);mesh.receiveShadow=true;scene.add(mesh);
+    const mesh=new T.Mesh(geometry,mat);mesh.receiveShadow=true;scene.add(mesh);ribbons.push(mesh);
   }
   const roadMat = new T.MeshStandardMaterial({ color: 0xb7a17a, side: T.DoubleSide, roughness: 1 });
   const riverMat = new T.MeshStandardMaterial({ color:0x4c858b,side:T.DoubleSide,roughness:0.5,metalness:0.04 });
@@ -154,32 +156,52 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
   rocks.forEach((r,i)=>{const size=r.width*S*.38;for(let j=0;j<3;j++)place(rockMesh,i*3+j,r.x*S+Math.sin(i+j)*size*.32,size*(.3+j*.12),r.y*S+Math.cos(i+j)*size*.2,size*(.8-j*.13),size*(.65+j*.15),size*.7,i+j);});
   rockMesh.castShadow=true;rockMesh.receiveShadow=true;rockMesh.computeBoundingSphere();scene.add(rockMesh);
 
-  // Reuse the same infantry source and jeep; animation is staged, never a campaign command.
+  // Generated roster positions are read-only. Selection references real army IDs.
+  const forces=data.world.armies.filter(a=>a.strength>0).map(a=>{
+    const squad=data.world.tactics?.squads.find(s=>s.army===a.id&&s.strength>0);
+    const region=data.world.regions[a.region];
+    return {army:a,x:(squad?.x??region.x)*S,z:(squad?.y??region.y)*S};
+  });
+  const infantry=forces.filter(f=>f.army.squadKind!=="motorized");
   const rig=bakeInfantry(0),troopMat=new T.MeshStandardMaterial({vertexColors:true,roughness:.9});
-  const troopCount=24;
-  const troopMeshes=rig.parts.map(p=>{const m=new T.InstancedMesh(p.geometry,troopMat,troopCount);m.castShadow=true;m.frustumCulled=false;scene.add(m);return m;});
-  const jeep=createJeep();jeep.root.scale.setScalar(.42);scene.add(jeep.root);
-  let studyCity=initialCity(data), staging=studyCity?.layout.roads.find(r=>r.length>=2) ?? [];
+  const troopMeshes=rig.parts.map(p=>{const m=new T.InstancedMesh(p.geometry,troopMat,infantry.length*6);m.castShadow=true;m.frustumCulled=false;scene.add(m);return m;});
+  const vehicles=forces.filter(f=>f.army.squadKind==="motorized").map(f=>{const jeep=createJeep();jeep.root.scale.setScalar(.42);jeep.root.position.set(f.x,.07,f.z);scene.add(jeep.root);return jeep.root;});
   const actorWorld=new T.Matrix4(),local=new T.Matrix4(),combined=new T.Matrix4();
-  let actorTime=0;
+  let actorTime=0,studyCity=initialCity(data);
   const updateActors=(dt:number)=>{
     if(settings.motion)actorTime+=dt;
-    if(!studyCity || staging.length<2)return;
-    const start=staging[0],end=staging[staging.length-1];
-    const dx=(end.x-start.x)*S,dz=(end.y-start.y)*S,len=Math.hypot(dx,dz)||1;
-    const heading=Math.atan2(dx,dz);
-    for(let i=0;i<troopCount;i++){
-      const t=(i/32+actorTime*.024)%1,side=(i%3-1)*.3;
-      dummy.position.set(start.x*S+dx*t-dz/len*side,.07,start.y*S+dz*t+dx/len*side);dummy.rotation.set(0,heading,0);dummy.scale.setScalar(.36);dummy.updateMatrix();actorWorld.copy(dummy.matrix);
-      const frame=settings.motion?Math.floor((actorTime*1.7+i*.17)%1*64):0;
-      rig.parts.forEach((_,part)=>{local.fromArray(rig.walk[frame][part]);combined.multiplyMatrices(actorWorld,local);troopMeshes[part].setMatrixAt(i,combined);});
-    }
-    for(const m of troopMeshes)m.instanceMatrix.needsUpdate=true;
-    const t=(actorTime*.012+.6)%1;jeep.root.position.set(start.x*S+dx*t+.9,.07,start.y*S+dz*t);jeep.root.rotation.y=heading;
+    infantry.forEach((f,index)=>{for(let member=0;member<6;member++){
+      dummy.position.set(f.x+(member%3-1)*.45,.07,f.z+Math.floor(member/3)*.5);dummy.rotation.set(0,0,0);dummy.scale.setScalar(.36);dummy.updateMatrix();actorWorld.copy(dummy.matrix);
+      const frame=settings.motion?Math.floor((actorTime*1.7+member*.17)%1*64):0;
+      rig.parts.forEach((_,part)=>{local.fromArray(rig.walk[frame][part]);combined.multiplyMatrices(actorWorld,local);troopMeshes[part].setMatrixAt(index*6+member,combined);});
+    }});
+    for(const mesh of troopMeshes)mesh.instanceMatrix.needsUpdate=true;
   };
+  const overlay=document.createElement("div");overlay.className="force-overlay";host.append(overlay);
+  const selectedArmies=new Set<number>(),owner=data.world.vision?.owner??0;
+  function selectArmies(ids:number[],additive=false){if(!additive)selectedArmies.clear();for(const id of ids)if(forces.some(f=>f.army.id===id&&f.army.owner===owner))selectedArmies.add(id);onArmies([...selectedArmies]);}
+  const markers=forces.map(f=>{
+    const button=document.createElement("button");button.className="force-marker";button.textContent=f.army.squadKind==="motorized"?"▰":"⚑";
+    button.title=`${data.world.nations[f.army.owner].name} · Army ${f.army.id} · ${f.army.squadKind??"infantry"}`;
+    button.setAttribute("aria-label",button.title);button.style.borderColor=data.world.nations[f.army.owner].color;
+    button.addEventListener("pointerdown",e=>e.stopPropagation());button.onclick=e=>{selectArmies([f.army.id],e.shiftKey);};overlay.append(button);return {f,button};
+  });
+  const nationLabels: {element:HTMLElement,x:number,z:number}[]=[];
+  const remaining=new Set(data.world.regions.filter(r=>r.owner!==null).map(r=>r.id));
+  while(remaining.size){const first=remaining.values().next().value!;remaining.delete(first);const component=[data.world.regions[first]];
+    for(let i=0;i<component.length;i++)for(const id of component[i].neighbors)if(remaining.has(id)&&data.world.regions[id].owner===component[0].owner){remaining.delete(id);component.push(data.world.regions[id]);}
+    const anchor=component.reduce((a,b)=>a.area>b.area?a:b),element=document.createElement("span");element.className="nation-label";element.textContent=data.world.nations[anchor.owner!].name;overlay.append(element);nationLabels.push({element,x:anchor.x*S,z:anchor.y*S});
+  }
+  const projection=new T.Vector3();
+  function screenPoint(x:number,z:number){projection.set(x,.5,z).project(camera);return {x:(projection.x+1)*host.clientWidth/2,y:(1-projection.y)*host.clientHeight/2,visible:projection.z>=-1&&projection.z<=1&&Math.abs(projection.x)<=1&&Math.abs(projection.y)<=1};}
+  function updateOverlay(){for(const {f,button} of markers){const p=screenPoint(f.x,f.z);button.hidden=settings.strategy||!p.visible;button.style.left=`${p.x}px`;button.style.top=`${p.y-18}px`;button.setAttribute("aria-pressed",String(selectedArmies.has(f.army.id)));}
+    for(const label of nationLabels){const p=screenPoint(label.x,label.z);label.element.hidden=!settings.strategy||!p.visible;label.element.style.left=`${p.x}px`;label.element.style.top=`${p.y}px`;}
+  }
+  const originalGrounds=new Map(terrainMeshes.map(mesh=>[mesh,mesh.material]));
+  const politicalMats=new Map(data.world.regions.map(r=>[r.id,new T.MeshBasicMaterial({color:r.owner===null?0x969e8a:data.world.nations[r.owner].color})]));
   const target=new T.Vector3();
   function focus(x:number,z:number,span:number){
-    target.set(x,0,z);controls.target.copy(target);camera.position.copy(target).add(new T.Vector3(260,260,260));
+    target.set(x,0,z);controls.target.copy(target);camera.position.copy(target).add(new T.Vector3(5000,5000,5000));
     camera.zoom=100/span;camera.updateProjectionMatrix();controls.update();
   }
   function view(mode:"continent"|"town"|"ground"){
@@ -190,26 +212,44 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
     }
     else if(studyCity)focus(studyCity.feature.x*S,studyCity.feature.y*S,mode==="ground"?28:85);
   }
-  function chooseCity(id:string){const city=data.cities.find(c=>c.feature.id===id);if(!city)return;studyCity=city;staging=city.layout.roads.find(r=>r.length>=2)??[];actorTime=0;select(city.region);view("town");}
+  function chooseCity(id:string){const city=data.cities.find(c=>c.feature.id===id);if(!city)return;studyCity=city;actorTime=0;select(city.region);view("town");}
   function configure(next:StudySettings){
-    settings={...next};borderGroup.visible=settings.borders;modelBuildings.visible=!settings.sprites;spriteBuildings.visible=settings.sprites;renderer.shadowMap.enabled=settings.shadows;
+    settings={...next};borderGroup.visible=settings.borders||settings.strategy;modelBuildings.visible=!settings.strategy&&!settings.sprites;spriteBuildings.visible=!settings.strategy&&settings.sprites;
+    for(const mesh of terrainMeshes)mesh.material=settings.strategy?politicalMats.get(mesh.userData.region)!:originalGrounds.get(mesh)!;
+    for(const child of land.children)if(!terrainMeshes.includes(child as T.Mesh))child.visible=!settings.strategy||!child.userData.detailPatch;
+    for(const item of [...ribbons,...treeGroups,rockMesh,...troopMeshes,...vehicles])item.visible=!settings.strategy;
+renderer.shadowMap.enabled=settings.shadows;
     for(const [name,mat]of Object.entries(grounds)){mat.map=settings.textures&&!settings.snow?mat.userData.retainedMap??null:null;mat.needsUpdate=true;mat.color.setHex(settings.snow?(name==="forest"?0xb8c8c0:0xe5e6db):palette[name as keyof typeof palette]);}
     leafMat.color.setHex(settings.snow?0xc5d5cf:0x668348);roofMat.color.setHex(settings.snow?0xc8d4d7:0x48565b);rockMat.color.setHex(settings.snow?0xc5cbc6:0x9a9d90);
     hemi.color.setHex(settings.snow?0xe0ebf5:0xf0efdc);sun.color.setHex(settings.snow?0xfff1da:0xffe4b9);
   }
-  const raycaster=new T.Raycaster(),pointer=new T.Vector2();let down={x:0,y:0};
-  const onDown=(e:PointerEvent)=>{down={x:e.clientX,y:e.clientY};};
-  const onUp=(e:PointerEvent)=>{if(e.button!==0||Math.hypot(e.clientX-down.x,e.clientY-down.y)>5)return;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(terrainMeshes,false)[0];if(hit){const id=hit.object.userData.region as number;select(id);onSelect(id);}};
-  renderer.domElement.addEventListener("pointerdown",onDown);renderer.domElement.addEventListener("pointerup",onUp);
+  const raycaster=new T.Raycaster(),pointer=new T.Vector2();let down={x:0,y:0},selecting=false,pointerId=-1;
+  const marquee=document.createElement("div");marquee.className="selection-marquee";marquee.hidden=true;host.append(marquee);
+  const onDown=(e:PointerEvent)=>{down={x:e.clientX,y:e.clientY};selecting=e.button===0&&e.pointerType!=="touch";pointerId=e.pointerId;if(selecting)renderer.domElement.setPointerCapture(e.pointerId);};
+  const onMove=(e:PointerEvent)=>{if(!selecting||e.pointerId!==pointerId)return;const rect=host.getBoundingClientRect();marquee.hidden=false;Object.assign(marquee.style,{left:`${Math.min(down.x,e.clientX)-rect.left}px`,top:`${Math.min(down.y,e.clientY)-rect.top}px`,width:`${Math.abs(e.clientX-down.x)}px`,height:`${Math.abs(e.clientY-down.y)}px`});};
+  const onUp=(e:PointerEvent)=>{const wasSelecting=selecting;selecting=false;marquee.hidden=true;if(renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.releasePointerCapture(e.pointerId);if(e.type==="pointercancel")return;
+    const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y)>5,rect=renderer.domElement.getBoundingClientRect();
+    if(wasSelecting&&moved){if(!settings.strategy){const ids=forces.filter(f=>{const p=screenPoint(f.x,f.z);return f.army.owner===owner&&p.visible&&p.x>=Math.min(down.x,e.clientX)-rect.left&&p.x<=Math.max(down.x,e.clientX)-rect.left&&p.y>=Math.min(down.y,e.clientY)-rect.top&&p.y<=Math.max(down.y,e.clientY)-rect.top;}).map(f=>f.army.id);selectArmies(ids,e.shiftKey);}return;}
+    if(e.button!==0||moved)return;
+    if(!settings.strategy){const hit=forces.find(f=>{const p=screenPoint(f.x,f.z);return p.visible&&Math.hypot(p.x-(e.clientX-rect.left),p.y-(e.clientY-rect.top))<14;});if(hit){selectArmies([hit.army.id],e.shiftKey);return;}}
+    pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(terrainMeshes,false)[0];if(hit){const id=hit.object.userData.region as number;select(id);onSelect(id);}
+  };
+  const keys=new Set<string>();
+  const editable=()=>document.activeElement?.matches("input,select,textarea,[contenteditable=true]");
+  const onKey=(e:KeyboardEvent)=>{if(editable())return;if(e.key==="Escape"){selectArmies([]);marquee.hidden=true;selecting=false;}if("wasd".includes(e.key.toLowerCase())&&e.key.length===1){keys.add(e.key.toLowerCase());e.preventDefault();}};
+  const onKeyUp=(e:KeyboardEvent)=>keys.delete(e.key.toLowerCase()),onBlur=()=>{keys.clear();selecting=false;marquee.hidden=true;};
+  window.addEventListener("keydown",onKey);window.addEventListener("keyup",onKeyUp);window.addEventListener("blur",onBlur);
+  renderer.domElement.addEventListener("pointerdown",onDown);renderer.domElement.addEventListener("pointermove",onMove);renderer.domElement.addEventListener("pointerup",onUp);renderer.domElement.addEventListener("pointercancel",onUp);
   const resize=()=>{const {width,height}=host.getBoundingClientRect();if(!width||!height)return;renderer.setSize(width,height);camera.left=-50*width/height;camera.right=50*width/height;camera.top=50;camera.bottom=-50;camera.updateProjectionMatrix();};
   const observer=new ResizeObserver(resize);observer.observe(host);resize();view("town");
   let previous=performance.now(),sampleAt=previous,frames=0,raf=0;
-  const render=()=>{if(disposed)return;const now=performance.now(),dt=Math.min(.05,(now-previous)/1000);previous=now;if(!document.hidden){controls.update();updateActors(dt);
+  const render=()=>{if(disposed)return;const now=performance.now(),dt=Math.min(.05,(now-previous)/1000);previous=now;if(!document.hidden){if(keys.size&&!editable()){const speed=40/camera.zoom*dt;const x=(Number(keys.has("d"))-Number(keys.has("a")))*speed,z=(Number(keys.has("s"))-Number(keys.has("w")))*speed;const delta=new T.Vector3(x+z,0,z-x).multiplyScalar(Math.SQRT1_2);camera.position.add(delta);controls.target.add(delta);}controls.update();updateActors(dt);updateOverlay();
     sun.target.position.copy(controls.target);sun.position.copy(controls.target).add(new T.Vector3(-85,160,90));
     renderer.render(scene,camera);frames++;
     if(now-sampleAt>1200){onStats({fps:Math.round(frames*1000/(now-sampleAt)),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,trees:trees.length,buildings:count,view:camera.zoom<.3?"Continent":camera.zoom>2?"Ground":"Regional"});sampleAt=now;frames=0;}
   }else{sampleAt=now;frames=0;}raf=requestAnimationFrame(render);};render();
-  return {view,chooseCity,configure,select,dispose(){disposed=true;cancelAnimationFrame(raf);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointerup",onUp);
+  return {view,chooseCity,configure,select,selectArmies,focusArmy(id:number){const f=forces.find(f=>f.army.id===id);if(f)focus(f.x,f.z,28);},dispose(){disposed=true;cancelAnimationFrame(raf);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointerup",onUp);
+    overlay.remove();marquee.remove();window.removeEventListener("keydown",onKey);window.removeEventListener("keyup",onKeyUp);window.removeEventListener("blur",onBlur);renderer.domElement.removeEventListener("pointermove",onMove);renderer.domElement.removeEventListener("pointercancel",onUp);politicalMats.forEach(m=>m.dispose());
     const geos=new Set<T.BufferGeometry>(),mats=new Set<T.Material>();scene.traverse(o=>{if(o instanceof T.Mesh || o instanceof T.Line || o instanceof T.Sprite){if("geometry" in o)geos.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);}});geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());resources.forEach(t=>t.dispose());snowLeafMat.dispose();atlasMaterials.forEach(m=>m.dispose());renderer.dispose();renderer.domElement.remove();
   }};
 }

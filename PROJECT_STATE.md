@@ -2,7 +2,7 @@
 
 ## Three.js renderer experiment — branch only
 
-`/three-preview.html` explores the existing generated world in Three.js with miniature building volumes, reused infantry/jeep models, sprites, winter colors and a Pixi comparison. The camera now stays at a fixed isometric angle, with pan/zoom and distance presets. The original game remains available. No campaign migration or new biome mechanics are shipped. See [prototype notes](docs/prototypes/threejs-migration.md) and decision 029.
+`/three-preview.html` explores the existing generated world in Three.js with miniature building volumes, reused infantry/jeep models, sprites, winter colors and a Pixi comparison. The camera now stays at a fixed isometric angle, with pan/zoom and distance presets. The original game remains available. Friendly army box/additive selection, Escape clearing, right/middle/touch and WASD panning, roster focus and a manual ownership strategy view are now available. Generated force selection is read-only; campaign orders and new biome mechanics are not shipped. See [prototype notes](docs/prototypes/threejs-migration.md) and decision 029.
 
 ## Steam jeep model study — September 10, 2026
 
