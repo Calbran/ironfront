@@ -22,7 +22,7 @@ function Study() {
       <div className="map-caption">{engine==='three'?'Left-drag selects · Shift adds · right/middle-drag or WASD pans · Escape clears':'Original Pixi renderer · same generated world'}</div>
     </section>
     <aside><div className="switch" aria-label="Renderer">{['three','pixi'].map(value=><button key={value} aria-pressed={engine===value} onClick={()=>setEngine(value)}>{value==='three'?'Three.js study':'Pixi baseline'}</button>)}</div>
-      <p className="intro">Existing geography, city layouts and artwork, explored with depth, light and miniature models.</p>
+      <p><a href="/reference-preview.html">Crafted miniature art scene ↗</a></p><p className="intro">Existing geography, city layouts and artwork, explored with depth, light and miniature models.</p>
       <form onSubmit={e=>{e.preventDefault();if(seed.trim())setRequest(seed.trim());}}><label htmlFor="seed">World seed</label><div className="seed"><input id="seed" value={seed} onChange={e=>setSeed(e.target.value)}/><button disabled={!data||seed.trim()===request}>Generate</button></div></form>
       <label htmlFor="settlement">Visit a settlement</label><select id="settlement" value={city} disabled={!data} onChange={e=>{setCity(e.target.value);setSelected(data?.cities.find(c=>c.feature.id===e.target.value)?.region??null);}}>{data?.cities.map(c=><option key={c.feature.id} value={c.feature.id}>{data.world.regions[c.region].name} · {c.feature.size}</option>)}</select>
       <button className="strategy-toggle" disabled={engine!=='three'} aria-label="Strategy view" aria-pressed={settings.strategy} onClick={()=>setSettings({...settings,strategy:!settings.strategy})}>{settings.strategy?'Strategy view':'Terrain view'}</button>

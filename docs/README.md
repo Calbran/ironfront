@@ -61,3 +61,5 @@ Mobile infantry model and accepted six-person transport direction: [027: steam j
 - [028: Live infantry rendering](05-decisions/028-live-infantry-rendering.md) — model integration, culling and limits.
 
 - [Three.js migration experiment](prototypes/threejs-migration.md) — isolated miniature-world renderer study.
+
+- [Crafted miniature art scene](prototypes/crafted-miniature-scene.md) — summer/winter reference diorama, branch only.

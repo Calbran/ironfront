@@ -15,3 +15,5 @@ Three.js as the production world renderer; miniature scale ratios; replacement b
 A standalone `/three-preview.html` entry reuses generated world data and existing infantry/jeep sources, offers the original Pixi renderer for comparison, and supports model/sprite buildings and terrain palette studies. Original checkout and campaign authority are preserved. See [prototype notes](../prototypes/threejs-migration.md).
 
 The user requested restoration of Pixi interactions. The experiment now supports friendly generated-army selection and a manual strategy mode following the existing control conventions. This remains a read-only generated preview, not live campaign command integration.
+
+The user approved building one crafted-miniature reference scene before extending the art across the generated world. `/reference-preview.html` implements that bounded summer/winter study. Its final art quality and adoption into campaign generation remain subject to review; see the scene notes for limitations.

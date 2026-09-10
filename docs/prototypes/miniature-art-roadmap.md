@@ -1,6 +1,6 @@
 # Crafted miniature reference-scene plan
 
-Status: proposed next art pass, based on the user's supplied summer/winter concept B. This is not a shipped generator or a promise of exact concept-image reproduction.
+Status: first bounded scene implemented; further art refinement and generator integration remain proposed, based on the user's supplied summer/winter concept B. This is not a shipped generator or a promise of exact concept-image reproduction.
 
 ## First milestone
 
@@ -18,3 +18,5 @@ Create one bounded reference scene: a small settlement, dirt road, bridge, river
 ## Exit criteria
 
 A coherent still view comparable in composition to the reference; units and roads remain legible at normal play scale; summer/winter variants share assets; pan/zoom and selection remain usable; measured frame time, draw calls and texture memory stay within an explicitly chosen target device budget. Then expand the generator using the same rules and modular kit. Full continent performance remains to be validated.
+
+See [implemented scene and limits](crafted-miniature-scene.md).

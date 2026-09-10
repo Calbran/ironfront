@@ -1,0 +1,14 @@
+import {chromium} from 'playwright';
+import {mkdir} from 'node:fs/promises';
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH??'/Users/brutus-mac/Library/Caches/ms-playwright/chromium-1228/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'});
+const page=await browser.newPage({viewport:{width:1500,height:1050},deviceScaleFactor:1});const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+await mkdir('/private/tmp/ironfront-reference-review',{recursive:true});await page.goto('http://127.0.0.1:5187/reference-preview.html');await page.locator('output').filter({hasText:'FPS'}).waitFor({timeout:60000});
+await page.screenshot({path:'/private/tmp/ironfront-reference-review/summer.png'});
+await page.getByRole('button',{name:'Winter',exact:true}).click();await page.waitForTimeout(500);await page.screenshot({path:'/private/tmp/ironfront-reference-review/winter.png'});
+await page.getByRole('button',{name:'town',exact:true}).click();await page.waitForTimeout(500);await page.screenshot({path:'/private/tmp/ironfront-reference-review/town.png'});
+await page.getByRole('button',{name:'Summer',exact:true}).click();await page.getByRole('button',{name:'bridge',exact:true}).click();await page.waitForTimeout(500);await page.screenshot({path:'/private/tmp/ironfront-reference-review/bridge.png'});
+await page.getByRole('button',{name:'Select reference troops',exact:true}).click();if(await page.locator('.squads strong').innerText()!=='2 squads selected')throw Error('Select failed');await page.keyboard.press('Escape');if(await page.locator('.squads strong').innerText()!=='0 squads selected')throw Error('Clear failed');
+await page.mouse.move(285,100);await page.mouse.down();await page.mouse.move(1450,980,{steps:12});await page.mouse.up();if((await page.locator('.squads strong').innerText()).startsWith('0 '))throw Error('Box selection failed');
+await page.getByLabel('Strategy readability').check();await page.getByRole('button',{name:'scene',exact:true}).click();await page.waitForTimeout(300);await page.screenshot({path:'/private/tmp/ironfront-reference-review/strategy.png'});await page.getByLabel('Strategy readability').uncheck();
+await page.setViewportSize({width:390,height:844});await page.waitForTimeout(1700);await page.screenshot({path:'/private/tmp/ironfront-reference-review/mobile.png',fullPage:true});if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Overflow');
+console.log(JSON.stringify({errors,stats:await page.locator('output').innerText()}));await browser.close();if(errors.length)process.exitCode=1;

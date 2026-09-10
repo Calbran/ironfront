@@ -17,3 +17,5 @@ Validation: inspected small and enlarged models, aiming, walking, timeline scrub
 The [steam jeep study](steam-jeep.md) is available at `/jeep-preview.html`. It includes six passenger seats at the existing infantry scale and a downloadable vehicle model.
 
 - [Three.js migration experiment](threejs-migration.md) — isolated miniature-world renderer study.
+
+- [Crafted miniature art scene](crafted-miniature-scene.md) — summer/winter reference diorama, branch only.
