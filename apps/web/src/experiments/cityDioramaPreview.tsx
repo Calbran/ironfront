@@ -49,8 +49,17 @@ function App() {
       <div className="reference-canvas" ref={host} />
       <aside>
         <p>
-          A large-city candidate: civic square, market streets, residential
-          blocks and a supply yard.
+          Ancoats-inspired industrial city: close street frontages, canal
+          warehouses, cobbled lanes and a civic square.
+        </p>
+        <p>
+          <a href="https://www.openstreetmap.org/copyright">
+            © OpenStreetMap contributors
+          </a>{" "}
+          ·{" "}
+          <a href="https://www.openstreetmap.org/#map=16/53.482/-2.2275">
+            Street reference
+          </a>
         </p>
         <div className="views">
           {(["city", "capital", "depot", "street"] as const).map((v) => (

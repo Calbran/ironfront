@@ -41,3 +41,9 @@ Authorized continuation adds farming/riverside/industrial patterns, size-based d
 ## Large-city diorama and capture capital direction
 
 User requested an upper-end city sample with units for scale and asked for a per-city building benchmark. Added a separate 160-building diorama with a prominent capital, civic square, neighborhoods and depot yard, plus density controls and benchmark captures. Recorded intended capital-based ownership separately from unchanged server rules. Expanded shadow coverage with city size to keep high-density measurements representative.
+
+## Organic layout and real-city seed
+
+User requested curved streets, close downtown density, alleys, open pockets, waterways, cobbles and steampunk lamps. They rejected the first concentric layout and requested actual city data, choosing an industrial river town. Replaced the ring approach with a locally bundled Ancoats OpenStreetMap street/canal seed, cropped to a smaller district for model scale. Pure frontage placement checks oriented model footprints against streets and neighbors; canal-side workshops, open pockets and looser outer homes are included. The fixed capital/depot require a diverted canal in the study. Added attribution, data provenance/license, offline conversion script and decision 031. World-generator integration, historical building footprints and a broader template library remain unimplemented.
+
+Validation: typecheck, 111 tests, build, city/capital/depot/street screenshots, winter and narrow viewport, and nine browser performance samples through 1,024 buildings. No browser errors; p95 18.5–18.7 ms locally. Results recorded separately in `organic-city-results.json`; higher geometry density remains a material limit for other devices/live combat.

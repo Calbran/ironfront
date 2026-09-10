@@ -1,3 +1,7 @@
+import {
+  planOrganicCity,
+  lineDistance,
+} from "../../../../packages/game-core/src/organicCity";
 import * as T from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -49,7 +53,7 @@ export function cityDiorama(
     far: 450,
   });
   sun.shadow.normalBias = 0.06;
-  sun.shadow.bias=-.0002;
+  sun.shadow.bias = -0.0002;
   scene.add(sun);
   const kit = createMiniatureKit(),
     rig = bakeInfantry(0),
@@ -61,6 +65,7 @@ export function cityDiorama(
     disposed = false,
     raf = 0;
   scene.add(group);
+  const ownedTextures: T.Texture[] = [];
   const materials: T.Material[] = [],
     geometries: T.BufferGeometry[] = [];
   let winterMeshes: T.Object3D[] = [],
@@ -77,6 +82,7 @@ export function cityDiorama(
     return m;
   };
   function clear() {
+    ownedTextures.splice(0).forEach((t) => t.dispose());
     group.traverse((o) => {
       if (o instanceof T.InstancedMesh) o.dispose();
       if (o instanceof T.Mesh) {
@@ -133,75 +139,139 @@ export function cityDiorama(
       d: number,
       a = 0,
     ) => add(new T.BoxGeometry(w, h, d), m, x, y, z, a);
-    type Placement = {
-      x: number;
-      z: number;
-      angle: number;
-      scale: number;
-      variant: string;
-    };
-    const lots: Placement[] = [];
-    // Blocks have shared streets, paired frontage and back gardens; reserve a civic precinct and depot yard.
-    let ring = 1;
-    fill: while (lots.length < target - 1) {
-      for (let row = -ring; row <= ring; row++)
-        for (let col = -ring; col <= ring; col++) {
-          if (Math.max(Math.abs(row), Math.abs(col)) !== ring) continue;
-          const x = col * 11 + Math.sign(col) * 7,
-            z = row * 10 + Math.sign(row) * 6;
-          if (
-            Math.abs(x) < 7 ||
-            Math.abs(z) < 5 ||
-            (Math.abs(x) < 30 && Math.abs(z) < 25) ||
-            (x > 22 && x < 52 && z > 24 && z < 52)
-          )
-            continue;
-          const industrial = z < -34,
-            variant = industrial
-              ? "factory"
-              : Math.abs(z) < 24
-                ? "shop"
-                : (row + col) % 7 === 0
-                  ? "hall"
-                  : "home";
-          lots.push({
-            x,
-            z,
-            angle:
-              Math.sign(col) *
-              (Math.abs(col) % 2 === 0 ? Math.PI / 2 : -Math.PI / 2),
-            scale: industrial
-              ? 0.76
-              : 0.83 + (Math.abs(row * 7 + col) % 3) * 0.035,
-            variant,
-          });
-          if (lots.length >= target - 1) break fill;
-        }
-      ring++;
-    }
-    // The inner square is the city's recognizable ownership landmark.
-    extent = Math.max(
-      75,
-      ...lots.map((p) => Math.max(Math.abs(p.x), Math.abs(p.z)) + 13),
-    );
-    count=lots.length+1;
-    sun.position.set(-extent*.8,extent*1.4,extent*.6);
-    Object.assign(sun.shadow.camera,{left:-extent*1.5,right:extent*1.5,top:extent*1.5,bottom:-extent*1.5,far:extent*6});sun.shadow.camera.updateProjectionMatrix();
+    const layout = planOrganicCity(target);
+    const lots = layout.lots;
+    extent = layout.extent;
+    count = lots.length + 1;
+    sun.position.set(-extent * 0.8, extent * 1.4, extent * 0.6);
+    Object.assign(sun.shadow.camera, {
+      left: -extent * 1.5,
+      right: extent * 1.5,
+      top: extent * 1.5,
+      bottom: -extent * 1.5,
+      far: extent * 6,
+    });
+    sun.shadow.camera.updateProjectionMatrix();
     box(ground, 0, -0.65, 0, extent * 2 + 32, 1.2, extent * 2 + 32);
     box(paving, 0, 0.025, 0, 49, 0.1, 42);
-    box(path, 0, 0.05, 0, 8, 0.12, extent * 2 + 12);
-    box(path, 0, 0.06, 0, extent * 2 + 12, 0.12, 6);
-    for (let x = 34.5; x <= extent; x += 22)
-      for (const side of [-1, 1])
-        box(path, x * side, 0.045, 0, 2.2, 0.09, extent * 2 + 5);
-    for (let z = 31; z <= extent; z += 30)
-      for (const side of [-1, 1])
-        box(path, 0, 0.04, z * side, extent * 2 + 5, 0.08, 2.2);
+    // World-aligned cobbles remain the same size on curved and straight streets.
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 128;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#595d59";
+    ctx.fillRect(0, 0, 128, 128);
+    for (let row = 0; row < 8; row++)
+      for (let col = -1; col < 8; col++) {
+        const shade = 125 + ((row * 17 + col * 23) % 35);
+        ctx.fillStyle = `rgb(${shade + 8},${shade + 6},${shade})`;
+        ctx.fillRect(col * 20 + (row % 2) * 10 + 1, row * 16 + 1, 18, 14);
+      }
+    const cobbles = new T.CanvasTexture(canvas);
+    cobbles.wrapS = cobbles.wrapT = T.RepeatWrapping;
+    cobbles.colorSpace = T.SRGBColorSpace;
+    path.map = cobbles;
+    paving.map = cobbles;
+    path.bumpMap = cobbles;
+    path.bumpScale = 0.06;
+    ownedTextures.push(cobbles);
+    const ribbon = (
+      points: { x: number; z: number }[],
+      width: number,
+      m: T.Material,
+      y: number,
+    ) => {
+      for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1],
+          b = points[i],
+          dx = b.x - a.x,
+          dz = b.z - a.z;
+        box(
+          m,
+          (a.x + b.x) / 2,
+          y,
+          (a.z + b.z) / 2,
+          width,
+          0.08,
+          Math.hypot(dx, dz) + 0.06,
+          Math.atan2(dx, dz),
+        );
+      }
+    };
+    const water = mat("#477d84");
+    for (const river of layout.rivers) {
+      ribbon(river, 7, soil, 0.015);
+      ribbon(river, 4, water, 0.075);
+    }
+    const lampGlass = mat("#efd696");
+    lampGlass.emissive.set("#d4a353");
+    lampGlass.emissiveIntensity = 0.5;
+    for (const street of layout.streets) {
+      for (let i = 1; i < street.points.length; i++) {
+        const a = street.points[i - 1],
+          b = street.points[i],
+          p = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+        if (
+          (Math.abs(p.x) < 25 && p.z > -22 && p.z < 32) ||
+          (p.x > 20 && p.x < 54 && p.z > 23 && p.z < 53)
+        )
+          continue;
+        const bridge = layout.rivers.some((r) => lineDistance(p, r) < 4.5);
+        ribbon(
+          [a, b],
+          street.width,
+          bridge ? stone : path,
+          bridge ? 0.25 : 0.13,
+        );
+        if (bridge) {
+          const angle = Math.atan2(b.x - a.x, b.z - a.z),
+            len = Math.hypot(b.x - a.x, b.z - a.z) + 0.05;
+          for (const side of [-1, 1])
+            box(
+              stone,
+              p.x + (Math.cos(angle) * side * street.width) / 2,
+              0.65,
+              p.z - (Math.sin(angle) * side * street.width) / 2,
+              0.25,
+              0.65,
+              len,
+              angle,
+            );
+        }
+        if (!street.alley && !bridge && i % 12 === 0) {
+          const dx = b.x - a.x,
+            dz = b.z - a.z,
+            l = Math.hypot(dx, dz),
+            x = p.x + (dz / l) * (street.width / 2 + 0.6),
+            z = p.z - (dx / l) * (street.width / 2 + 0.6);
+          add(new T.CylinderGeometry(0.16, 0.28, 0.4, 6), roof, x, 0.2, z);
+          add(new T.CylinderGeometry(0.07, 0.11, 2.7, 6), brass, x, 1.7, z);
+          box(brass, x + 0.35, 3, z, 0.8, 0.12, 0.12);
+          box(lampGlass, x + 0.68, 2.8, z, 0.36, 0.5, 0.36);
+          add(
+            new T.ConeGeometry(0.38, 0.3, 4),
+            roof,
+            x + 0.68,
+            3.2,
+            z,
+            Math.PI / 4,
+          );
+          box(brass, x + 0.68, 2.52, z, 0.46, 0.1, 0.46);
+        }
+      }
+    }
     // Capital: raised civic hall, portico, slate roof and a clock tower.
     box(stone, 0, 0.6, -7, 24, 1.2, 16);
     box(stone, 0, 4.6, -7, 21, 8, 13);
-    add(new T.ConeGeometry(1,3,4).rotateY(Math.PI/4).scale(23/Math.SQRT2,1,15/Math.SQRT2),roof,0,10,-7);
-    for(const y of [1.5,4,7.6])box(stone,0,y,-7,21.4,.2,13.4);
+    add(
+      new T.ConeGeometry(1, 3, 4)
+        .rotateY(Math.PI / 4)
+        .scale(23 / Math.SQRT2, 1, 15 / Math.SQRT2),
+      roof,
+      0,
+      10,
+      -7,
+    );
+    for (const y of [1.5, 4, 7.6]) box(stone, 0, y, -7, 21.4, 0.2, 13.4);
     box(stone, 0, 9.8, -10, 6, 19.6, 6);
     box(roof, 0, 20, -10, 7, 1, 7);
     add(new T.ConeGeometry(4.8, 5, 4), roof, 0, 23, -10, Math.PI / 4);
@@ -249,50 +319,30 @@ export function cityDiorama(
       );
     }
     for (let i = 0; i < 4; i++) box(wood, 29 + i * 3, 0.5, 44, 2.4, 1, 5);
-    // A river edge, bridge approach and lamps frame the city without changing its building budget.
-    const water = mat("#477d84"),
-      river: number[] = [];
-    for (let z = -extent - 16; z < extent + 16; z += 2) {
-      const x = -extent - 8 + Math.sin(z * 0.045) * 1.5,
-        nx = -extent - 8 + Math.sin((z + 2) * 0.045) * 1.5;
-      for (const p of [
-        [x - 3, z],
-        [x + 3, z],
-        [nx - 3, z + 2],
-        [nx - 3, z + 2],
-        [x + 3, z],
-        [nx + 3, z + 2],
-      ])
-        river.push(p[0], 0.025, p[1]);
-    }
-    const riverGeo = new T.BufferGeometry();
-    riverGeo.setAttribute("position", new T.Float32BufferAttribute(river, 3));
-    riverGeo.computeVertexNormals();
-    water.side = T.DoubleSide;
-    add(riverGeo, water, 0, 0, 0);
-    box(stone, -extent - 8, 0.28, 0, 11, 0.55, 5);
-    for (const z of [-2.5, 2.5]) box(stone, -extent - 8, 0.8, z, 11, 0.7, 0.4);
-    for (let z = -extent + 12; z < extent; z += 18)
-      for (const x of [-5, 5]) {
-        if(x<0&&z>14&&z<32)continue;
-        box(brass, x, 1.25, z, 0.14, 2.5, 0.14);
-        box(brass, x, 2.55, z, 0.6, 0.35, 0.6);
-      }
-    // Merge street furniture and fences into material batches.
+    // Gardens and workshops rotate with the frontage rather than the world axes.
     for (const p of lots) {
-      box(soil, p.x, 0.08, p.z, 8.6, 0.08, 8);
-      if (p.variant === "home") {
-        box(wood, p.x, 0.6, p.z - 4.2, 8.5, 0.12, 0.12);
-        for (const dx of [-4, 0, 4])
-          box(wood, p.x + dx, 0.45, p.z - 4.2, 0.15, 0.9, 0.15);
-      }
-      if (p.variant === "factory") {
-        box(brass, p.x + 3, 1, p.z + 3, 1.2, 2, 1.2);
-        box(wood, p.x - 3, 0.4, p.z + 3, 2, 0.8, 2);
+      const local = (x: number, z: number) => ({
+        x: p.x + Math.cos(p.angle) * x + Math.sin(p.angle) * z,
+        z: p.z - Math.sin(p.angle) * x + Math.cos(p.angle) * z,
+      });
+      box(soil, p.x, 0.09, p.z, 6 * p.scale, 0.08, 5 * p.scale, p.angle);
+      if (p.variant === "home" && Math.hypot(p.x, p.z) > extent * 0.8) {
+        const q = local(0, -3.7);
+        box(wood, q.x, 0.6, q.z, 7, 0.12, 0.12, p.angle);
+        for (const x of [-3.4, 0, 3.4]) {
+          const q = local(x, -3.7);
+          box(wood, q.x, 0.45, q.z, 0.15, 0.9, 0.15);
+        }
       }
     }
     for (const [m, gs] of batches) {
       const g = mergeGeometries(gs)!;
+      if (m === path || m === paving) {
+        const pos = g.getAttribute("position"),
+          uv = g.getAttribute("uv");
+        for (let i = 0; i < pos.count; i++)
+          uv.setXY(i, pos.getX(i) / 4, pos.getZ(i) / 4);
+      }
       gs.forEach((g) => g.dispose());
       const mesh = new T.Mesh(g, m);
       mesh.castShadow =
@@ -300,22 +350,17 @@ export function cityDiorama(
       mesh.receiveShadow = true;
       group.add(mesh);
     }
-    const cap = new T.Mesh(new T.ConeGeometry(1,3,4).rotateY(Math.PI/4).scale(23.1/Math.SQRT2,1,15.1/Math.SQRT2), mat("#e3e9e4"));
-    cap.position.set(0,10.06,-7);
+    const cap = new T.Mesh(
+      new T.ConeGeometry(1, 3, 4)
+        .rotateY(Math.PI / 4)
+        .scale(23.1 / Math.SQRT2, 1, 15.1 / Math.SQRT2),
+      mat("#e3e9e4"),
+    );
+    cap.position.set(0, 10.06, -7);
     cap.visible = winter;
     group.add(cap);
     winterMeshes.push(cap);
-    const placements = [...lots];
-    for (let i = 0; i < 40; i++) {
-      const a = i * 2.399;
-      placements.push({
-        x: Math.cos(a) * (extent + 6),
-        z: Math.sin(a) * (extent + 6),
-        angle: a,
-        scale: 0.65 + (i % 3) * 0.1,
-        variant: i % 3 ? "tree" : "pine",
-      });
-    }
+    const placements = [...lots, ...layout.trees];
     for (const x of [-17, 17])
       for (const z of [9, 15])
         placements.push({ x, z, angle: 0, scale: 0.55, variant: "tree" });
@@ -344,7 +389,8 @@ export function cityDiorama(
         }
       }
     }
-    const troopMat = mat("#ffffff");troopMat.vertexColors=true;
+    const troopMat = mat("#ffffff");
+    troopMat.vertexColors = true;
     for (const part of rig.parts) {
       const mesh = new T.InstancedMesh(part.geometry, troopMat, 144);
       for (let i = 0; i < 144; i++) {
@@ -381,7 +427,7 @@ export function cityDiorama(
         ? new T.Vector3(36, 0, 37)
         : view === "street"
           ? new T.Vector3(40, 0, -35)
-          : new T.Vector3(0, view==="capital"?7:0, 3);
+          : new T.Vector3(0, view === "capital" ? 7 : 0, 3);
     controls.target.copy(target);
     camera.position.copy(target).add(new T.Vector3(180, 180, 180));
     camera.zoom = view === "city" ? 85 / extent : view === "capital" ? 2.5 : 4;

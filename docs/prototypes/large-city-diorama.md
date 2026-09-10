@@ -2,7 +2,13 @@
 
 Open `/city-diorama.html`. The default is 160 buildings, including a custom capital building, plus 144 static infantry figures and two existing jeep models. City, Capital, Depot and Street presets provide scale comparisons. Building counts can be changed to 128, 256, 512 and 1,024. The large densities expand the land occupied by the city; model and unit scales stay unchanged. Winter is a visual treatment, not a new biome.
 
-The composition reserves a civic precinct and supply yard, places houses/shops/workshops in street-facing blocks, adds gardens, fences, crates, lamps and a river-edge bridge, and uses a raised clock-tower capital as its landmark. It is authored presentation geometry, separate from the world generator and campaign authority. Further architectural refinement and integration into the town planner require visual review.
+The original composition reserves a civic precinct and supply yard, places houses/shops/workshops in street-facing blocks, adds gardens, fences, crates, lamps and a river-edge bridge, and uses a raised clock-tower capital as its landmark. It is authored presentation geometry, separate from the world generator and campaign authority. Further architectural refinement and integration into the town planner require visual review.
+
+## Current real-city layout
+
+The current scene uses `packages/game-core/src/organicCity.ts` with a bundled Ancoats OpenStreetMap reference. Dense frontage placement uses oriented footprint separation and street clearance; civic/depot areas and small parks stay reserved. Canal-side lots favor factories, and outer lots favor homes. The capital and units retain their scale. Cobbles use one procedural texture; lamps share merged geometry and emissive materials, without individual lights. Reference data and licensing live in `packages/game-core/data/city-samples/README.md`.
+
+This is a contemporary street seed, with canal geometry diverted around the fixed sample landmarks. It does not yet import building footprints or connect the diorama to actual campaign rivers. The density controls enlarge the same source district, not the geographic coverage of the source. See [decision 031](../05-decisions/031-real-city-street-seeds.md). Earlier results below describe the original layout; the updated measurements are stored separately in `organic-city-results.json`.
 
 ## Method
 
@@ -28,3 +34,7 @@ See [decision 030](../05-decisions/030-city-capitals-and-large-city-study.md) fo
 | 1,024 | 17.1 ms | 17.2 ms | 64 / 497,866 |
 
 All normal samples stayed near 60 FPS with no frames above 33.4 ms. The renderer reported 62 geometries and four textures across density rebuilds. Browser error and phone-width overflow checks passed. See [raw results, including CPU4x](large-city-results.json). TypeScript and production build passed; Vite retains its large-chunk advisory. These figures are the static diorama's budget, not a production cap.
+
+### Ancoats-seeded layout rerun
+
+The updated local run recorded p50 frame intervals of about 16.7 ms and p95 of 18.5–18.7 ms across the nine samples, including 256 buildings at CPU4x. No sampled intervals exceeded 33.4 ms, and no browser errors were recorded. City view used 58 calls; the 1,024-building stress case submitted about 3.50 million triangles, substantially more than the original sparse study. This is still a repeated-asset/static-unit benchmark on the local machine. Typecheck, all 111 tests and the production build passed. Winter and phone-width overflow checks passed in the browser script.

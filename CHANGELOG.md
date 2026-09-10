@@ -1,5 +1,12 @@
 # Changelog
 
+## Experimental branch — real-city organic layout
+
+- Seed the large-city study from a bundled, attributed Ancoats street/canal extract; add a repeatable offline converter.
+- Fit closer street-facing model footprints, canal workshops, open pockets and rural housing.
+- Add procedural cobblestones, merged steampunk lamps and raised canal crossings.
+- Add deterministic count, frontage, building overlap and open-space checks.
+
 ## Experimental branch — large-city scale study
 
 - Add a standalone 160-building diorama with a capital landmark, civic/market/residential/industrial areas, supply yard, infantry and jeeps.
