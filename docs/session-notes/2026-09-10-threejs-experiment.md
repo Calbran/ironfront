@@ -13,3 +13,7 @@ Added shared miniature building/tree assets to the generated world with chunked 
 ## Live integration and generated-region refinement
 
 Connected an opt-in Three.js map to the existing App polling and command callbacks. Built an isolated real-server soak harness. After the user requested further art refinement, added one generated-region terrain study driven by existing roads, rivers, settlements and field parcels. Preserved the original checkout, Pixi default, campaign authority and the fixed camera. See prototype notes for test scope and limitations.
+
+## River and edge follow-up
+
+User approved continuing the generated-region study. Added bounded river-corner rounding, continuous strip joins and matching channel/bank paths, with bridge approaches and mouths retained. Added material/grain edge blending and cached terrain-vertex evaluation. Live renderer and authoritative world remain unchanged.

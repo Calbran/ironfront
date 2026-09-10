@@ -1,4 +1,5 @@
 import * as T from "three";
+import { presentationRivers } from "./riverPresentation";
 import { createMiniatureKit } from "./referenceAssets";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import type { MiniatureData } from "./miniatureData";
@@ -23,7 +24,7 @@ export function generatedLandscape(
   data: MiniatureData,
   regionMeshes: T.Mesh[],
 ) {
-  const rivers = (data.world.geography?.rivers ?? []).flatMap((r) =>
+  const rivers = presentationRivers(data).flatMap((r) =>
     r.slice(1).map(
       (b, i) =>
         [
@@ -126,7 +127,7 @@ export function generatedLandscape(
           (t) => Math.hypot(x - t.x * S, z - t.y * S) - t.width * S * 0.32,
         ),
       );
-    const edge = T.MathUtils.smoothstep(nearest(p, edges), 0, 5);
+    const edge = T.MathUtils.smoothstep(nearest(p, edges), 0, 10);
     const rolling =
       Math.max(0, 0.5 + noise(x * 0.14, z * 0.14) * 0.7) *
       T.MathUtils.smoothstep(clear, 0, 4);
@@ -142,8 +143,20 @@ export function generatedLandscape(
   const groundSummer: number[] = [],
     groundWinter: number[] = [],
     vertices: number[] = [],
+    blends: number[] = [],
     dummy = new T.Object3D();
+  const baseColor = (source.material as T.MeshStandardMaterial).color.clone();
+  const vertexCache = new Map<string, number[]>();
   function vertex(p: P) {
+    const key = `${p.x.toFixed(6)},${p.z.toFixed(6)}`,
+      cached = vertexCache.get(key);
+    if (cached) {
+      vertices.push(p.x, cached[0], p.z);
+      groundSummer.push(...cached.slice(1, 4));
+      groundWinter.push(...cached.slice(4, 7));
+      blends.push(cached[7]);
+      return;
+    }
     const road = nearest(p, roads),
       river = nearest(p, localRivers),
       wear = Math.max(
@@ -157,8 +170,9 @@ export function generatedLandscape(
       new T.Color("#8d8b77"),
       1 - T.MathUtils.smoothstep(river, 1.1, 3.4),
     );
-    const border = T.MathUtils.smoothstep(nearest(p, edges), 0, 5);
-    color.lerp(new T.Color("#95a36b"), 1 - border);
+    const border = T.MathUtils.smoothstep(nearest(p, edges), 0, 10);
+    color.lerp(baseColor, 1 - border);
+    blends.push(border);
     vertices.push(p.x, height(p.x, p.z) + 0.028, p.z);
     color.toArray(groundSummer, groundSummer.length);
     color
@@ -166,7 +180,14 @@ export function generatedLandscape(
         new T.Color("#e0e5e2").multiplyScalar(1 + n * 0.025),
         0.94 - wear * 0.65,
       )
+      .lerp(new T.Color(0xe5e6db), 1 - border)
       .toArray(groundWinter, groundWinter.length);
+    vertexCache.set(key, [
+      vertices[vertices.length - 2],
+      ...groundSummer.slice(-3),
+      ...groundWinter.slice(-3),
+      border,
+    ]);
   }
   function triangle(a: P, b: P, c: P, depth = 0) {
     const edge = Math.max(
@@ -197,9 +218,11 @@ export function generatedLandscape(
     });
     triangle(points[0], points[1], points[2]);
   }
+  vertexCache.clear();
   const geometry = new T.BufferGeometry();
   geometry.setAttribute("position", new T.Float32BufferAttribute(vertices, 3));
   geometry.setAttribute("color", new T.Float32BufferAttribute(groundSummer, 3));
+  geometry.setAttribute("edgeBlend", new T.Float32BufferAttribute(blends, 1));
   geometry.computeVertexNormals();
   const textureData = new Uint8Array(128 * 128 * 4);
   for (let y = 0; y < 128; y++)
@@ -226,19 +249,22 @@ export function generatedLandscape(
   material.onBeforeCompile = (shader) => {
     shader.uniforms.groundGrain = { value: texture };
     shader.vertexShader = shader.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec2 groundUV;")
+      .replace(
+        "#include <common>",
+        "#include <common>\nattribute float edgeBlend;varying vec2 groundUV;varying float groundBlend;",
+      )
       .replace(
         "#include <begin_vertex>",
-        "#include <begin_vertex>\ngroundUV=position.xz*.14;",
+        "#include <begin_vertex>\ngroundUV=position.xz*.14;groundBlend=edgeBlend;",
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",
-        "#include <common>\nvarying vec2 groundUV;uniform sampler2D groundGrain;",
+        "#include <common>\nvarying vec2 groundUV;varying float groundBlend;uniform sampler2D groundGrain;",
       )
       .replace(
         "#include <color_fragment>",
-        "#include <color_fragment>\ndiffuseColor.rgb*=texture2D(groundGrain,groundUV).rgb;",
+        "#include <color_fragment>\ndiffuseColor.rgb*=mix(vec3(1.0),texture2D(groundGrain,groundUV).rgb,groundBlend);",
       );
   };
   const mesh = new T.Mesh(geometry, material);

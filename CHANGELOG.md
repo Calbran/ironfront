@@ -1,5 +1,10 @@
 # Changelog
 
+## Experimental branch — river and region-edge refinement
+
+- Rounded preview river bends, joined strip edges and shared those paths with channel/riverbank placement while preserving bridge approaches and mouths.
+- Blended terrain height, color and grain into neighboring ground, including winter; cached repeated terrain vertices during construction.
+
 ## Experimental branch — live Three.js and generated landscape
 
 - Added an opt-in live map adapter using existing authoritative snapshots and command callbacks, with Pixi retained as default.

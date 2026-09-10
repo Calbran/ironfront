@@ -1,3 +1,4 @@
+import { presentationRivers } from "./riverPresentation";
 import {generatedLandscape} from './generatedLandscape';
 import {liveUnits,type LiveCallbacks} from './liveUnits';
 import type {World} from '../../../../packages/game-core/src/index';
@@ -94,10 +95,14 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
     scene.add(selection);
   }
   const ribbons: T.Mesh[] = [];
-  function ribbon(points: {x:number;y:number}[], width: number, mat: T.Material, y = 0.055) {
+  function ribbon(points: {x:number;y:number}[], width: number, mat: T.Material, y = 0.055, joined=false) {
     if(points.length<2)return;
     const positions:number[]=[];
-    for(let i=1;i<points.length;i++){
+    if(joined){
+      const sides=points.map((p,i)=>{const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],dx=b.x-a.x,dz=b.y-a.y,len=Math.hypot(dx,dz)||1;return [[p.x*S-dz/len*width/2,p.y*S+dx/len*width/2],[p.x*S+dz/len*width/2,p.y*S-dx/len*width/2]];});
+      for(let i=1;i<sides.length;i++)for(const p of [sides[i-1][0],sides[i-1][1],sides[i][0],sides[i][0],sides[i-1][1],sides[i][1]])positions.push(p[0],y,p[1]);
+    }
+    for(let i=1;!joined&&i<points.length;i++){
       const a=points[i-1],b=points[i],dx=b.x-a.x,dz=b.y-a.y,len=Math.hypot(dx,dz);if(len<0.001)continue;
       const nx=-dz/len*width/2,nz=dx/len*width/2;
       for(const p of [[a.x*S+nx,a.y*S+nz],[a.x*S-nx,a.y*S-nz],[b.x*S+nx,b.y*S+nz],[b.x*S+nx,b.y*S+nz],[a.x*S-nx,a.y*S-nz],[b.x*S-nx,b.y*S-nz]]) positions.push(p[0],y,p[1]);
@@ -107,7 +112,7 @@ export function miniatureScene(host: HTMLElement, data: MiniatureData, onSelect:
   }
   const roadMat = new T.MeshStandardMaterial({ color: 0xb7a17a, side: T.DoubleSide, roughness: 1 });
   const riverMat = new T.MeshStandardMaterial({ color:0x4c858b,side:T.DoubleSide,roughness:0.5,metalness:0.04 });
-  for(const river of data.world.geography?.rivers ?? []) ribbon(river.map(p=>({x:p[0],y:p[1]})),1.35,riverMat,0.035);
+  for(const river of live ? data.world.geography?.rivers ?? [] : presentationRivers(data)) ribbon(river.map(p=>({x:p[0],y:p[1]})),1.35,riverMat,0.035,!live);
   for(const road of data.roads) ribbon(road.points,road.kind==="main"?0.8:0.5,roadMat);
   for(const city of data.cities) for(const road of city.layout.roads) ribbon(road,0.8,roadMat);
 
@@ -271,7 +276,7 @@ renderer.shadowMap.enabled=settings.shadows;
 
     if(now-sampleAt>1200){onStats({...detailed.stats(),fps:Math.round(frames*1000/(now-sampleAt)),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,trees:trees.length,buildings:count,view:camera.zoom<.3?"Continent":camera.zoom>2?"Ground":"Regional"});sampleAt=now;frames=0;}
   }else{sampleAt=now;frames=0;}raf=requestAnimationFrame(render);};render();
-  return {view,chooseCity,configure,select,selectArmies,refineRegion(){if(landscapeStudy){landscapeStudy.setEnabled(true);chooseCity(landscapeStudy.city.feature.id);}},landscapeStats:()=>landscapeStudy?.stats,setLandscape(enabled:boolean){landscapeStudy?.setEnabled(enabled);},focusRegion(id:number){const r=data.world.regions[id];if(r)focus(r.x*S,r.y*S,85);},project(x:number,y:number){const p=screenPoint(x*S,y*S);return p;},liveSnapshot:()=>liveLayer?.snapshot(),setSelectedSquads(ids:string[]){liveLayer?.setSelected(ids);if(liveLayer){selectedArmies.clear();for(const s of data.world.tactics?.squads??[])if(ids.includes(s.id)&&s.army!==null)selectedArmies.add(s.army);}},updateWorld(world:World){data.world=world;liveLayer?.update(world);refreshLabels();const visible=new Set(world.vision?.visible??world.regions.map(r=>r.id));fogMeshes.forEach(m=>m.visible=!visible.has(m.userData.region));for(const line of borderGroup.children){const r=world.regions[line.userData.region];((line as T.Line).material as T.LineBasicMaterial).color.set(r.owner===null?0xc9c7a2:world.nations[r.owner].color);}for(const r of world.regions)politicalMats.get(r.id)?.color.set(r.owner===null?0x969e8a:world.nations[r.owner].color);},setLoad:detailed.setLoad,setFullDetail(value:boolean){fullDetail=value;},pan(dx:number,dz:number){camera.position.x+=dx;camera.position.z+=dz;controls.target.x+=dx;controls.target.z+=dz;},benchmark(ms=4000){if(sample)throw Error('Benchmark already running');return new Promise(resolve=>{sample={frames:[],last:performance.now(),end:performance.now()+ms,calls:0,triangles:0,peakVisibleSoldiers:0,resolve};});},focusArmy(id:number){const f=forces.find(f=>f.army.id===id);if(f)focus(f.x,f.z,28);},dispose(){disposed=true;sample?.resolve({cancelled:true});sample=undefined;landscapeStudy?.dispose();liveLayer?.dispose();detailed.dispose();cancelAnimationFrame(raf);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointerup",onUp);
+  return {view,chooseCity,configure,select,selectArmies,refineRegion(){if(landscapeStudy){landscapeStudy.setEnabled(true);chooseCity(landscapeStudy.city.feature.id);if(selection)selection.visible=false;}},landscapeStats:()=>landscapeStudy?.stats,setLandscape(enabled:boolean){landscapeStudy?.setEnabled(enabled);},focusRegion(id:number){const r=data.world.regions[id];if(r)focus(r.x*S,r.y*S,85);},project(x:number,y:number){const p=screenPoint(x*S,y*S);return p;},liveSnapshot:()=>liveLayer?.snapshot(),setSelectedSquads(ids:string[]){liveLayer?.setSelected(ids);if(liveLayer){selectedArmies.clear();for(const s of data.world.tactics?.squads??[])if(ids.includes(s.id)&&s.army!==null)selectedArmies.add(s.army);}},updateWorld(world:World){data.world=world;liveLayer?.update(world);refreshLabels();const visible=new Set(world.vision?.visible??world.regions.map(r=>r.id));fogMeshes.forEach(m=>m.visible=!visible.has(m.userData.region));for(const line of borderGroup.children){const r=world.regions[line.userData.region];((line as T.Line).material as T.LineBasicMaterial).color.set(r.owner===null?0xc9c7a2:world.nations[r.owner].color);}for(const r of world.regions)politicalMats.get(r.id)?.color.set(r.owner===null?0x969e8a:world.nations[r.owner].color);},setLoad:detailed.setLoad,setFullDetail(value:boolean){fullDetail=value;},pan(dx:number,dz:number){camera.position.x+=dx;camera.position.z+=dz;controls.target.x+=dx;controls.target.z+=dz;},benchmark(ms=4000){if(sample)throw Error('Benchmark already running');return new Promise(resolve=>{sample={frames:[],last:performance.now(),end:performance.now()+ms,calls:0,triangles:0,peakVisibleSoldiers:0,resolve};});},focusArmy(id:number){const f=forces.find(f=>f.army.id===id);if(f)focus(f.x,f.z,28);},dispose(){disposed=true;sample?.resolve({cancelled:true});sample=undefined;landscapeStudy?.dispose();liveLayer?.dispose();detailed.dispose();cancelAnimationFrame(raf);observer.disconnect();controls.dispose();renderer.domElement.removeEventListener("pointerdown",onDown);renderer.domElement.removeEventListener("pointerup",onUp);
     overlay.remove();marquee.remove();window.removeEventListener("keydown",onKey);window.removeEventListener("keyup",onKeyUp);window.removeEventListener("blur",onBlur);renderer.domElement.removeEventListener("pointermove",onMove);renderer.domElement.removeEventListener("pointercancel",onUp);politicalMats.forEach(m=>m.dispose());
     const geos=new Set<T.BufferGeometry>(),mats=new Set<T.Material>();scene.traverse(o=>{if(o instanceof T.Mesh || o instanceof T.Line || o instanceof T.Sprite){if("geometry" in o)geos.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);}});geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());resources.forEach(t=>t.dispose());snowLeafMat.dispose();atlasMaterials.forEach(m=>m.dispose());renderer.dispose();renderer.domElement.remove();
   }};

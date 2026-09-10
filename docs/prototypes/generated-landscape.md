@@ -15,3 +15,11 @@ Verification: `scripts/generated-landscape-browser.ts` captures summer/winter, b
 The default Meridian study contains 83,626 ground triangles, eight fields, 32 trees, 77 shrubs, 105 bank rocks, 479 grass tufts and one bridge deck. At the same town camera, detailed rendering submitted 193 calls / 572,418 triangles versus 148 calls / 421,956 triangles with the layer hidden. Five-second samples stayed near 60 FPS: p95 18.7 ms detailed, 18.6 ms baseline; neither sample contained a frame above 33.4 ms. Browser error and phone-width overflow checks passed. See [raw comparison](generated-landscape-results.json).
 
 Turning the layer off hides it for drawing; it intentionally retains its allocations for immediate comparison. Extending this ground geometry to every region without chunk streaming is not authorized by these numbers. River paths still show the underlying generated angular geometry, and regional transitions and asset detail remain visibly short of the authored reference.
+
+## River and edge refinement
+
+The preview now rounds river corners with bounded quadratic segments while retaining original mouths and bridge approaches. Joined strip edges avoid gaps at bends. The sculpted channel and bank placement consume the same presentation paths; authoritative river/navigation data and the live renderer remain unchanged. This improves existing paths rather than creating a new drainage simulation.
+
+Terrain height, color and texture grain fade over a ten-model-unit margin into the original region material, including the winter palette. The art-tour button clears its temporary region outline; ordinary map selection still draws an outline. Terrain construction caches repeated vertices to avoid recalculating nearby roads, rivers and buildings for shared triangle corners.
+
+Follow-up measurement: p95 17.6 ms both detailed and baseline, no sampled frames over 33.4 ms, no browser errors or phone overflow. Refined rendering submitted 192 calls / 574,918 triangles. The runner reached the study in 4,452 ms including its 1,500 ms settling delay. See [river/edge comparison](generated-landscape-river-results.json); the earlier comparison remains retained above. These are short local samples rather than a new full campaign soak.

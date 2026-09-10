@@ -21,10 +21,12 @@ try {
     if (r.status() >= 400 && !r.url().endsWith("/favicon.ico"))
       errors.push(`${r.status()} ${r.url()}`);
   });
+  const started = Date.now();
   await page.goto("http://127.0.0.1:5187/three-preview.html");
   await page.waitForFunction(() => !!window.__worldStudy, { timeout: 120000 });
   await page.getByRole("button", { name: "Visit refined region" }).click();
   await page.waitForTimeout(1500);
+  const readyMs = Date.now() - started;
   const stats = await page.evaluate(() =>
     window.__worldStudy!.landscapeStats(),
   );
@@ -53,7 +55,7 @@ try {
     await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
   )
     errors.push("Horizontal overflow");
-  const result = { stats, detailed, baseline, errors };
+  const result = { readyMs, stats, detailed, baseline, errors };
   await writeFile(out + "/results.json", JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result));
   if (errors.length) process.exitCode = 1;
