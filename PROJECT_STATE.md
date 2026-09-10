@@ -1,5 +1,9 @@
 # Project State
 
+## Infantry rendering prototype
+
+A standalone 3D infantry preview and repeatable crowd benchmark are available at `/prototypes/infantry-benchmark.html`. It uses 348-triangle soldiers, instanced parts and shared cached animation over a captured map. Local overlay-only measurements reached approximately 165 FPS at 2,000 soldiers and 91 FPS at 4,000. These exclude the live map and simulation; squad movement and cover-like repositioning are staged. The campaign renderer is not integrated with this prototype. See [benchmark methodology and history](docs/prototypes/infantry-benchmark.md).
+
 ## Boundary-filling farmland
 
 Farm parcels now clip to whole agricultural-region contours and around infrastructure, water, settlements and mountain obstacles. Partial edge fields replace the former unused margins. Texture scale stays fixed; display geometry masks coastal edges and scenery clearance uses actual clipped fragments. Existing campaigns update on reload.

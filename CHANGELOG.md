@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-10 — Infantry rendering and performance prototype
+
+- Added a standalone map-overlay infantry preview with small low-poly models, independent squad motion and firing cadence, instanced geometry, and shared cached animation.
+- Added a repeatable 500–4,000-soldier rendering benchmark with viewport/count validation, cancellation, and measured performance history.
+- Published this as an isolated visual prototype, without changing campaign simulation or the live unit renderer.
+
 ## 2026-09-09 — Clear tactical terrain
 
 - National ownership washes now fade beyond strategy zoom, disappearing completely at 400% rather than the earlier 230% cutoff.
