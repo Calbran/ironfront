@@ -1,6 +1,7 @@
 import * as T from "three";
 
 type Draw = {
+  snow: (geometry: T.BufferGeometry, x: number, y: number, z: number) => void;
   capture: (name: string, draw: () => void) => void;
   box: (
     m: T.Material,
@@ -41,11 +42,13 @@ type Draw = {
   iron: T.Material;
   brick: T.Material;
   glass: T.Material;
+  glow: T.Material;
 };
 /** Silhouettes and restrained machinery; shared materials and capture-generated LODs. */
 export function buildSteampunkAssets(k: Draw) {
   const {
     capture,
+    snow,
     box,
     add,
     windowPane,
@@ -59,6 +62,7 @@ export function buildSteampunkAssets(k: Draw) {
     iron,
     brick,
     glass,
+    glow,
   } = k;
   const pipe = (
     x: number,
@@ -103,6 +107,160 @@ export function buildSteampunkAssets(k: Draw) {
     const c = a.clone().add(b).multiplyScalar(0.5);
     add(g, iron, c.x, c.y, c.z);
   };
+  // Different massing, rooflines and fenestration within the shared lot envelopes.
+  for (const [i, name] of [
+    "commercialTowerGothic",
+    "commercialTowerObservatory",
+    "commercialTowerExchange",
+  ].entries())
+    capture(name, () => {
+      const floors = [8, 7, 10][i],
+        h = floors * 2.7;
+      for (let f = 0; f < floors; f++) {
+        const inset = i === 2 ? Math.max(0, f - 5) * 0.55 : 0;
+        const w = 9 - inset * 2,
+          d = 11 - inset * 2,
+          y = 0.4 + f * 2.7;
+        box(i === 0 ? brick : walls, 0, y + 1.35, 0, w, 2.7, d);
+        // Keep cornice and storey top faces on distinct planes, including roof decks.
+        box(trim, 0, y + 2.66, 0, w + 0.16, 0.2, d + 0.16);
+        for (const side of [-1, 1]) {
+          for (const x of [-0.3, 0, 0.3]) {
+            windowPane(
+              x * w,
+              y + 1.4,
+              side * (d / 2 + 0.08),
+              i === 0 ? 0.8 : 1.5,
+              1.85,
+              0.08,
+            );
+            if (i === 0)
+              add(
+                new T.ConeGeometry(0.52, 0.6, 3),
+                trim,
+                x * w,
+                y + 2.45,
+                side * (d / 2 + 0.08),
+                1,
+                1,
+                0.16,
+              );
+          }
+          for (const z of [-0.3, 0, 0.3])
+            windowPane(side * (w / 2 + 0.08), y + 1.4, z * d, 0.08, 1.85, 1.3);
+        }
+      }
+      box(stone, 0, 0.2, 0, 9.2, 0.4, 11.2);
+      const roofInset = i === 2 ? Math.max(0, floors - 6) * .55 : 0;
+      snow(new T.BoxGeometry(9.1 - roofInset * 2, .08, 11.1 - roofInset * 2), 0, h + .54, 0);
+      doors(11);
+      if (i === 0) {
+        for (const x of [-4.15, 4.15])
+          for (const z of [-5.1, 5.1]) {
+            pipe(x, h / 2, z, 0.28, h, trim);
+            add(new T.ConeGeometry(0.48, 4, 6), copper, x, h + 2.4, z);
+          }
+        box(brick, 0, h + 2, 0, 4, 3.2, 5);
+        add(
+          new T.ConeGeometry(2.8, 7, 4).rotateY(Math.PI / 4),
+          roof,
+          0,
+          h + 7,
+          0,
+        );
+      } else if (i === 1) {
+        pipe(0, h + 2, 0, 3.3, 3, stone);
+        dome(0, h + 3.5, 0, 3.5);
+        box(brass, 0, h + 5.3, 1, 0.2, 0.2, 5);
+        for (const x of [-3.9, 3.9]) pipe(x, h + 1.5, -4.6, 0.32, 2, copper);
+      } else {
+        box(iron, 0, h + 1, 0, 3.7, 1.4, 5.7);
+        for (const x of [-1.2, 1.2]) pipe(x, h + 3, -1.3, 0.35, 3.5, brass);
+        clock(0, h + 1, 2.95, 0.6);
+      }
+    });
+  for (const [i, name] of [
+    "urbanBayTerrace",
+    "urbanDutchGable",
+    "urbanGlassArcade",
+  ].entries())
+    capture(name, () => {
+      const h = [10.8, 8.1, 10.8][i];
+      box(stone, 0, 0.2, 0, 5.2, 0.4, 11.2);
+      box(i === 1 ? brick : walls, 0, h / 2 + 0.4, 0, 5, h, 11);
+      for (const side of [-1, 1]) {
+        for (let y = 1.8; y < h; y += 2.7) {
+          for (const x of [-1.25, 1.25]) {
+            if (i === 0) box(trim, x, y, side * 5.64, 1.8, 2.2, 0.45);
+            windowPane(x, y, side * (i === 0 ? 5.9 : 5.62), 1.35, 1.75, 0.08);
+          }
+          box(trim, 0, y + 1.15, side * 5.62, 5.25, 0.16, 0.2);
+        }
+        if (i === 2) {
+          box(copper, 0, 3.05, side * 5.7, 5.2, 0.18, 0.8);
+          for (const x of [-2.35, 2.35])
+            box(iron, x, 1.5, side * 5.9, 0.12, 3, 0.12);
+        }
+      }
+      doors(11);
+      box(roof, 0, h + 0.65, 0, 5.25, 0.35, 11.25);
+      snow(new T.BoxGeometry(i === 1 ? 5.2 : 3.8, .08, i === 1 ? 10.6 : 9.8), 0, h + (i === 1 ? .87 : 2.12), 0);
+      for (const side of [-1, 1])
+        for (let y = 1.8; y < h; y += 2.7)
+          for (const z of [-3.5, 0, 3.5])
+            windowPane(side * 2.58, y, z, 0.06, 1.7, 1.15);
+      if (i === 1)
+        for (let s = 0; s < 5; s++) {
+          for (const side of [-1, 1])
+            box(
+              brick,
+              0,
+              h + 0.9 + s * 0.5,
+              side * 5.45,
+              5 - s * 0.9,
+              0.5,
+              0.22,
+            );
+        }
+      else {
+        for (let s = 0; s < 3; s++)
+          box(
+            i === 2 ? copper : roof,
+            0,
+            h + 0.95 + s * 0.45,
+            0,
+            5 - s * 0.6,
+            0.45,
+            11 - s * 0.6,
+          );
+        for (const x of [-1.3, 1.3]) {
+          box(trim, x, h + 1.1, 4.85, 0.9, 1.2, 0.65);
+          windowPane(x, h + 1.1, 5.21, 0.65, 0.8, 0.06);
+        }
+      }
+      for (const x of [-1.9, 1.9]) pipe(x, h + 1.6, -3.9, 0.25, 2.4, brick);
+    });
+  capture("warehouseSawtooth", () => {
+    box(stone, 0, 0.2, 0, 10.2, 0.4, 7.2);
+    box(brick, 0, 2.7, 0, 10, 5, 7);
+    for (const x of [-3.3, 0, 3.3]) {
+      add(
+        new T.CylinderGeometry(1, 1, 6.8, 3).rotateX(Math.PI / 2),
+        roof,
+        x,
+        5.7,
+        0,
+        1.85,
+        1,
+        1,
+      );
+      box(glass, x, 6.1, 0, 0.15, 1.3, 6.6);
+      snow(new T.CylinderGeometry(1, 1, 6.7, 3).rotateX(Math.PI / 2).scale(1.85, 1, 1), x, 5.78, 0);
+      windowPane(x, 3.6, 3.58, 2, 1.3, 0.08);
+    }
+    doors(7);
+    pipe(4.4, 5.5, -2.7, 0.35, 8, brick);
+  });
   for (const [i, name] of [
     "commercialTowerCopper",
     "commercialTowerClock",
@@ -293,10 +451,27 @@ export function buildSteampunkAssets(k: Draw) {
       box(wood, 0.73, 0.72, -0.8, 0.025, 0.25, 0.6);
       box(iron, 0, 0.25, 1.72, 1.55, 0.12, 0.1);
     });
+  capture("streetTramStop", () => {
+    box(stone, 0, .06, 0, 1.5, .12, 3);
+    for (const z of [-1.25, 1.25]) {
+      pipe(.5, .9, z, .045, 1.8, iron);
+      box(brass, .5, 1.55, z, .06, .06, .7);
+    }
+    box(copper, 0, 1.85, 0, 1.55, .14, 3);
+    box(wood, .3, .38, 0, .35, .09, 2.2);
+    for (const z of [-.8, .8]) box(iron, .3, .19, z, .06, .38, .06);
+    box(iron, .55, 1.25, -.85, .1, .55, .4);
+    box(glow, .48, 1.25, -.85, .035, .42, .28);
+    box(glow, 0, 1.73, 0, .25, .08, 2.1);
+    pipe(-.6, 1, 1.35, .04, 2, iron);
+    box(brass, -.6, 1.85, 1.35, .09, .5, .55);
+    box(glow, -.66, 1.85, 1.35, .025, .33, .38);
+  });
   capture("streetKiosk", () => {
     box(wood, 0, 0.8, 0, 1.4, 1.6, 1);
     box(roof, 0, 1.7, 0, 1.65, 0.18, 1.3);
     box(trim, 0, 1.05, 0.52, 1.15, 0.75, 0.04);
+    box(glow, 0, 1.48, .56, 1.05, .17, .025);
     box(iron, 0, 0.6, 0.6, 1.55, 0.12, 0.35);
   });
   capture("streetClock", () => {

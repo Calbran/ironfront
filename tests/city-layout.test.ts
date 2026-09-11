@@ -10,6 +10,11 @@ import {
   buildingsOverlap,
 } from "../packages/game-core/src/cityLayout.ts";
 import { onLocalLand } from "../packages/game-core/src/localMovement.ts";
+import {
+  PORT_FRAME_BY_DIRECTION,
+  portOrientation,
+  portOrientationFromLand,
+} from "../packages/game-core/src/portOrientation.ts";
 const base = createWorld("CITIES", "Boreal", 4, 3600000, 0);
 function fixture(x = 500) {
   const w = structuredClone(base),
@@ -102,6 +107,54 @@ test("a distant coast cannot make a settlement a port without reachable docks", 
       if (candidate.archetype === "port") assert(candidate.docks.length > 0);
     }
 });
+
+test("port art selects all eight directions with at most a half-step correction", () => {
+  for (let index = 0; index < 8; index++) {
+    const angle = -Math.PI / 2 + index * (Math.PI / 4) + 0.1;
+    const orientation = portOrientation({
+      docks: [
+        [
+          { x: 0, y: 0 },
+          { x: Math.cos(angle), y: Math.sin(angle) },
+        ],
+      ],
+    });
+    assert.equal(orientation.index, index);
+    assert.equal(orientation.frame, PORT_FRAME_BY_DIRECTION[index]);
+    assert(Math.abs(orientation.correction - 0.1) < 1e-10);
+    assert(Math.abs(orientation.correction) <= Math.PI / 8);
+  }
+});
+
+test("port art follows visible open water instead of a misleading dock", () => {
+  const land = {
+    ...base.regions[0],
+    polygon: [
+      [-1000, 0],
+      [1000, 0],
+      [1000, 1000],
+      [-1000, 1000],
+    ],
+    contours: [
+      [
+        [-1000, 0],
+        [1000, 0],
+        [1000, 1000],
+        [-1000, 1000],
+      ],
+    ] as [number, number][][],
+  };
+  const orientation = portOrientationFromLand([land], { x: 0, y: 50 }, 100, {
+    docks: [
+      [
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+      ],
+    ],
+  });
+  assert.equal(orientation.index, 0, "north-facing water is selected");
+  assert.equal(orientation.frame, 4, "uses the atlas's actual north frame");
+});
 test("nearby settlements constrain footprints, including across territory borders", () => {
   const { w, r, f } = fixture();
   r.features!.push({ ...f, id: "neighbor", x: f.x + 100 });
@@ -186,4 +239,15 @@ test("settlement rank changes building count, never the size of a building", () 
   }
   for (let i = 1; i < counts.length; i++)
     assert(counts[i] > counts[i - 1], `building counts ${counts}`);
+});
+
+test("city artwork and dock scale stay fixed when world dimensions grow", () => {
+  const { w, r, f } = fixture();
+  const original = generateCityLayout(w, r, f);
+  w.geography!.width *= 2;
+  w.geography!.height *= 2;
+  const expanded = generateCityLayout(w, r, f);
+  assert.equal(expanded.radius, original.radius);
+  assert.deepEqual(expanded.docks, original.docks);
+  assert.deepEqual(expanded.buildings, original.buildings);
 });

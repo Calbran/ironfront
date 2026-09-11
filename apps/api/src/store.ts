@@ -14,6 +14,7 @@ import {
 export const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 export class Store {
   db: DatabaseSync;
+  private nextTacticalCheck = new Map<string, number>();
   constructor(file: string) {
     if (file !== ":memory:") mkdirSync(dirname(file), { recursive: true });
     this.db = new DatabaseSync(file);
@@ -72,9 +73,12 @@ export class Store {
     ).map((r) => r.id);
   }
   tick(id: string, now = Date.now(), force = false) {
-    return this.mutate(id, (w) => {
+    if (!force && now < (this.nextTacticalCheck.get(id) ?? -Infinity)) return false;
+    let nextCheck = Infinity;
+    const result = this.mutate(id, (w) => {
       if (w.winner !== null) return false;
       const tactics = ensureTactics(w);
+      nextCheck = Math.min(now + Math.max(250, w.tickMs / 40), w.nextTickAt > now ? w.nextTickAt : Infinity);
       if (force) {
         advance(w, 1);
         tactics.lastWallAt = now;
@@ -84,7 +88,7 @@ export class Store {
       const previous =
         tactics.lastWallAt || Math.max(0, w.nextTickAt - w.tickMs);
       const elapsed = Math.max(0, Math.min(w.tickMs, now - previous));
-      if (!force && elapsed < Math.min(1000, w.tickMs / 12)) return false;
+      if (!force && elapsed < Math.min(250, w.tickMs / 40)) return false;
       advanceTactics(w, elapsed / w.tickMs);
       tactics.lastWallAt = now;
       if (!force && now < w.nextTickAt) return false;
@@ -92,8 +96,11 @@ export class Store {
       w.nextTickAt = now + w.tickMs;
       return true;
     });
+    this.nextTacticalCheck.set(id, nextCheck);
+    return result;
   }
   resume(now = Date.now()) {
+    this.nextTacticalCheck.clear();
     for (const id of this.ids())
       this.mutate(id, (w) => {
         w.nextTickAt = now + w.tickMs;

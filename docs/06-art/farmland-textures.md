@@ -13,3 +13,9 @@ The town-centered blocks are superseded by a seeded shared-vertex parcel lattice
 ## Boundary-filling fields
 
 Agricultural regions now clip the parcel lattice to their complete land contours rather than rejecting parcels that cross a boundary. Concave outlines and inland-water holes are triangulated; roads, rivers, settlement clearings and mountain obstacles are subtracted from each field. Edge pieces retain the same world-space crop texture and orientation. Narrow parcel verges remain. Farmland is also masked to the smoothed display coastline to prevent raster/display-edge leakage. This supersedes the isolated-parcel rejection rule for edge fields: partial edge parcels fill the remaining region footprint. Scenery clearance consumes actual clipped fragments.
+
+## Shared-edge smoothing and density
+
+Rendering now keeps infrastructure-clipped parcel overdraw beneath a mask assembled from the same smoothed shared region rings used by terrain and borders. Clearance still uses the exact raw clipped fragments. New-map agricultural selection is capped at 24% of passable land area and 26% of passable regions; existing saved `landUse` is not rewritten.
+
+Settlement cutouts follow the displayed art rather than the older circular layout radius. Each tier uses an axis-aligned ellipse based on its runtime sprite width and source aspect ratio, with a small terrain margin.

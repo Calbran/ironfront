@@ -1,6 +1,6 @@
 # Ironfront
 
-A lightweight asynchronous browser conquest game. Develop a nation, give standing orders, and return to a changing front. 
+Ironfront is moving to the full 3D city and commanded tactical battle direction. The default page opens the full city with a staged, paused skirmish. 
 
 ## Start here
 
@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Create a campaign, select a faction, and share its invite code with another browser. Empty seats act as simple automated opponents until claimed. Each campaign can run at a test pace (one simulated hour every 10 seconds) or normal pace (one hour per real hour). The host can advance one hour in test campaigns.
+Open http://localhost:5173 for the full-city skirmish. The previous campaign remains at http://localhost:5173/legacy.html. To use that archived campaign, create a campaign, select a faction, and share its invite code with another browser. Empty seats act as simple automated opponents until claimed. Each campaign can run at a test pace (one simulated hour every 10 seconds) or normal pace (one hour per real hour). The host can advance one hour in test campaigns.
 
 ```sh
 npm test
@@ -34,7 +34,7 @@ This is an early persistent multiplayer proof, not the complete game. Authentica
 
 ## Miniature city and Three.js development
 
-Pixi remains the default renderer. The repository also includes these development studies:
+The full-city Three.js view is now the default entry. The previous Pixi campaign remains at `/legacy.html`. The repository also includes these development studies:
 
 - `/military-preview.html`: ten infantry-scaled military models with GLB export.
 - `/city-diorama.html`: dense district city (160 buildings by default); select 28 for the crafted neighborhood.
@@ -75,3 +75,5 @@ For local positioning, zoom in and click an own squad (Shift-click adds squads),
 Run `CHROMIUM_PATH=/usr/bin/chromium node --import tsx scripts/dev-map-smoke.ts` against Vite to verify development-mode map startup and regeneration. `DEV_TEST_URL` overrides port 5173. This read-only preview flow does not create campaigns.
 
 New campaigns start each nation with two infantry squads (six soldiers each) and one mobile infantry squad (two vehicles), at its capital. Each squad has its own health and orders. Existing campaigns keep their original forces; create a new campaign for the 6/6/2 roster.
+
+Newly generated maps include physical scrapyard, lake-crossing, and mountain-pass districts. Ground units use open lanes and bridge decks; solid edges provide nearby cover against fire from the opposite side. The selected squad displays a terrain-cover indicator. Existing campaigns retain their saved geography. See [physical region layouts](docs/05-decisions/030-physical-region-layouts.md).

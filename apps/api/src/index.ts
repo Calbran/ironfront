@@ -18,7 +18,7 @@ const timer = setInterval(() => {
       console.error("Campaign update failed", id, error);
     }
   }
-}, 1000);
+}, 250);
 for (const signal of ["SIGINT", "SIGTERM"] as const)
   process.on(signal, async () => {
     clearInterval(timer);

@@ -1,6 +1,9 @@
+import { generateTerrainLayouts, supportsSettlement } from "./terrainLayoutGenerator.ts";
+import { GENERATED_WORLD_SCALE } from "./campaignScale.ts";
 import { openEnclosedTerritories } from "./territoryPartition.ts";
 import { noise, generateRelief } from "./relief.ts";
 import type { Region } from "./index.ts";
+import { placeSettlements, type PlacedSettlement, type SettlementSite } from "./settlementPlacement.ts";
 
 export type Point = [number, number];
 export interface Province {
@@ -10,7 +13,7 @@ export interface Province {
   regions: number[];
 }
 export interface Geography {
-  version: 1 | 2 | 3 | 4 | 5 | 6;
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   terrainPatches?: { terrain: Region["terrain"]; contours: Point[][] }[];
   sources?: string[];
   wind?: number;
@@ -230,6 +233,7 @@ const townSuffixes = [
 export function generateContinent(
   seed: string,
   seats: number,
+  reserveSettlements?: (map: { regions: GeographicRegion[]; geography: Geography }) => void,
 ): { regions: GeographicRegion[]; geography: Geography } {
   // Keep land area per nation constant instead of packing more cells into a fixed world.
   const scale = Math.sqrt(seats / 4);
@@ -615,15 +619,45 @@ export function generateContinent(
     }
     if (rivers.length >= Math.max(8, seats * 3)) break;
   }
-  const allSettlements: { x: number; y: number; major: boolean }[] = [];
+  const settlementSites: SettlementSite[] = [];
+  let usableSettlementArea = 0;
+  const fertileByRegion = new Map(
+    regions.map((r) => [
+      r.id,
+      cells[r.id].filter((i) => biome[i] === 0).length / cells[r.id].length,
+    ]),
+  );
+  const passable = regions.filter((r) => r.terrain !== "mountains");
+  const agricultural = new Set<number>();
+  const farmAreaLimit =
+    passable.reduce((sum, region) => sum + region.area, 0) * 0.24;
+  const farmRegionLimit = Math.max(1, Math.floor(passable.length * 0.26));
+  let farmArea = 0;
+  const farmCandidates = passable
+    .filter((r) => (fertileByRegion.get(r.id) ?? 0) > 0.6)
+    .map((r) => ({
+      region: r,
+      score: noise(r.x / (S * 100), r.y / (S * 100), salt + 53),
+    }))
+    .sort((a, b) => a.score - b.score || a.region.id - b.region.id);
+  for (const candidate of farmCandidates) {
+    if (candidate.score >= 0.62 || agricultural.size >= farmRegionLimit) break;
+    if (
+      agricultural.size > 0 &&
+      farmArea + candidate.region.area > farmAreaLimit
+    )
+      continue;
+    agricultural.add(candidate.region.id);
+    farmArea += candidate.region.area;
+  }
+  // Keep at least one rural district on unusually dry/noisy seeds.
+  if (!agricultural.size && farmCandidates.length)
+    agricultural.add(farmCandidates[0].region.id);
   for (const r of regions) {
-    const fertile =
-      cells[r.id].filter((i) => biome[i] === 0).length / cells[r.id].length;
     r.landUse =
       r.terrain === "mountains"
         ? "wilderness"
-        : fertile > 0.6 &&
-            noise(r.x / (S * 100), r.y / (S * 100), salt + 53) < 0.68
+        : agricultural.has(r.id)
           ? "agricultural"
           : "settled";
     r.purpose =
@@ -663,89 +697,30 @@ export function generateContinent(
       });
     }
     if (r.terrain === "mountains") continue;
-    const suitable = cells[r.id].filter((i) => heights[i] < 0.72);
-    const pool = suitable.length ? suitable : cells[r.id];
-    const desired =
-      r.landUse === "agricultural"
-        ? random() < 0.45
-          ? 0
-          : 1
-        : 1 +
-          (r.area > ((W * H) / regions.length) * 0.35 && random() < 0.28
-            ? 1
-            : 0);
-    for (let k = 0; k < desired; k++) {
-      const roll = random();
-      const size =
-        r.landUse === "agricultural"
-          ? roll < 0.55
-            ? "hamlet"
-            : "village"
-          : k > 0
-            ? roll < 0.7
-              ? "hamlet"
-              : "village"
-            : roll < 0.2
-              ? "hamlet"
-              : roll < 0.5
-                ? "village"
-                : roll < 0.86
-                  ? "town"
-                  : roll < 0.975
-                    ? "city"
-                    : "metropolis";
-      const major = size === "city" || size === "metropolis";
-      let best = -1,
-        score = -Infinity;
-      for (const cell of pool) {
-        const p = point(cell);
-        if (
-          allSettlements.some(
-            (q) =>
-              Math.hypot(p[0] - q.x, p[1] - q.y) <
-              (major && q.major ? 420 : major || q.major ? 220 : 150) * scale,
-          )
-        )
-          continue;
-        const interior = neighbors(cell).filter(
-          (n) => labels[n] === r.id,
-        ).length;
-        if (interior < 4) continue;
-        const coastal = neighbors(cell).some((n) =>
-          neighbors(n).some((m) => land[m] < 0),
-        );
-        const waterside = neighbors(cell).some((n) => riverCells.has(n));
-        // Favor safe riverbanks, lowland access, and genuine shore sites for ports.
-        if (riverCells.has(cell)) continue;
-        const slope = Math.max(
-          ...neighbors(cell).map((n) => Math.abs(heights[n] - heights[cell])),
-        );
-        const value =
-          1 -
-          heights[cell] +
-          hash(cell, k, salt) * 0.15 -
-          slope * 5 +
-          (waterside ? 0.32 : 0) +
-          (coastal && r.purpose === "port hinterland" ? 0.7 : 0);
-        if (value > score) {
-          score = value;
-          best = cell;
-        }
-      }
-      if (best < 0) break;
-      const [x, y] = point(best);
-      allSettlements.push({ x, y, major });
-      r.features.push({
-        id: `${r.id}-settlement-${k}`,
-        kind: "settlement",
-        name:
-          k === 0
-            ? r.name
-            : townPrefixes[(r.id + k * 7) % 24] +
-              townSuffixes[(r.id + k * 11) % 24],
+    for (const cell of cells[r.id]) {
+      if (heights[cell] >= 0.72 || riverCells.has(cell)) continue;
+      usableSettlementArea += S * S;
+      // Sample physical space uniformly, without giving each territory a candidate quota.
+      if (cell % COLS % 4 !== 0 || Math.floor(cell / COLS) % 4 !== 0) continue;
+      const adjacent = neighbors(cell);
+      if (adjacent.filter((n) => labels[n] === r.id).length < 4) continue;
+      const slope = Math.max(...adjacent.map((n) => Math.abs(heights[n] - heights[cell])));
+      if (slope > 0.12) continue;
+      const coastal = adjacent.some((n) => neighbors(n).some((m) => land[m] < 0));
+      const waterside = adjacent.some((n) => riverCells.has(n));
+      const [x, y] = point(cell);
+      settlementSites.push({
+        id: cell,
+        region: r.id,
         x,
         y,
-        size,
+        ruralOnly: r.landUse === "agricultural",
+        variation: hash(cell, 71, salt),
+        suitability:
+          (1 - heights[cell]) * 0.45 - slope * 3 +
+          noise(x / (S * 80), y / (S * 80), salt + 79) * 0.2 +
+          hash(cell, 73, salt) * 0.15 +
+          (waterside ? 0.15 : 0) + (coastal ? 0.12 : 0),
       });
     }
   }
@@ -791,7 +766,7 @@ export function generateContinent(
     };
   });
   // Expand world coordinates without multiplying the terrain raster workload.
-  const worldScale = 3;
+  const worldScale = GENERATED_WORLD_SCALE;
   const scalePoint = ([x, y]: Point): Point => [x * worldScale, y * worldScale];
   const scaleRings = (rings: Point[][]) => rings.map((r) => r.map(scalePoint));
   for (const r of regions) {
@@ -806,10 +781,10 @@ export function generateContinent(
       f.y *= worldScale;
     }
   }
-  return {
+  const map: { regions: GeographicRegion[]; geography: Geography } = {
     regions,
     geography: {
-      version: 6,
+      version: 7,
       terrainPatches: terrainPatches.map((p) => ({
         ...p,
         contours: scaleRings(p.contours),
@@ -826,4 +801,36 @@ export function generateContinent(
       provinces: provinces.map((p) => ({ ...p, center: scalePoint(p.center) })),
     },
   };
+  // Physical layouts precede settlement reservations and all derived roads/scenery.
+  generateTerrainLayouts(map, seed);
+  // National ports claim space before the ordinary settlement budget is spent.
+  reserveSettlements?.(map);
+  const reserved: PlacedSettlement[] = regions.flatMap((r) =>
+    (r.features ?? []).filter((f) => f.kind === "settlement").map((f, i) => ({
+      id: -(r.id * 1000 + i + 1), region: r.id,
+      x: f.x / worldScale, y: f.y / worldScale,
+      size: f.size ?? "hamlet", ruralOnly: r.landUse === "agricultural",
+      suitability: 1, variation: 0,
+    })),
+  );
+  // Place major centers before towns and villages across the entire continent.
+  // Territory ownership attaches afterward; borders do not demand settlements.
+  const settlementCounts = new Map<number, number>();
+  for (const site of placeSettlements(settlementSites.filter(site => supportsSettlement(regions[site.region], {x:site.x*worldScale,y:site.y*worldScale})), usableSettlementArea, reserved)) {
+    const r = regions[site.region];
+    const k = settlementCounts.get(r.id) ?? 0;
+    settlementCounts.set(r.id, k + 1);
+    r.features!.push({
+      id: r.id + "-settlement-" + k,
+      kind: "settlement",
+      name: k === 0 ? r.name :
+        townPrefixes[(r.id + k * 7) % 24] + townSuffixes[(r.id + k * 11) % 24],
+      x: site.x * worldScale,
+      y: site.y * worldScale,
+      size: site.size,
+      owner: r.owner,
+    });
+  }
+  return map;
+
 }

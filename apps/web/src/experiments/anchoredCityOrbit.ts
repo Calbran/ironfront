@@ -1,9 +1,10 @@
 import * as T from "three";
+import { rotateCityOrbit } from "./cityOrbitPivot";
 import type { OrbitControls } from "three/addons/controls/OrbitControls.js";
-/** Rotate the view around the grabbed ground point without recentering it on mouse-down. */
+/** Orbit the terrain under the cursor, never building geometry. */
 export function anchoredCityOrbit(
   canvas: HTMLCanvasElement,
-  camera: T.Camera,
+  getCamera: () => T.Camera,
   controls: OrbitControls,
   root: () => T.Group,
   height: (p: { x: number; z: number }) => number,
@@ -42,7 +43,9 @@ export function anchoredCityOrbit(
       }
     | undefined;
   let lastAnchor: T.Vector3 | undefined;
-  const ground = (e: PointerEvent) => {
+  const aim = (e: PointerEvent) => {
+    const camera = getCamera();
+    camera.updateMatrixWorld(true);
     const rect = canvas.getBoundingClientRect();
     raycaster.setFromCamera(
       new T.Vector2(
@@ -51,6 +54,9 @@ export function anchoredCityOrbit(
       ),
       camera,
     );
+  };
+  const ground = (e: PointerEvent) => {
+    aim(e);
     const g = root();
     g.updateMatrixWorld(true);
     const ray = raycaster.ray
@@ -71,7 +77,8 @@ export function anchoredCityOrbit(
     if (!command && !orbit) return;
     e.stopImmediatePropagation();
     e.preventDefault();
-    const anchor = ground(e);
+    const floor = ground(e);
+    const anchor = command ? floor : floor ?? controls.target.clone();
     if (!anchor) return;
     drag = {
       x: e.clientX,
@@ -87,7 +94,7 @@ export function anchoredCityOrbit(
       const p = root().worldToLocal(anchor.clone());
       preview({ x: p.x, z: p.z });
     }
-    lastAnchor = anchor.clone();
+    if (!command) lastAnchor = anchor.clone();
     canvas.setPointerCapture(e.pointerId);
   };
   const move = (e: PointerEvent) => {
@@ -119,24 +126,7 @@ export function anchoredCityOrbit(
       requestedPitch = -(e.clientY - drag.lastY) * 0.005;
     drag.lastX = e.clientX;
     drag.lastY = e.clientY;
-    const offset = camera.position.clone().sub(controls.target),
-      polar = Math.acos(T.MathUtils.clamp(offset.y / offset.length(), -1, 1));
-    const pitch = T.MathUtils.clamp(
-      requestedPitch,
-      controls.minPolarAngle - polar,
-      controls.maxPolarAngle - polar,
-    );
-    const yawQ = new T.Quaternion().setFromAxisAngle(
-      new T.Vector3(0, 1, 0),
-      yaw,
-    );
-    const right = new T.Vector3(1, 0, 0)
-      .applyQuaternion(camera.quaternion)
-      .applyQuaternion(yawQ)
-      .normalize();
-    const q = new T.Quaternion().setFromAxisAngle(right, pitch).multiply(yawQ);
-    camera.position.sub(drag.anchor).applyQuaternion(q).add(drag.anchor);
-    controls.target.sub(drag.anchor).applyQuaternion(q).add(drag.anchor);
+    rotateCityOrbit(getCamera(), controls.target, drag.anchor, yaw, requestedPitch, controls.minPolarAngle, controls.maxPolarAngle);
     controls.update();
   };
   const cancel = () => {

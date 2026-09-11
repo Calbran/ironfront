@@ -1,14 +1,24 @@
-import { Container, Graphics } from "pixi.js";
-import type { CityArchetype } from "../../../packages/game-core/src/cityLayout";
+import { portArtFootprint } from "./portPlacement";
+import { Container, Graphics, Sprite, Texture } from "pixi.js";
+import type {
+  CityArchetype,
+  CityLayout,
+} from "../../../packages/game-core/src/cityLayout";
 import type { RegionFeature } from "../../../packages/game-core/src/index";
+import { portOrientation } from "../../../packages/game-core/src/portOrientation";
 
-/** Compact cartographic symbols: readable screen size, no illustrated city footprint. */
+/** World-space settlement art with a readable cartographic badge above it. */
 export function settlementGraphics(
   archetype: CityArchetype,
   feature: RegionFeature,
   scale: number,
   isCapital = false,
   ownerColor?: string | null,
+  artTexture?: Texture,
+  artRadius = 0,
+  layout?: CityLayout,
+  portTextures: Texture[] = [],
+  visualPortOrientation?: ReturnType<typeof portOrientation>,
 ) {
   const graphics = new Container();
   const rank = Math.max(
@@ -17,6 +27,36 @@ export function settlementGraphics(
       feature.size ?? "hamlet",
     ),
   );
+  let artWidth = 0,
+    artHeight = 0;
+  const directionalPort =
+    archetype === "port" && layout?.docks.length && portTextures.length >= 8;
+  if (artTexture && artRadius > 0 && !directionalPort) {
+    const art = new Sprite(artTexture);
+    art.anchor.set(0.5);
+    art.alpha = 0.96;
+    const footprint = artRadius * 1.72;
+    art.scale.set(footprint / Math.max(artTexture.width, artTexture.height));
+    artWidth = art.width;
+    artHeight = art.height;
+    graphics.addChild(art);
+  }
+  if (directionalPort && layout) {
+    const orientation = visualPortOrientation ?? portOrientation(layout),
+      harbor = new Sprite(portTextures[orientation.frame]);
+    harbor.label = `port-art-${orientation.index}`;
+    harbor.anchor.set(0.5);
+    harbor.alpha = 0.98;
+    harbor.rotation = orientation.correction;
+    // This atlas depicts two harbor buildings, not an entire city district.
+    const footprint = portArtFootprint(artRadius);
+    harbor.scale.set(
+      footprint / Math.max(harbor.texture.width, harbor.texture.height),
+    );
+    artWidth = harbor.width;
+    artHeight = harbor.height;
+    graphics.addChild(harbor);
+  }
   const u = 1; // Every settlement gets the same readable type symbol.
   const icon = new Graphics();
   graphics.addChild(icon);
@@ -84,7 +124,8 @@ export function settlementGraphics(
   }
   return {
     graphics,
-    width: (26 * u) / scale,
-    height: ((isCapital ? 48 : 42) * u) / scale,
+    screenScaled: icon,
+    width: Math.max((26 * u) / scale, artWidth),
+    height: Math.max(((isCapital ? 48 : 42) * u) / scale, artHeight),
   };
 }

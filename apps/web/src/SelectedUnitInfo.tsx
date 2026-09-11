@@ -7,9 +7,11 @@ import {
 export function SelectedUnitInfo({
   squad: s,
   picking,
+  terrainCover = false,
 }: {
   squad: Squad;
   picking: boolean;
+  terrainCover?: boolean;
 }) {
   const vehicle = s.kind === "motorized" || s.kind === "armor";
   const health = squadHealth(s);
@@ -53,6 +55,7 @@ export function SelectedUnitInfo({
           <span className={`unit-status status-${s.action}`}>{status}</span>
         </div>
         <span className="unit-summary-meta">
+          {terrainCover && <span title="The nearby solid obstacle protects against fire from the other side.">Terrain cover | </span>}
           {s.unitCount ?? "—"} assigned {vehicle ? "vehicles" : "soldiers"}
           {s.localOrder?.movementGroup !== undefined && s.localOrder.path.length
             ? " · Group pace"

@@ -1,5 +1,49 @@
 # Project State
 
+## Primary direction — full-city tactical game
+
+User-approved promotion: default page opens the full-city battle. Previous campaign remains at /legacy.html. Archive target is codex/archive-pre-city-2026-09-10 at c5e407e; publication awaits destination approval. City battles remain separate from campaign saves.
+
+## Commanded full-city skirmish — 2026-09-10
+
+The full-city view now stages an isolated server-controlled battle: six infantry and a tank against six defending infantry. Select squad or individual units, move on ground, click enemies to attack, and start/pause/reset. Shared seeded fire rules, city building obstruction, live health, casualties and tracers are connected. This supersedes the earlier statement that the city preview has no combat connection; campaign save integration is still separate. See [controls and limits](docs/02-systems/city-battle-trial.md).
+
+## Floor-only orbit anchor — 2026-09-10
+
+Clarification: middle-drag anchors to the terrain/floor beneath the cursor, including through building geometry. Roofs and walls do not supply pivots. If the cursor ray misses the floor, orbit retains the current camera focus. This supersedes fixed-focus orbit below. Movement orders and idle animation are unchanged.
+
+## Authoritative squad fire — 2026-09-10
+
+Campaign combat now uses fixed campaign-time steps, saved seeded hit rolls and reload state, retained targets, spatial enemy queries, cached polygon exposure, weapon-versus-armor profiles, and delayed tank/artillery impacts. Losses are applied simultaneously. The API polls at 250 ms with a campaign due-time gate. Test pace produces four exchanges per second; normal pace remains scaled to campaign time. The separate 3D city preview still needs its geometry and effects connected. Balance and whole-server capacity remain unverified; see [system and benchmark notes](docs/02-systems/squad-fire-model.md).
+
+## Fixed-focus orbit and subtle idle motion — 2026-09-10
+
+Middle-drag now orbits the current camera focus, never the clicked building or surface. This supersedes the surface-anchor behavior below; movement orders still pick terrain. Command destinations no longer become remembered orbit anchors. Relaxed infantry receive staggered, low-amplitude breathing and sway; running, aiming and cover suppress these additions. No extra geometry or draw calls. Seven focused regression tests, typecheck and production build pass; live preview loads with the updated controls. Motion tuning remains provisional.
+
+## Zoom-aware unit markers — 2026-09-10
+
+The city diorama now shows screen-space infantry, tank and jeep badges when units become small on screen. Badges remain visible through buildings, spread into separate slots with leader lines, highlight selected units, support click/Shift-click selection and double-click focus, and fade at close range. Projection supports both camera modes and excludes offscreen/behind-camera units. This is the five-unit local trial, not campaign force visibility or large-army clustering. Two marker regression tests and typecheck pass; browser review confirms overview selection and close-view hiding.
+
+## Close perspective city camera — 2026-09-10
+
+Street View now switches the diorama to a 50-degree perspective camera near the selected unit (or last grabbed surface), with slower WASD panning and distance-based zoom. Planning View restores the saved orthographic pose. Camera picking, selection projection and LOD scaling use the active camera. Selected units get a soft screen-door cutaway through foreground building surfaces, preserving opaque instancing and existing lighting shaders; this is a local reveal corridor, not whole-building transparency or camera collision. Cutaway surfaces are ignored by orbit-pivot picking. Four pivot/cutaway regression tests, typecheck and production build pass. Browser review verified close street rendering and restoration of the planning overview; manual orbit/movement usability remains worth reviewing.
+
+## Visible-surface orbit pivots — 2026-09-10
+
+Middle-drag now raycasts the rendered opaque surface under the cursor, including instanced rooftops, walls and ground. Hidden LODs, transparent effects and their hidden ancestors are excluded. Empty-space clicks fall back to a plane through the current view target, preventing a distant ground pivot. The grabbed point remains stable on screen; orbit preserves zoom and camera-target distance. Right-drag movement orders retain terrain picking. Orthographic projection is retained, so natural ground foreshortening remains. Two camera regression tests, typecheck and build pass; the live preview reloads successfully.
+
+## Streetscape lighting, distant windows and roof correction — 2026-09-10
+
+The local tank/jeep trial now admits the same paved town-hall plaza rectangle used by rendering, with radius clearance at the paving edges. Vehicle routes through gates pass regression checks; walls, garden beds, buildings and unbridged water remain blocked. This supersedes the earlier roads-only restriction. Vehicle swept-hull turning and detailed decorative-prop collision remain separate work.
+
+The city now includes fitted tram-stop shelters, illuminated facade trade signs and rooftop water tanks/service pipes. Dusk shows emissive fixtures plus a single batch of static pavement light pools; the three real civic lights remain bounded. These pools approximate spill on ground, without dynamic shadows or facade illumination. Low-detail models retain the seeded lit-window pattern as outward-facing quads, with one sixth the full window triangles. New Gothic/observatory/exchange tower cornices now end above the storey top, removing coplanar roof-deck faces; snow clearance follows the raised deck. Typecheck/build and model envelope/window-seed audits pass. Citywide seed 732 was reviewed at dusk and overview; see the streetscape session note.
+
+## Victorian city variety and refined surfaces — 2026-09-10
+
+The city diorama now selects seven additional footprint-compatible building appearances: Gothic, observatory and stepped exchange towers; bay terraces, Dutch gables and glass arcades; and sawtooth works. Seeded facade tints, two tree proportions and bounded pebble/grass clusters break repeated streets. Ground, soil, planting and paths use a world-space grain shared with the generated-world refined terrain. Appearance selection applies across city study modes; campaign city rollout remains separate. A patrol airship uses the existing 0.55 military placement scale, cruises above the highest rendered roof and has an Airship review camera that pauses its route. Other camera presets resume flight.
+
+Validation: TypeScript and production build pass; all seven new model envelopes and distant variants pass geometry checks. Full-city seed 732 was inspected in the browser at skyline, capital and airship views, with winter/dusk controls exercised. This is local visual verification, not a production performance gate. See docs/session-notes/2026-09-10-victorian-city-variety.md.
+
 ## City prop scale audit — 2026-09-10
 
 City street furniture now references the existing 0.55-scale infantry: smaller benches with knee-height seats, lower/narrower civic walls and pillars, trimmed hedges, smaller lamps, bins, crates, drums, fences and street equipment. Parked cars use 0.55 placement scale. Civic obstacle widths match rendering through shared `cityPropScale.ts` dimensions. See `docs/06-art/city-prop-scale.md` for the audit and retained structural scales.
@@ -192,6 +236,33 @@ A Victorian steampunk jeep preview is available at `/jeep-preview.html`, with si
 ## Infantry rendering prototype
 
 A standalone 3D infantry preview and repeatable crowd benchmark are available at `/prototypes/infantry-benchmark.html`. It uses 348-triangle soldiers, instanced parts and shared cached animation over a captured map. Local overlay-only measurements reached approximately 165 FPS at 2,000 soldiers and 91 FPS at 4,000. These exclude the live map and simulation; squad movement and cover-like repositioning are staged. The infantry model is now integrated into the live campaign as a lazily loaded, viewport-culled Three.js overlay. The prototype measurements remain separate from whole-game performance. See [benchmark methodology and history](docs/prototypes/infantry-benchmark.md).
+## Harbor shoreline attachment
+
+Compact harbor art now meets the smoothed coastline, with water-facing piers and a road back to the saved settlement position. Diagonal atlas directions were corrected and all eight views visually checked. Existing campaigns update on refresh; settlement tests, typecheck and build pass.
+
+## Harbor artwork scale
+
+Directional port art now uses a compact footprint (0.85 times layout radius, capped at 180 world units) instead of stretching two buildings over twice the settlement radius. Ordinary city art and gameplay footprints remain unchanged. Existing campaigns receive the correction on refresh. Browser comparison, typecheck and build passed.
+
+## Terrain preview visibility
+
+The live Vite preview had stale cached source despite updated files on disk. Refreshing its watcher restored the terrain generator and renderer. New-map previews now include an Explore terrain selector that frames each saved landmark. Boreal with four nations exposes two of each theme; other seeds may have fewer suitable regions. Existing saved campaigns retain their original terrain. Browser checks confirmed lake, scrapyard and mountain-pass views; typecheck and build pass.
+
+## Physical themed regions
+
+New maps now generate saved scrapyard, lake-crossing and mountain-pass layouts before settlements and derived roads. Shared polygons drive artwork, ground collision, bridge traversal and directional cover. Connectivity checks preserve region approaches and settlement clearances. The selected squad shows nearby terrain cover. This replaces the decorative countryside pockets; existing campaigns keep their saved terrain. The foundation has initial procedural artwork and provisional tuning. See decision 030 and the 2026-09-10 physical-region-layouts session note for tests and limits.
+
+## Active project and verified grand scale
+
+The development app at http://127.0.0.1:5173/ runs from D:/ironfront. Earlier changes in the partial Documents/ChatGPT/Ironfront copy were not live. The complete active project now contains the version-7 generator: 28,800 × 19,200 for four nations, unchanged territory count, sparse global settlement budgets, and fixed city sizes. The live browser confirms the expanded dimensions and substantially more countryside at tactical zoom. See decision 029. Longer travel times remain provisional.
+
+## Eight-direction port-town artwork
+
+At detail zoom, settlements that already qualify as ports use a genuine-alpha atlas with separately authored N, NE, E, SE, S, SW, W and NW port-town views. The renderer samples the actual land/water silhouette around the town, maps that direction to the atlas's verified frame order, and applies no more than 22.5 degrees of correction. The layout dock is only a fallback. This prevents graphics pointing inland on bays and peninsulas. The change is presentation-only: it does not guarantee ports, alter national starts, or move settlements. See decision 028.
+
+## Smooth farmland and inhabited settlements
+
+Farmland now renders through the same smoothed shared region geometry as terrain and borders, removing the raw raster staircase at coasts while retaining precise road, river, city and mountain exclusions. Settlement exclusions are tier-aware ellipses fitted to each sprite's actual aspect ratio instead of oversized circles. New-map agriculture is capped to 24% of passable area and 26% of passable regions so a fertile seed cannot become almost entirely fields. Detail zoom fills settlement clearings with tiered transparent city artwork while retaining the owner/type badge. Saved land use and geography remain unchanged. See decision 027.
 
 ## Boundary-filling farmland
 
@@ -635,3 +706,8 @@ Destination ghosts now fit around obstacles: blocked slots slide along nearby bu
 Friendly tank/full and jeep/partial cover now follow live vehicle hulls in the local city trial. Directional attack queries remove protection for exposed approaches; preview facing is only an assumed threat direction.
 
 Future combat direction recorded in decision 050: resolve cover separately for each actual attacker, with flanking and moving vehicle hulls; preview indicators are advisory. Server integration, battle-scale profiling and height-aware exposure remain future work.
+## Countryside visual pass — 2026-09-10
+
+Seeded woodland pockets, river-adjacent marsh pools/reeds, and small decorative farmsteads now fill suitable countryside at detail zoom. They respect land and infrastructure clearance and use existing chunk culling. No functional region types or saved-game rules change. Existing maps receive these details on reload. See docs/session-notes/2026-09-10-countryside-visuals.md for validation and the concurrent settlement-clearance test limitation.
+
+Validation: all 119 tests pass; TypeScript checking and the production build pass. Verified the live preview at http://127.0.0.1:5173/ with Boreal and Map-e05fa536 at 244% zoom; the footer reports 28,800 × 19,200. Existing campaigns retain their saved maps.

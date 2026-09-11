@@ -1,3 +1,4 @@
+import { blockedByTerrainLayout } from "./terrainLayout.ts";
 import { blockedByMountains, type MovementLayer } from "./mountainObstacles.ts";
 import { crossRegionPath, type RoutePoint } from "./crossRegionPath.ts";
 import type { World, Region } from "./index.ts";
@@ -106,6 +107,10 @@ function formationPoints(
   return result;
 }
 
+export function blockedByRegion(r: Region, a: LocalPoint, b=a, layer:MovementLayer="ground") {
+  return blockedByMountains(r.mountainObstacles,a,b,layer) || blockedByTerrainLayout(r.terrainLayout,a,b,layer);
+}
+
 export function onLocalLand(
   r: Region,
   p: LocalPoint,
@@ -113,7 +118,7 @@ export function onLocalLand(
 ): boolean {
   if (
     (layer === "ground" && r.terrain === "mountains") ||
-    blockedByMountains(r.mountainObstacles, p, p, layer) ||
+    blockedByRegion(r, p, p, layer) ||
     !Number.isFinite(p.x) ||
     !Number.isFinite(p.y)
   )
@@ -141,7 +146,7 @@ export function localSegment(
   if (
     !onLocalLand(r, a, layer) ||
     !onLocalLand(r, b, layer) ||
-    blockedByMountains(r.mountainObstacles, a, b, layer)
+    blockedByRegion(r, a, b, layer)
   )
     return false;
   const dx = b.x - a.x,
@@ -436,14 +441,14 @@ export function stepLocal(
   while (order.path.length && distance > 0) {
     let next = order.path[0];
     if (
-      blockedByMountains(
-        w.regions[s.region].mountainObstacles,
+      blockedByRegion(
+        w.regions[s.region],
         s,
         next,
         s.movementLayer,
       ) ||
-      blockedByMountains(
-        w.regions[next.region ?? s.region].mountainObstacles,
+      blockedByRegion(
+        w.regions[next.region ?? s.region],
         s,
         next,
         s.movementLayer,

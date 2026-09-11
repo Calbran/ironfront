@@ -122,8 +122,8 @@ test("squad range and cover affect damage rather than merely the animation", () 
   )!;
   s.x = 245;
   s.y = 5;
-  advanceTactics(near, 0.01);
-  advanceTactics(far, 0.01);
+  advanceTactics(near, 0.05);
+  advanceTactics(far, 0.05);
   assert(far.armies[1].strength > near.armies[1].strength);
   const forest = battle(),
     plain = battle();
@@ -217,4 +217,25 @@ test("taking cover reduces live incoming damage and does not grant a distant cov
   advanceTactics(control, 0.2);
   advanceTactics(covered, 0.2);
   assert(covered.armies[1].strength > control.armies[1].strength);
+});
+
+test("fixed combat steps preserve losses and firing RNG across split updates", () => {
+  const a = battle(); advanceTactics(a, 0);
+  const b = structuredClone(a);
+  advanceTactics(a, .2);
+  for (let i=0;i<8;i++) advanceTactics(b,.025);
+  for(const s of a.tactics!.squads){const other=b.tactics!.squads.find(v=>v.id===s.id)!;assert(Math.abs(s.strength-other.strength)<1e-8);assert.deepEqual(s.fireMemory,other.fireMemory);}
+});
+
+test("sub-step time is saved and shells resolve only when their due step arrives", () => {
+  const w=battle();advanceTactics(w,0);
+  advanceTactics(w,.01);assert.equal(w.tactics!.pendingHours,.01);
+  const restored=JSON.parse(JSON.stringify(w)) as World;
+  advanceTactics(w,.015);advanceTactics(restored,.015);assert.deepEqual(JSON.parse(JSON.stringify(w)),restored);
+  const e=w.tactics!.engagements[0],target=w.tactics!.squads.find(s=>s.owner===1)!;
+  for(const s of w.tactics!.squads)s.fireMemory={seed:1,rounds:0,reload:100};
+  const before=target.strength;
+  e.impacts=[{due:w.tactics!.time+.05,x:target.x,y:target.y,fromX:target.x,fromY:target.y,owner:0,kind:'armor',damage:1,radius:100}];
+  advanceTactics(w,.025);assert.equal(target.strength,before);
+  advanceTactics(w,.025);assert(target.strength<before);assert.equal(e.impacts!.length,0);
 });

@@ -1,3 +1,4 @@
+import { worldSettlementSeparation } from "../packages/game-core/src/settlementPlacement.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -116,7 +117,7 @@ test("more nations expand world and mainland area while preserving territory sca
       previous = area;
       assert(
         Math.abs(
-          (geography.width * geography.height) / (14400 * 9600) - seats / 4,
+          (geography.width * geography.height) / (28800 * 19200) - seats / 4,
         ) < 0.02,
       );
       perTerritory.push(area / regions.length);
@@ -143,7 +144,7 @@ test("twenty Earth-derived seeds produce connected terrain, merging drainage, an
   for (let index = 0; index < 20; index++) {
     const seed = `Survey-${index}`;
     const { regions, geography } = generateContinent(seed, 4);
-    assert.equal(geography.version, 6);
+    assert.equal(geography.version, 7);
     assert.equal(new Set(geography.sources).size, 2);
     silhouettes.add(JSON.stringify(geography.coastlines));
     const open = regions.filter((r) => r.terrain !== "mountains");
@@ -280,7 +281,9 @@ test("local features stay inside their territories and settlement sizes vary", (
       "Local terrain partitions the same mainland",
     );
   }
-  assert.equal(sizes.size, 5);
+  assert(sizes.has("city") && sizes.has("town"));
+  assert(sizes.has("hamlet") && sizes.has("village"));
+  // Metropolises are rare and need not appear in a small seed sample.
 });
 
 // Baselines are measured version-3 mainland areas, not a duplicate generator formula.
@@ -293,7 +296,7 @@ test("expanded maps retain usable land at the new territory density", () => {
     const { regions, geography } = generateContinent(seed, 4);
     assert.equal(regions.length, 96);
     const ratio = regions.reduce((n, r) => n + r.area, 0) / oldArea;
-    assert(ratio > 35.1 && ratio < 36.9);
+    assert(ratio > 140.4 && ratio < 147.6);
     assert(geography.width > 4000 && geography.height > 3000);
   }
 });
@@ -340,4 +343,52 @@ test("generated farmland reserves rural space before towns are placed", () => {
     assert(towns.length <= 1);
     assert(towns.every((f) => f.size === "hamlet" || f.size === "village"));
   }
+});
+
+test("agricultural land stays a minority of passable map area across seeds", () => {
+  for (const seed of [
+    "Boreal",
+    "Ironfront",
+    "Meridian",
+    "Rook",
+    "Delta",
+    "Vale",
+  ]) {
+    const { regions } = generateContinent(seed, 4);
+    const passableArea = regions
+      .filter((r) => r.terrain !== "mountains")
+      .reduce((sum, r) => sum + r.area, 0);
+    const farmArea = regions
+      .filter((r) => r.landUse === "agricultural")
+      .reduce((sum, r) => sum + r.area, 0);
+    assert(
+      farmArea / passableArea <= 0.25,
+      `${seed}: farmland covers ${(farmArea / passableArea).toFixed(3)} of passable land`,
+    );
+  }
+});
+
+test("completed campaigns enforce city spacing and settlement budgets", () => {
+  for (const seats of [2, 4, 8])
+    for (const seed of ["Boreal", "Ironfront", "Map-e05fa536"]) {
+      const w = createWorld("GRAND", seed, seats, 10000, 0);
+      const sites = w.regions.flatMap((r) =>
+        (r.features ?? []).filter((f) => f.kind === "settlement"),
+      );
+      for (let i = 0; i < sites.length; i++)
+        for (const b of sites.slice(i + 1)) {
+          const a = sites[i];
+          assert(
+            Math.hypot(a.x - b.x, a.y - b.y) >=
+              worldSettlementSeparation(a.size ?? "hamlet", b.size ?? "hamlet"),
+            seed + ": " + a.id + " crowds " + b.id,
+          );
+        }
+      const budget = Math.floor(
+        w.regions
+          .filter((r) => r.terrain !== "mountains")
+          .reduce((sum, r) => sum + r.area, 0) / 6480000,
+      );
+      assert(sites.length <= budget);
+    }
 });

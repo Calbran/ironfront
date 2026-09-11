@@ -311,6 +311,7 @@ export function createCityUnitTrial(
   function tick(dt: number) {
     if (!Number.isFinite(dt) || dt <= 0) return;
     for (const unit of units) {
+      if(unit.health<=0)continue;
       unit.cover =
         unit.kind === "infantry"
           ? coverAt(

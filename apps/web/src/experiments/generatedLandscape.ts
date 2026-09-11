@@ -1,4 +1,5 @@
 import * as T from "three";
+import { refinedGrain } from "./refinedSurface";
 import { presentationRivers } from "./riverPresentation";
 import { createMiniatureKit } from "./referenceAssets";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -224,23 +225,7 @@ export function generatedLandscape(
   geometry.setAttribute("color", new T.Float32BufferAttribute(groundSummer, 3));
   geometry.setAttribute("edgeBlend", new T.Float32BufferAttribute(blends, 1));
   geometry.computeVertexNormals();
-  const textureData = new Uint8Array(128 * 128 * 4);
-  for (let y = 0; y < 128; y++)
-    for (let x = 0; x < 128; x++) {
-      const i = (y * 128 + x) * 4,
-        n =
-          220 +
-          Math.sin(x * 17.3 + y * 31.7) * 14 +
-          noise(x * 0.12, y * 0.12) * 9;
-      textureData.set([n, n, n, 255], i);
-    }
-  const texture = new T.DataTexture(textureData, 128, 128);
-  texture.wrapS = texture.wrapT = T.RepeatWrapping;
-  texture.colorSpace = T.SRGBColorSpace;
-  texture.generateMipmaps = true;
-  texture.minFilter = T.LinearMipmapLinearFilter;
-  texture.magFilter = T.LinearFilter;
-  texture.needsUpdate = true;
+  const texture = refinedGrain();
   const material = new T.MeshStandardMaterial({
     vertexColors: true,
     roughness: 1,

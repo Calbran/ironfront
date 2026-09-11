@@ -1,3 +1,4 @@
+import { terrainLayoutGraphics } from "./terrainLayoutGraphics";
 import { blendedGround } from "./blendedGround";
 import { FillPattern, Graphics, Matrix, type Texture } from "pixi.js";
 import type { World } from "../../../packages/game-core/src/index";
@@ -209,5 +210,6 @@ export function terrainGraphics(
   }
   traceCoasts(details);
   details.stroke({ color: "#d0c49a", width: 2, alpha: 0.8, join: "round" });
+  terrain.addChild(terrainLayoutGraphics(world, geometry, patterns));
   return Object.assign(terrain, { setDetailZoom });
 }

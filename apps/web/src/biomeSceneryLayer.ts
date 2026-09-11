@@ -2,7 +2,11 @@ import { Container, Rectangle, Sprite, Texture } from "pixi.js";
 import type { ScenerySprite } from "../../../packages/game-core/src/biomeScenery";
 
 /** Trim each sprite, allowing small atlas cell misalignment without cutting branches. */
-export function sceneryFrames(atlas: Texture): Texture[] {
+export function atlasFrames(
+  atlas: Texture,
+  columns: number,
+  rows: number,
+): Texture[] {
   const canvas = document.createElement("canvas");
   canvas.width = atlas.width;
   canvas.height = atlas.height;
@@ -10,9 +14,9 @@ export function sceneryFrames(atlas: Texture): Texture[] {
   ctx.drawImage(atlas.source.resource as CanvasImageSource, 0, 0);
   const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
   const out: Texture[] = [];
-  for (let row = 0; row < 2; row++) {
-    const top = (row * canvas.height) / 2,
-      bottom = ((row + 1) * canvas.height) / 2;
+  for (let row = 0; row < rows; row++) {
+    const top = Math.round((row * canvas.height) / rows),
+      bottom = Math.round(((row + 1) * canvas.height) / rows);
     const counts = Array.from({ length: canvas.width }, (_, x) => {
       let n = 0;
       for (let y = top; y < bottom; y++)
@@ -20,8 +24,8 @@ export function sceneryFrames(atlas: Texture): Texture[] {
       return n;
     });
     const cuts = [0];
-    for (let col = 1; col < 4; col++) {
-      const ideal = (canvas.width * col) / 4;
+    for (let col = 1; col < columns; col++) {
+      const ideal = (canvas.width * col) / columns;
       let cut = Math.round(ideal),
         score = Infinity;
       for (
@@ -38,7 +42,7 @@ export function sceneryFrames(atlas: Texture): Texture[] {
       cuts.push(cut);
     }
     cuts.push(canvas.width);
-    for (let col = 0; col < 4; col++) {
+    for (let col = 0; col < columns; col++) {
       let left = cuts[col + 1],
         right = cuts[col],
         low = bottom,
@@ -61,6 +65,7 @@ export function sceneryFrames(atlas: Texture): Texture[] {
   }
   return out;
 }
+export const sceneryFrames = (atlas: Texture) => atlasFrames(atlas, 4, 2);
 export function biomeSceneryLayer(
   points: readonly ScenerySprite[],
   atlas: Texture,

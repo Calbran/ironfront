@@ -1,3 +1,4 @@
+import { terrainCover, type TerrainPoint } from "./terrainLayout.ts";
 import type { Army, World } from "./index.ts";
 import { settlementOwner } from "./settlementCapture.ts";
 export function coverSite(w: World, a: Army) {
@@ -23,9 +24,12 @@ export function inCover(
     y: number;
     region: number;
     owner?: number | null;
+    movementLayer?: "ground" | "air";
     garrisonSite?: { region: number; feature: string };
   },
+  source?: TerrainPoint,
 ) {
+  if (terrainCover(w.regions[s.region], s, source)) return true;
   if (s.garrisonSite) {
     const r = w.regions[s.garrisonSite.region];
     const f = r?.features?.find(

@@ -58,6 +58,8 @@ export const CITY_CONTROL_AREA = {
   maxZ: 19,
 };
 export type CityMover = "infantry" | "vehicle";
+/** Shared with the rendered civic paving, including its approaches outside the gates. */
+export const CITY_PLAZA_SURFACE = { x: 0, z: -6, width: 72, depth: 56 } as const;
 export type CityCover = {
   position: CityPoint;
   normal: CityPoint;
@@ -234,6 +236,10 @@ export function createCityTactics(
       return false;
     if (
       mover === "vehicle" &&
+      !(
+        Math.abs(p.x - CITY_PLAZA_SURFACE.x) <= CITY_PLAZA_SURFACE.width / 2 - r &&
+        Math.abs(z - CITY_PLAZA_SURFACE.z) <= CITY_PLAZA_SURFACE.depth / 2 - r
+      ) &&
       !(
         streetBuckets.get(`${Math.floor(p.x / 16)},${Math.floor(p.z / 16)}`) ??
         []

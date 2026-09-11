@@ -1,4 +1,8 @@
+import { remoteCityBattle } from "./remoteCityBattle";
+import type { TerrainProfile } from "../../../../packages/game-core/src/combinedDistrict";
 import { createJeep } from "../prototypes/jeepModel";
+import { cityUnitMarkers } from "./cityUnitMarkers";
+import { cityIdleMotion } from "./cityIdleMotion";
 import { CITY_TRIAL_SANDBAGS } from "../../../../packages/game-core/src/cityTactics";
 import { createMilitaryModel } from "../prototypes/militaryModels";
 import { createTankTracks } from "../prototypes/tankTracks";
@@ -13,10 +17,11 @@ import type { bakeInfantry } from "../infantryModel";
 
 export function createCityTestUnits(
   root: T.Group,
-  camera: T.Camera,
+  getCamera: () => T.Camera,
   canvas: HTMLCanvasElement,
   rig: ReturnType<typeof bakeInfantry>,
   tactics: ReturnType<typeof createCityTactics>,
+  config: {seed:number;profile:TerrainProfile},
   focus: (p: { x: number; z: number }) => void,
 ) {
   const jeep = createJeep();
@@ -46,7 +51,7 @@ export function createCityTestUnits(
     partial: rig.pose("aim", 0.9, 0, 0.7, 0),
     full: rig.pose("aim", 0.9, 0, 0.25, 0.35),
   };
-  const trial = createCityUnitTrial(tactics),
+  const trial = remoteCityBattle(tactics,config),
     objects = new Map<number, T.Group>(),
     rings = new Map<number, T.Mesh>();
   const bodyMaterial = new T.MeshStandardMaterial({
@@ -62,6 +67,8 @@ export function createCityTestUnits(
     opacity: 0.8,
     side: T.DoubleSide,
   });
+  const enemyRing = new T.MeshBasicMaterial({color:0xf16b59,depthTest:false,side:T.DoubleSide});
+  const enemyBody=bodyMaterial.clone();enemyBody.color.set(0xda9588);
   const selectedRing = new T.MeshBasicMaterial({
     color: 0xffdc69,
     depthTest: false,
@@ -96,7 +103,7 @@ export function createCityTestUnits(
       soldier.add(unit.vehicleType === "jeep" ? jeep.root : tank.root);
     else
       for (const part of rig.parts) {
-        const mesh = new T.Mesh(part.geometry, bodyMaterial);
+        const mesh = new T.Mesh(part.geometry, unit.friendly ? bodyMaterial : enemyBody);
         mesh.matrixAutoUpdate = false;
         mesh.castShadow = true;
         soldier.add(mesh);
@@ -225,6 +232,7 @@ export function createCityTestUnits(
   const raycaster = new T.Raycaster(),
     mouse = new T.Vector2();
   function screen(p: { x: number; z: number }, above = 0) {
+    const camera = getCamera();
     root.updateMatrixWorld(true);
     camera.updateMatrixWorld();
     const v = root
@@ -237,6 +245,7 @@ export function createCityTestUnits(
     };
   }
   function ground(e: PointerEvent) {
+    const camera = getCamera();
     const rect = canvas.getBoundingClientRect();
     mouse.set(
       ((e.clientX - rect.left) / rect.width) * 2 - 1,
@@ -330,13 +339,14 @@ export function createCityTestUnits(
           }))
           .filter((v) => v.d < 18)
           .sort((a, b) => a.d - b.d)[0];
-        trial.selectMany(hit ? [hit.u.id] : [], start.shift);
+        if(hit?.u.friendly===false)trial.attack(hit.u.id);else trial.selectMany(hit ? [hit.u.id] : [], start.shift);
       }
       drawPath();
     } else if (start.button === 2 && !start.dragged) {
       const p = ground(e);
       if (p) {
-        trial.order(p);
+        const enemy=trial.units.find(u=>!u.friendly&&u.health>0&&Math.hypot(u.x-p.x,u.z-p.z)<2);
+        if(enemy)trial.attack(enemy.id);else trial.order(p);
         drawPath();
       }
     }
@@ -363,26 +373,57 @@ export function createCityTestUnits(
   canvas.addEventListener("pointercancel", onCancel);
   window.addEventListener("keydown", onKey);
   window.addEventListener("blur", onCancel);
+  const markers=cityUnitMarkers(canvas,trial.units,(id,add)=>{
+    if(trial.units.find(u=>u.id===id)?.friendly===false)trial.attack(id);else trial.selectMany([id],add);
+    drawPath();
+  },focus);
+  const tracerGeometry=new T.BufferGeometry();
+  const tracerPositions=new Float32Array(128*6);tracerGeometry.setAttribute('position',new T.BufferAttribute(tracerPositions,3));
+  const tracerMaterial=new T.LineBasicMaterial({color:0xffd48a});
+  const tracers=new T.LineSegments(tracerGeometry,tracerMaterial);tracers.frustumCulled=false;layer.add(tracers);
+  const firedAt=new Map<number,number>();
+  let lastShot=0;
+  const effects:{shot:ReturnType<typeof trial.state>['shots'][number];until:number}[]=[];
+  let guideSignature="";
+  let idleTime=0;
   function update(dt: number) {
+    idleTime+=dt;
     trial.tick(dt);
+    for(const shot of trial.state().shots)if(shot.id>lastShot){lastShot=shot.id;firedAt.set(shot.from,idleTime);effects.push({shot,until:idleTime+(shot.shell?.5:.12)});}
+    while(effects.length&&(effects[0].until<idleTime||effects.length>128))effects.shift();
+    let n=0;
+    for(const {shot,until} of effects){if(until<idleTime)continue;
+      const y=tactics.surfaceHeight({x:shot.x,z:shot.z})+.65,ty=tactics.surfaceHeight({x:shot.tx,z:shot.tz})+.5;
+      tracerPositions.set([shot.x,y,shot.z,shot.tx,ty,shot.tz],n++*6);
+    }
+    tracerGeometry.setDrawRange(0,n*2);tracerGeometry.attributes.position.needsUpdate=true;
     if (previewRequest) previewAt(previewRequest.p, previewRequest.facing);
     const selected = trial.selectedIds();
+    const guides=JSON.stringify(trial.units.filter(u=>selected.includes(u.id)).map(u=>u.guide));
+    if(guides!==guideSignature){guideSignature=guides;drawPath();}
+    markers.update(getCamera(),root,u=>tactics.surfaceHeight(u),selected);
     for (const u of trial.units) {
       const obj = objects.get(u.id)!;
+      obj.visible=u.health>0;
       obj.position.set(u.x, tactics.surfaceHeight(u), u.z);
       obj.rotation.y = u.angle;
       if (u.kind === "vehicle") {
         if (u.vehicleType !== "jeep") tracks.update(u.leftTrack, u.rightTrack);
         rings.get(u.id)!.material = selected.includes(u.id)
           ? selectedRing
-          : idleRing;
+          : u.friendly ? idleRing : enemyRing;
         continue;
       }
       const phase = (u.distance / CITY_RUN_STRIDE) * Math.PI * 2;
       const amount = Math.min(1, u.speed / 0.6);
       const body = obj.children[0];
+      const idleMotion=cityIdleMotion(idleTime,u.id,u.speed,u.moving,u.facing!==undefined,u.cover);
       body.position.y = 0.035 * (1 - Math.cos(phase * 2)) * 0.5 * amount;
       body.rotation.z = 0.025 * Math.sin(phase) * amount;
+      // Stretch from the planted feet rather than translating the whole soldier.
+      body.scale.y=.55*(1+idleMotion.breath);
+      body.rotation.z+=idleMotion.sway;
+      body.position.z=-Math.max(0,.1-(idleTime-(firedAt.get(u.id)??-10)))*.3;
       const frame = ((u.distance / CITY_RUN_STRIDE) % 1) * 64,
         first = Math.floor(frame),
         fraction = frame - first;
@@ -402,7 +443,7 @@ export function createCityTestUnits(
       });
       rings.get(u.id)!.material = selected.includes(u.id)
         ? selectedRing
-        : idleRing;
+        : u.friendly ? idleRing : enemyRing;
     }
     if (
       pathLine &&
@@ -413,6 +454,8 @@ export function createCityTestUnits(
   update(0);
   return {
     update,
+    toggleBattle:trial.toggle,
+    selectSquad(){trial.selectMany(trial.units.filter(u=>u.friendly&&u.health>0&&u.kind==="infantry").map(u=>u.id));drawPath();},
     previewAt,
     clearPreview,
     previewState: () => orderPreview.map((p) => ({ ...p })),
@@ -446,6 +489,9 @@ export function createCityTestUnits(
       clearPath();
     },
     dispose: () => {
+      trial.dispose();
+      tracerGeometry.dispose();tracerMaterial.dispose();enemyRing.dispose();enemyBody.dispose();
+      markers.dispose();
       canvas.removeEventListener("pointerdown", onDown, true);
       canvas.removeEventListener("pointerup", onUp, true);
       canvas.removeEventListener("pointermove", onMove, true);

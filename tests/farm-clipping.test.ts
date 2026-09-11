@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   farmClipper,
   farmCorridor,
+  farmExclusionClipper,
   polygonArea,
 } from "../packages/game-core/src/farmClipping.ts";
 import type { Region } from "../packages/game-core/src/index.ts";
@@ -40,4 +41,23 @@ test("edge fields cover an irregular region while preserving its lake and road c
       ) - 7600,
     ) < 0.01,
   );
+});
+
+test("display field fragments preserve overdraw for a smoothed region mask", () => {
+  const parcel = [
+    { x: -10, y: -10 },
+    { x: 110, y: -10 },
+    { x: 110, y: 110 },
+    { x: -10, y: 110 },
+  ];
+  const fragments = farmExclusionClipper([
+    farmCorridor({ x: 50, y: -10 }, { x: 50, y: 110 }, 2),
+  ])(parcel);
+  const area = fragments.reduce(
+    (sum, fragment) => sum + polygonArea(fragment),
+    0,
+  );
+  assert(Math.abs(area - 13920) < 0.01);
+  assert(fragments.some((fragment) => fragment.some((p) => p.x < 0)));
+  assert(fragments.some((fragment) => fragment.some((p) => p.x > 100)));
 });

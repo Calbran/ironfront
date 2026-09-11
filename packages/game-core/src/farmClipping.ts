@@ -51,12 +51,19 @@ function subtract(poly: P[], clip: P[]) {
   }
   return out;
 }
-export function farmCircle(x: number, y: number, radius: number): P[] {
+export function farmEllipse(
+  x: number,
+  y: number,
+  radiusX: number,
+  radiusY: number,
+): P[] {
   return Array.from({ length: 16 }, (_, i) => ({
-    x: x + (Math.cos((i * Math.PI) / 8) * radius) / Math.cos(Math.PI / 16),
-    y: y + (Math.sin((i * Math.PI) / 8) * radius) / Math.cos(Math.PI / 16),
+    x: x + (Math.cos((i * Math.PI) / 8) * radiusX) / Math.cos(Math.PI / 16),
+    y: y + (Math.sin((i * Math.PI) / 8) * radiusY) / Math.cos(Math.PI / 16),
   }));
 }
+export const farmCircle = (x: number, y: number, radius: number) =>
+  farmEllipse(x, y, radius, radius);
 export function farmCorridor(a: P, b: P, width: number): P[] {
   const dx = b.x - a.x,
     dy = b.y - a.y,
@@ -69,6 +76,20 @@ export function farmCorridor(a: P, b: P, width: number): P[] {
     { x: b.x - nx, y: b.y - ny },
     { x: b.x + nx, y: b.y + ny },
   ];
+}
+/** Subtract infrastructure without imposing the raw raster region boundary. */
+export function farmExclusionClipper(exclusions: P[][]) {
+  const masks = exclusions.map((poly) => ({ poly, box: bounds(poly) }));
+  return (parcel: P[]) => {
+    const box = bounds(parcel);
+    let pieces = [parcel];
+    for (const mask of masks)
+      if (overlaps(box, mask.box))
+        pieces = pieces.flatMap((p) =>
+          overlaps(bounds(p), mask.box) ? subtract(p, mask.poly) : [p],
+        );
+    return pieces.filter((p) => polygonArea(p) > 0.1);
+  };
 }
 /** Triangulation handles concave coasts and lake holes. Every resulting fragment is convex. */
 export function farmClipper(region: Region, exclusions: P[][]) {
@@ -84,18 +105,13 @@ export function farmClipper(region: Region, exclusions: P[][]) {
       .map((k) => ({ x: coords[k * 2], y: coords[k * 2 + 1] }));
     triangles.push({ poly, box: bounds(poly) });
   }
-  const masks = exclusions.map((poly) => ({ poly, box: bounds(poly) }));
+  const subtractExclusions = farmExclusionClipper(exclusions);
   return (parcel: P[]) => {
     const box = bounds(parcel);
-    let pieces = triangles
+    const pieces = triangles
       .filter((t) => overlaps(t.box, box))
       .map((t) => intersect(t.poly, parcel))
       .filter((p) => p.length >= 3 && polygonArea(p) > 0.1);
-    for (const mask of masks)
-      if (overlaps(box, mask.box))
-        pieces = pieces.flatMap((p) =>
-          overlaps(bounds(p), mask.box) ? subtract(p, mask.poly) : [p],
-        );
-    return pieces.filter((p) => polygonArea(p) > 0.1);
+    return pieces.flatMap(subtractExclusions);
   };
 }

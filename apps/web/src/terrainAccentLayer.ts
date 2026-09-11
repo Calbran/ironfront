@@ -31,12 +31,17 @@ export function terrainAccentLayer(
   layer.addChild(farmland);
   if (geometry) {
     const mask = new Graphics();
-    for (const rings of geometry.rings)
+    const agriculturalRegions = new Set(
+      layout.fields.map((field) => field.region),
+    );
+    for (const [region, rings] of geometry.rings.entries()) {
+      if (!agriculturalRegions.has(region)) continue;
       for (const ring of rings) {
         mask.poly(ring.flat());
         if (signedArea(ring) > 0) mask.fill(0xffffff);
         else mask.cut();
       }
+    }
     layer.addChild(mask);
     farmland.mask = mask;
   }
@@ -74,7 +79,10 @@ export function terrainAccentLayer(
           .rotate(Math.atan2(b.y - a.y, b.x - a.x))
           .translate(a.x, a.y),
       );
-    for (const fragment of field.fragments ?? [field.points])
+    const fragments = geometry
+      ? (field.displayFragments ?? field.fragments ?? [field.points])
+      : (field.fragments ?? [field.points]);
+    for (const fragment of fragments)
       farmland.poly(fragment.flatMap((p) => [p.x, p.y])).fill(
         pattern
           ? { fill: pattern, alpha: 0.78 }

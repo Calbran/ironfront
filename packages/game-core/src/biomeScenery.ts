@@ -67,6 +67,7 @@ export function generateBiomeScenery(
   }
   for (const patch of world.geography?.terrainPatches ?? [])
     paint(patch.contours, biomes, codes[patch.terrain]);
+  for (const r of world.regions) if(r.terrainLayout) paint(r.contours??[r.polygon],biomes,0);
   const sample = (x: number, y: number) => {
     const c = Math.floor(x / cell),
       r = Math.floor(y / cell);

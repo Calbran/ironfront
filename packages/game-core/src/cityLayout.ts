@@ -1,5 +1,6 @@
 import type { World, Region, RegionFeature } from "./index.ts";
 import { localSegment, onLocalLand } from "./localMovement.ts";
+import { SETTLEMENT_RADII } from "./campaignScale.ts";
 export type CityArchetype =
   "port" | "riverside" | "market" | "industrial" | "woodland" | "fortified";
 export type CityPoint = { x: number; y: number };
@@ -206,14 +207,14 @@ export function buildingsOverlap(
   return true;
 }
 export function generateCityLayout(
-  w: World,
+  w: Pick<World, "seed" | "regions" | "geography">,
   r: Region,
   f: RegionFeature,
 ): CityLayout {
   const rng = random(`${w.seed}:${f.id}:city-v5`);
   const rank = Math.max(0, sizes.indexOf(f.size ?? "hamlet"));
-  const worldScale = (w.geography?.width ?? 14400) / 14400;
-  let radius = [110, 160, 230, 320, 430][rank] * worldScale;
+  const worldScale = 1;
+  let radius: number = SETTLEMENT_RADII[f.size ?? "hamlet"];
   for (const region of w.regions)
     for (const other of region.features ?? [])
       if (other.kind === "settlement" && other.id !== f.id)
@@ -225,36 +226,40 @@ export function generateCityLayout(
   const river = nearest(f, w.geography?.rivers ?? []);
   const locationRadius = [65, 95, 140, 210, 290][rank] * worldScale;
   const port = (() => {
+    const makeDocks = (dx: number, dy: number, inland: CityPoint) => {
+      if (!localSegment(r, f, inland)) return null;
+      const docks: CityPoint[][] = [];
+      for (let i = -1; i <= 1; i++) {
+        const land = {
+            x: inland.x - dy * i * worldScale * 14,
+            y: inland.y + dx * i * worldScale * 14,
+          },
+          water = {
+            x: land.x + dx * worldScale * 38,
+            y: land.y + dy * worldScale * 38,
+          };
+        if (
+          onLocalLand(r, land) &&
+          !w.regions.some((region) => onLocalLand(region, water))
+        )
+          docks.push([land, water]);
+      }
+      return docks.length ? { inland, docks } : null;
+    };
     if (
-      !Number.isFinite(coast.distance) ||
-      coast.distance <= 0 ||
-      coast.distance > radius * 1.35
-    )
-      return null;
-    const dx = (coast.x - f.x) / coast.distance,
-      dy = (coast.y - f.y) / coast.distance,
-      inland = {
-        x: coast.x - dx * worldScale * 12,
-        y: coast.y - dy * worldScale * 12,
-      };
-    if (!localSegment(r, f, inland)) return null;
-    const docks: CityPoint[][] = [];
-    for (let i = -1; i <= 1; i++) {
-      const land = {
-          x: inland.x - dy * i * worldScale * 14,
-          y: inland.y + dx * i * worldScale * 14,
-        },
-        water = {
-          x: land.x + dx * worldScale * 38,
-          y: land.y + dy * worldScale * 38,
-        };
-      if (
-        onLocalLand(r, land) &&
-        !w.regions.some((region) => onLocalLand(region, water))
-      )
-        docks.push([land, water]);
+      Number.isFinite(coast.distance) &&
+      coast.distance > 0 &&
+      coast.distance <= radius * 1.35
+    ) {
+      const dx = (coast.x - f.x) / coast.distance,
+        dy = (coast.y - f.y) / coast.distance,
+        result = makeDocks(dx, dy, {
+          x: coast.x - dx * worldScale * 12,
+          y: coast.y - dy * worldScale * 12,
+        });
+      if (result) return result;
     }
-    return docks.length ? { inland, docks } : null;
+    return null;
   })();
   const archetype: CityArchetype = port
     ? "port"

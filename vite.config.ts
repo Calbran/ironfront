@@ -13,6 +13,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "apps/web/index.html",
+        legacy: "apps/web/legacy.html",
         jeep: "apps/web/jeep-preview.html",
         military: "apps/web/military-preview.html",
         animations: "apps/web/animation-review.html",

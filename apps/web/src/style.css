@@ -1829,3 +1829,19 @@ h2,
   .current-selection .unit-status { font-size: 9px; padding: 2px 4px; }
 }
 .legend-garrison i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #c4b491; border: 1px solid #172c2f; margin-right: 4px; }
+
+.terrain-tour {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  max-width: calc(100% - 24px);
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  background: #183038ed;
+  border: 1px solid #668077;
+  border-radius: 3px;
+  color: #e3e3d2;
+  font-size: 12px;
+}
+.terrain-tour select { min-width: 0; max-width: 100%; font-size: 12px; padding: 5px; }

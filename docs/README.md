@@ -2,15 +2,15 @@
 
 The organization follows Crownfall, with a deliberately smaller starting scope.
 
-| Area | Read |
-|---|---|
-| Direction | [Vision](01-design/vision.md), [game blueprint](01-design/game-blueprint.md), [theme and factions](01-design/thematic-direction.md) |
-| Interface | [Built visual system](../DESIGN.md), [working style guide](06-art/style-guide.md) |
-| Scope | [Proof and MVP](01-design/mvp.md) |
-| Rules | [Campaign systems](02-systems/campaign-systems.md), [armies and fronts](02-systems/fronts-and-armies.md), [geography](02-systems/continental-geography.md) |
-| Engineering | [Stack and architecture](03-technical/tech-stack.md), [hosting](03-technical/self-hosting.md) |
-| Delivery | [Roadmap](04-roadmap/mvp-checklist.md) |
-| Decisions | [001: direction](05-decisions/001-lightweight-land-conquest.md), [002: architecture](05-decisions/002-authoritative-browser-proof.md), [003: armies and fronts](05-decisions/003-armies-and-fronts.md), [004: Ironfront and terrain](05-decisions/004-ironfront-and-continental-terrain.md) |
+| Area        | Read                                                                                                                                                                                                                                                                                        |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Direction   | [Vision](01-design/vision.md), [game blueprint](01-design/game-blueprint.md), [theme and factions](01-design/thematic-direction.md)                                                                                                                                                         |
+| Interface   | [Built visual system](../DESIGN.md), [working style guide](06-art/style-guide.md)                                                                                                                                                                                                           |
+| Scope       | [Proof and MVP](01-design/mvp.md)                                                                                                                                                                                                                                                           |
+| Rules       | [Campaign systems](02-systems/campaign-systems.md), [armies and fronts](02-systems/fronts-and-armies.md), [geography](02-systems/continental-geography.md)                                                                                                                                  |
+| Engineering | [Stack and architecture](03-technical/tech-stack.md), [hosting](03-technical/self-hosting.md)                                                                                                                                                                                               |
+| Delivery    | [Roadmap](04-roadmap/mvp-checklist.md)                                                                                                                                                                                                                                                      |
+| Decisions   | [001: direction](05-decisions/001-lightweight-land-conquest.md), [002: architecture](05-decisions/002-authoritative-browser-proof.md), [003: armies and fronts](05-decisions/003-armies-and-fronts.md), [004: Ironfront and terrain](05-decisions/004-ironfront-and-continental-terrain.md) |
 
 **Accepted** means the owner established the direction. **Provisional** means a concrete hypothesis for playtesting. **Implemented** describes code, not approval or balance validation. PROJECT_STATE.md is the current save file; session notes and CHANGELOG.md preserve history.
 
@@ -42,7 +42,7 @@ Current forest/mountain decoration: [019: seeded biome scenery](05-decisions/019
 
 Authored settlements: [decision 019](05-decisions/019-authored-settlement-scenes.md), [asset catalog](../apps/web/public/art/settlement-scenes/README.md), [generation prompts](06-art/settlement-scene-prompts.md).
 
-Current settlement presentation: [020: abstract icons](05-decisions/020-abstract-settlement-icons.md), superseding authored city scenes.
+Prior settlement presentation: [020: abstract icons](05-decisions/020-abstract-settlement-icons.md), now superseded at detail zoom by decision 027 while retained as the interaction badge.
 
 Ground movement obstacles and air exemption: [020: mountain collision](05-decisions/020-ground-mountain-collision.md).
 
@@ -117,3 +117,8 @@ Faction model proofs: [048 — signature units and engineers](05-decisions/048-f
 - [049 — Urban civic frontages](05-decisions/049-urban-civic-frontages.md): fitted square surroundings, road bridge decks and steam utilities.
 
 - [050 — City tactical geometry inspection](05-decisions/050-city-tactical-geometry.md): prototype movement/obstacle queries, cover candidates and town-hall boundary.
+Current farmland density and settlement presentation: [027: smooth farmland and inhabited settlements](05-decisions/027-farmland-density-and-settlement-art.md).
+
+Current harbor presentation: [028: eight-direction port-town artwork](05-decisions/028-national-coast-aligned-ports.md), [port art kit](06-art/port-kit-prompts.md).
+
+Physical themed regions and their movement/cover geometry: [030: physical region layouts](05-decisions/030-physical-region-layouts.md).

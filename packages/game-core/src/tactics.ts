@@ -1,4 +1,5 @@
-import { blockedByMountains } from "./mountainObstacles.ts";
+import { FIRE_STEP, fireVolley, weaponEffectiveness, FireIndex, FireVisibility, type FireMemory, type FireObstacle } from "./squadFire.ts";
+import { blockedByRegion, onLocalLand } from "./localMovement.ts";
 import { refreshAttack } from "./attackOrders.ts";
 import { crossRegionPath } from "./crossRegionPath.ts";
 import { stepLocal, movementSpeed, type LocalOrder } from "./localMovement.ts";
@@ -36,6 +37,7 @@ export interface Squad {
   action: "holding" | "moving" | "firing" | "retreating" | "destroyed";
   target: string | null;
   fire: number;
+  fireMemory?: FireMemory;
   localOrder?: LocalOrder;
   independent?: boolean;
   garrisonSite?: {region:number;feature:string};
@@ -45,12 +47,14 @@ export interface Engagement {
   id: string;
   region: number;
   attackers: number[];
+  impacts?: {due:number;x:number;y:number;fromX:number;fromY:number;owner:number|null;kind:Squad["kind"];damage:number;radius:number}[];
   direct?: boolean;
   started: number;
   elapsed: number;
   status: "active" | "captured" | "ended";
 }
 export interface TacticalState {
+  pendingHours?: number;
   movementSequence?: number;
   version: 1;
   time: number;
@@ -70,18 +74,7 @@ export function ensureTactics(w: World): TacticalState {
   });
 }
 function inside(w: World, region: number, x: number, y: number, layer: import("./mountainObstacles.ts").MovementLayer = "ground") {
-  let hit = false;
-  for (const ring of w.regions[region].contours ?? [w.regions[region].polygon])
-    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-      const a = ring[i],
-        b = ring[j];
-      if (
-        a[1] > y !== b[1] > y &&
-        x < ((b[0] - a[0]) * (y - a[1])) / (b[1] - a[1]) + a[0]
-      )
-        hit = !hit;
-    }
-  return hit && !blockedByMountains(w.regions[region].mountainObstacles, {x,y}, {x,y}, layer);
+  return onLocalLand(w.regions[region],{x,y},layer);
 }
 function position(
   w: World,
@@ -276,11 +269,11 @@ function separateSquads(w: World, hours: number) {
       const limit = Math.min(1, (hours * 30) / 4 / Math.max(1e-9, length));
       const x = s.x + shift.x * limit,
         y = s.y + shift.y * limit;
-      if (inside(w, s.region, x, y, s.movementLayer) && !blockedByMountains(w.regions[s.region].mountainObstacles,s,{x,y},s.movementLayer)) {
+      if (inside(w, s.region, x, y, s.movementLayer) && !blockedByRegion(w.regions[s.region],s,{x,y},s.movementLayer)) {
         s.x = x;
         s.y = y;
-      } else if (inside(w, s.region, x, s.y, s.movementLayer) && !blockedByMountains(w.regions[s.region].mountainObstacles,s,{x,y:s.y},s.movementLayer)) s.x = x;
-      else if (inside(w, s.region, s.x, y, s.movementLayer) && !blockedByMountains(w.regions[s.region].mountainObstacles,s,{x:s.x,y},s.movementLayer)) s.y = y;
+      } else if (inside(w, s.region, x, s.y, s.movementLayer) && !blockedByRegion(w.regions[s.region],s,{x,y:s.y},s.movementLayer)) s.x = x;
+      else if (inside(w, s.region, s.x, y, s.movementLayer) && !blockedByRegion(w.regions[s.region],s,{x:s.x,y},s.movementLayer)) s.y = y;
     });
   }
 }
@@ -298,6 +291,7 @@ export function advanceTactics(w: World, hours: number) {
     return;
   }
   const t = ensureTactics(w);
+  if (!Number.isFinite(hours) || hours < 0) throw new Error("Invalid tactical duration");
   syncSquads(w);
   for (const a of w.armies)
     if (a.cover && !coverSite(w, a)) {
@@ -307,7 +301,7 @@ export function advanceTactics(w: World, hours: number) {
   for (const s of t.squads) {
     s.previousX = s.x;
     s.previousY = s.y;
-    s.target = null;
+    if (s.strength <= 0) s.target = null;
     s.action = s.strength > 0 ? "holding" : "destroyed";
   }
   // A command can withdraw a formation between campaign-hour ticks.
@@ -380,6 +374,7 @@ export function advanceTactics(w: World, hours: number) {
     g.strength = r.garrison;
     assigned.set(g.id, e);
   }
+  for (const s of t.squads) if (!assigned.has(s.id)) s.target = null;
   // Deploy once, then preserve actual positions during successive exchanges.
   for (const s of t.squads) {
     const e = assigned.get(s.id),
@@ -428,7 +423,7 @@ export function advanceTactics(w: World, hours: number) {
         (next ? (next.y - r.y) * fraction : 0) + offsetY,
       );
       const blend = Math.min(1, hours * 2);
-      if (next && !blockedByMountains(w.regions[s.region].mountainObstacles,s,{x,y},s.movementLayer)) {
+      if (next && !blockedByRegion(w.regions[s.region],s,{x,y},s.movementLayer)) {
         s.x += (x - s.x) * blend;
         s.y += (y - s.y) * blend;
       }
@@ -437,9 +432,10 @@ export function advanceTactics(w: World, hours: number) {
       s.morale = Math.min(1, s.morale + hours * 0.12);
     }
   }
-  for (let remaining = Math.max(0, hours); remaining > 1e-9;) {
-    const dt = Math.min(1 / 12, remaining);
-    remaining -= dt;
+  t.pendingHours = (t.pendingHours ?? 0) + Math.max(0, hours);
+  while (t.pendingHours + 1e-9 >= FIRE_STEP) {
+    const dt = FIRE_STEP;
+    t.pendingHours = Math.max(0, t.pendingHours - dt);
     t.time += dt;
     for (const s of t.squads) refreshAttack(w, s);
     const speeds = t.squads.map((s) => movementSpeed(w, s));
@@ -471,7 +467,7 @@ export function advanceTactics(w: World, hours: number) {
       );
       const nextX = s.x + (x - s.x) * amount;
       const nextY = s.y + (y - s.y) * amount;
-      if (inside(w, s.region, nextX, nextY, s.movementLayer) && !blockedByMountains(w.regions[s.region].mountainObstacles,s,{x:nextX,y:nextY},s.movementLayer)) {
+      if (inside(w, s.region, nextX, nextY, s.movementLayer) && !blockedByRegion(w.regions[s.region],s,{x:nextX,y:nextY},s.movementLayer)) {
         s.x = nextX;
         s.y = nextY;
       }
@@ -545,24 +541,24 @@ export function advanceTactics(w: World, hours: number) {
       );
       const hits = new Map<string, number>(),
         suppression = new Map<string, number>();
-      for (const s of units) {
-        const enemies = units.filter((d) => d.owner !== s.owner);
-        const d =
-          enemies.find((d) => d.id === s.localOrder?.attackTarget) ??
-          enemies.sort(
-            (a, b) =>
-              Math.hypot(a.x - s.x, a.y - s.y) -
-                Math.hypot(b.x - s.x, b.y - s.y) || a.id.localeCompare(b.id),
-          )[0];
-        if (!d) {
-          s.action = s.localOrder?.path.length ? "moving" : "holding";
-          s.target = null;
-          continue;
+      const fireIndex = new FireIndex(units, rad);
+      const sight = sightFor(r);
+      const exposure = (a: Squad, b: Squad) => sight.exposure(a, b);
+      const pending = e.impacts ?? [];e.impacts=[];
+      for(const impact of pending){
+        if(impact.due>t.time+1e-9){e.impacts.push(impact);continue;}
+        for(const d of units){const distance=Math.hypot(d.x-impact.x,d.y-impact.y);if(d.owner===impact.owner||distance>impact.radius)continue;
+          const origin={...d,id:`shell-origin`,x:impact.fromX,y:impact.fromY},center={...d,id:`shell-center`,x:impact.x,y:impact.y};
+          const clear=sight.exposure(origin,center)*sight.exposure(center,d);if(clear<=0)continue;
+          const damage=impact.damage*weaponEffectiveness(impact.kind,d.kind)*clear*(1-distance/impact.radius*.75);
+          hits.set(d.id,(hits.get(d.id)||0)+damage);suppression.set(d.id,(suppression.get(d.id)||0)+damage/25);
         }
+      }
+      for (const s of units) {
         const a = w.armies.find((a) => a.id === s.army),
-          range =
-            rad *
-            (s.kind === "artillery" ? 3.5 : s.kind === "armor" ? 1.25 : 0.95);
+          range = rad * (s.kind === "artillery" ? 3.5 : s.kind === "armor" ? 1.25 : .95);
+        const d = fireIndex.target(s, range, exposure) ?? fireIndex.target(s, rad * 8, () => 1);
+        if (!d) {s.action = s.localOrder?.path.length ? "moving" : "holding";s.target = null;continue;}
         const distance = Math.hypot(d.x - s.x, d.y - s.y);
         s.suppression = Math.max(0, s.suppression - dt * 0.12);
         if (
@@ -580,7 +576,7 @@ export function advanceTactics(w: World, hours: number) {
           );
           const x = s.x + ((d.x - s.x) / distance) * step,
             y = s.y + ((d.y - s.y) / distance) * step;
-          if (inside(w, e.region, x, y, s.movementLayer) && !blockedByMountains(w.regions[e.region].mountainObstacles,s,{x,y},s.movementLayer)) {
+          if (inside(w, e.region, x, y, s.movementLayer) && !blockedByRegion(w.regions[e.region],s,{x,y},s.movementLayer)) {
             s.x = x;
             s.y = y;
           }
@@ -596,7 +592,7 @@ export function advanceTactics(w: World, hours: number) {
         const nation = a ? w.nations[a.owner] : null;
         const defendingArmy = w.armies.find((a) => a.id === d.army);
         const cover =
-          d.owner === r.owner
+          (d.owner === r.owner
             ? (r.terrain === "forest"
                 ? 1.25
                 : r.terrain === "highlands"
@@ -608,11 +604,10 @@ export function advanceTactics(w: World, hours: number) {
                   : 1.25
                 : 1) *
               (1 + (defendingArmy?.entrenchment ?? 0) * 0.06) *
-              (inCover(w, defendingArmy, d) ? 1.3 : 1) *
               (d.owner !== null && w.nations[d.owner].faction === "crown"
                 ? 1.15
                 : 1)
-            : 1;
+            : 1) * (inCover(w, defendingArmy, d, s) ? 1.3 : 1);
         const armor =
           s.kind === "armor"
             ? (r.terrain === "plains" ? 1.65 : 0.8) *
@@ -620,23 +615,15 @@ export function advanceTactics(w: World, hours: number) {
             : 1;
         const support = s.kind === "artillery" ? 1.25 : 1;
         const supply = a && a.supplies < 6 ? 0.65 : 1;
-        const damage =
-          (s.strength *
-            0.42 *
-            dt *
-            armor *
-            support *
-            supply *
-            (nation?.faction === "iron" ? 1.1 : 1) *
-            (0.5 + s.morale * 0.5) *
-            (1 - s.suppression * 0.6)) /
-          cover;
-        hits.set(d.id, (hits.get(d.id) || 0) + damage);
-        suppression.set(
-          d.id,
-          (suppression.get(d.id) || 0) +
-            damage / (s.kind === "artillery" ? 25 : 65),
-        );
+        const volley = fireVolley(s, d, distance, range, exposure(s,d),
+          armor * support * supply * (nation?.faction === "iron" ? 1.1 : 1) * (.5+s.morale*.5) / cover);
+        if((s.kind==="armor"||s.kind==="artillery")&&volley.fired&&volley.rawDamage>0){
+          (e.impacts??=[]).push({due:t.time+FIRE_STEP*2,x:d.x,y:d.y,fromX:s.x,fromY:s.y,owner:s.owner,kind:s.kind,damage:volley.rawDamage,radius:rad*(s.kind==="artillery"?.18:.08)});
+        }else if(s.kind!=="armor"&&s.kind!=="artillery"){
+          hits.set(d.id, (hits.get(d.id) || 0) + volley.damage);
+          suppression.set(d.id, (suppression.get(d.id) || 0) + volley.suppression);
+        }
+        if (!volley.fired) {s.action=s.localOrder?.path.length ? "moving" : "holding";s.target=exposure(s,d)>0?d.id:null;continue;}
         s.target = d.id;
         s.action = "firing";
         s.fire += dt;
@@ -811,4 +798,12 @@ export function advanceTactics(w: World, hours: number) {
   for (const s of t.squads)
     if (s.strength > 0 && s.localOrder?.retreat) s.action = "retreating";
   t.revision++;
+}
+
+const sightCaches = new WeakMap<object, {signature:string;sight:FireVisibility}>();
+function sightFor(region: World["regions"][number]) {
+ const obstacles: FireObstacle[] = [...(region.fireObstacles ?? []), ...(region.terrainLayout?.obstacles.filter(o=>o.kind!=="water").map(o=>({id:o.id,polygon:o.polygon,exposure:o.kind==="ridge"?0:.5})) ?? [])];
+ const signature=JSON.stringify(obstacles);const cached=sightCaches.get(region);
+ if(cached?.signature===signature)return cached.sight;
+ const sight=new FireVisibility(obstacles);sightCaches.set(region,{signature,sight});return sight;
 }

@@ -77,6 +77,9 @@ export function createMiniatureKit(): MiniatureKit {
     leaves = mat("#67783d", pattern("grain")),
     trunk = mat("#685342"),
     snowMat = mat("#e1e7e5");
+  const signGlow = mat("#ebc579");
+  signGlow.emissive.set("#ffb85c");
+  signGlow.emissiveIntensity = 0;
   const batches = new Map<T.Material, T.BufferGeometry[]>();
   function add(
     geo: T.BufferGeometry,
@@ -298,11 +301,35 @@ export function createMiniatureKit(): MiniatureKit {
     batches.clear();
     snowPieces.length = 0;
     draw();
+    if ((name.startsWith("urban") && !["urbanBuild", "urbanCourt"].includes(name) && name.length % 3 === 0) || name.startsWith("warehouse")) {
+      const roofs = batches.get(roof) ?? [];
+      let top = 0;
+      for (const g of roofs) { g.computeBoundingBox(); top = Math.max(top, g.boundingBox!.max.y); }
+      if (top > 0) {
+        // Timber tank cradle, copper header and paired service pipes.
+        for (const x of [-.45, .45]) for (const z of [-2.45, -1.55]) box(wood, x, top + .35, z, .1, .7, .1);
+        add(new T.CylinderGeometry(.65, .65, 1.05, 10), wood, 0, top + 1.12, -2);
+        for (const y of [top + .66, top + 1.52]) add(new T.TorusGeometry(.66, .04, 4, 10).rotateX(Math.PI / 2), brass, 0, y, -2);
+        add(new T.ConeGeometry(.73, .3, 10), roof, 0, top + 1.8, -2);
+        box(brass, .8, top + .65, -2, .1, 1.3, .1);
+        box(brass, 1, top + 1.25, -2, .5, .1, .1);
+      }
+    }
+    if (name.startsWith("urban") && name !== "urbanBuild" && name !== "urbanCourt") {
+      // Keep signs within the reserved facade envelope and above the doorway.
+      box(wood, 1.5, 3.1, 5.88, .09, .09, .55);
+      box(trim, 1.5, 2.7, 5.96, .75, .62, .12);
+      box(signGlow, 1.5, 2.7, 6.035, .57, .42, .025);
+      // Simple trade symbol: crossbar and brass rivets remain legible at unit scale.
+      box(wood, 1.5, 2.7, 6.06, .38, .045, .025);
+      box(wood, 1.5, 2.7, 6.06, .045, .28, .025);
+    }
     const parts: KitPart[] = [],
       distant: KitPart[] = [];
     for (const [material, geos] of batches) {
       const normalized = geos.map((g) => (g.index ? g.toNonIndexed() : g));
       const large = normalized.filter((g) => {
+        if (g.hasAttribute("windowSeed")) return false;
         g.computeBoundingBox();
         const size = g.boundingBox!.getSize(new T.Vector3());
         return (
@@ -310,6 +337,24 @@ export function createMiniatureKit(): MiniatureKit {
           (size.y > 0.12 && size.x * size.z > 8)
         );
       });
+      // Distant windows retain the same room seed on a single outward-facing quad.
+      const windowQuads = normalized.filter((g) => g.hasAttribute("windowSeed")).map((g) => {
+        g.computeBoundingBox();
+        const b = g.boundingBox!, size = b.getSize(new T.Vector3()), center = b.getCenter(new T.Vector3());
+        const sideX = size.x < size.z;
+        const facing = Math.sign(sideX ? center.x : center.z) || 1;
+        const q = new T.PlaneGeometry(sideX ? size.z : size.x, size.y);
+        q.rotateY(sideX ? facing * Math.PI / 2 : facing < 0 ? Math.PI : 0);
+        if (sideX) center.x += facing * size.x / 2;
+        else center.z += facing * size.z / 2;
+        q.translate(center.x, center.y, center.z);
+        q.setAttribute("windowSeed", new T.Float32BufferAttribute(new Float32Array(4).fill(g.getAttribute("windowSeed").getX(0)), 1));
+        const flat = q.toNonIndexed(); q.dispose(); return flat;
+      });
+      if (windowQuads.length) {
+        distant.push({geometry:mergeGeometries(windowQuads)!,material,snow:false});
+        windowQuads.forEach(g=>g.dispose());
+      }
       if (large.length)
         distant.push({
           geometry: mergeGeometries(large)!,
@@ -659,6 +704,7 @@ export function createMiniatureKit(): MiniatureKit {
   });
   buildSteampunkAssets({
     capture,
+    snow: (geometry, x, y, z) => snowCap(geometry, x, y, z, 1, 1, 1),
     box,
     add,
     windowPane,
@@ -672,15 +718,47 @@ export function createMiniatureKit(): MiniatureKit {
     iron: ironwork,
     brick: millBrick,
     glass,
+    glow: signGlow,
   });
   capture("tree", () => tree(0, 0, 4, false));
   capture("pine", () => tree(0, 0, 4, true));
+  capture("treeTall", () => {
+    tree(0, 0, 4, false);
+    for (const gs of batches.values())
+      for (const g of gs) g.scale(0.8, 1.25, 0.8);
+    for (const g of snowPieces) g.scale(0.8, 1.25, 0.8);
+  });
+  capture("treeYoung", () => tree(0, 0, 2.7, false));
+  capture("groundPebbles", () => {
+    for (let i = 0; i < 5; i++)
+      add(
+        new T.IcosahedronGeometry(1, 0),
+        stone,
+        Math.sin(i * 2.4) * 0.6,
+        0.07,
+        Math.cos(i * 2.4) * 0.6,
+        0.1 + i * 0.025,
+        0.06 + i * 0.01,
+        0.08 + i * 0.02,
+      );
+  });
+  capture("groundTufts", () => {
+    for (let i = 0; i < 6; i++)
+      add(
+        new T.ConeGeometry(0.045, 0.28, 3),
+        leaves,
+        Math.sin(i * 2.4) * 0.3,
+        0.12,
+        Math.cos(i * 2.4) * 0.3,
+      );
+  });
   return {
     variants,
     distantVariants,
     architecture: { walls, roof },
     setDusk(enabled) {
       windowDusk.value = enabled ? 1 : 0;
+      signGlow.emissiveIntensity = enabled ? 2 : 0;
     },
     dispose() {
       const materials = new Set<T.Material>();

@@ -1,9 +1,10 @@
+import { polygonContains } from "./terrainLayout.ts";
 import { uniqueRoadSegments } from "./roadNetwork.ts";
 import { landscapeClearance } from "./landscapeClearance.ts";
-import { generateLandscape } from "./landscape.ts";
+import { generateLandscape, settlementClearance } from "./landscape.ts";
 import { visualScale } from "./visualScale.ts";
 import type { CityRoad } from "./cityRoads.ts";
-import type { World, Region } from "./index.ts";
+import type { World, Region, RegionFeature } from "./index.ts";
 import type { CityLayout, CityPoint } from "./cityLayout.ts";
 import { localSegment, onLocalLand } from "./localMovement.ts";
 export interface TerrainAccent extends CityPoint {
@@ -20,6 +21,7 @@ export interface AccentLine {
 }
 export interface AccentCity extends CityPoint {
   region: number;
+  size?: RegionFeature["size"];
   layout: CityLayout;
 }
 export function generateTerrainAccents(
@@ -29,6 +31,7 @@ export function generateTerrainAccents(
 ) {
   const cell = w.geography?.cellSize ?? 8;
   const sizes = visualScale(w);
+  const cityClearances = cities.map((city) => settlementClearance(city, cell));
   let seed = 2166136261;
   for (const c of `${w.seed}:accents-v1`)
     seed = Math.imul(seed ^ c.charCodeAt(0), 16777619);
@@ -74,9 +77,11 @@ export function generateTerrainAccents(
     return type;
   }
   const outsideCity = (p: CityPoint, padding: number) =>
-    cities.every(
-      (c) => Math.hypot(c.x - p.x, c.y - p.y) > c.layout.radius + padding,
-    );
+    cityClearances.every((city) => {
+      const dx = (p.x - city.x) / (city.radiusX + padding),
+        dy = (p.y - city.y) / (city.radiusY + padding);
+      return dx * dx + dy * dy > 1;
+    });
   function fits(r: Region, p: CityPoint, width: number) {
     const half = width * 0.5;
     return [
@@ -282,8 +287,9 @@ export function generateTerrainAccents(
   const clearsLandUse = landscapeClearance(landscape.fields, roads, sizes.road);
   const natural = sprites.filter((p) => clearsLandUse(p, p.width * 0.55));
   natural.push(...landscape.sprites);
+  const themedRings=w.regions.filter(r=>r.terrainLayout).map(r=>(r.contours??[r.polygon]).map(ring=>ring.map(([x,y])=>({x,y}))));
   return {
-    sprites: natural.sort((a, b) => a.y - b.y),
+    sprites: natural.filter(p=>!themedRings.some(rings=>rings.reduce((inside,ring)=>polygonContains(ring,p)?!inside:inside,false))).sort((a, b) => a.y - b.y),
     lines,
     fields: landscape.fields,
     farmLanes: landscape.lanes,

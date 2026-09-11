@@ -1,5 +1,50 @@
 # Changelog
 
+## 2026-09-10 — Restore floor orbit anchoring
+
+- Restore cursor-based floor/terrain anchors while excluding building surfaces; use current focus if the floor ray misses.
+
+## 2026-09-10 — Stable orbit and soldier idles
+
+- Replace click-surface orbit with the current camera focus; preserve terrain movement orders.
+- Add small staggered breathing and sway to relaxed soldiers, suppressed by running, aiming and cover.
+- Verify fixed-target orbit and bounded/context-sensitive idle motion with regression tests.
+
+## 2026-09-10 — Distant city unit markers
+
+- Add zoom-aware infantry, tank and jeep badges above the city rendering, with selection highlights and ground-position leader lines.
+- Separate overlapping badges; support click/Shift-click selection and double-click focus, fading icons out near units.
+- Test orthographic/perspective visibility and badge separation; verify selection and close-range hiding in the browser.
+
+## 2026-09-10 — Close street camera
+
+- Add perspective Street View alongside the saved orthographic Planning View.
+- Focus street inspection near selected units, slow street panning and adapt picking/LOD to the active camera.
+- Reveal selected units through a dithered building cutaway without extra transparency draw calls; exclude revealed surfaces from orbit picking.
+- Add perspective anchor and cutaway reset regression tests.
+
+## 2026-09-10 — Natural city orbit pivots
+
+- Pivot middle-drag around the clicked visible roof, wall or ground surface, excluding hidden detail models and transparent effects.
+- Use a stable view-target plane for empty-space clicks; preserve screen anchor, zoom and camera-target distance.
+- Retain terrain picking for movement orders; add regression checks for surface selection and stable orbit framing.
+
+## 2026-09-10 — City streetscape and distant nighttime detail
+
+- Allow tanks and jeeps to traverse the shared rendered civic paving; preserve gate clearance, walls and planted-bed exclusions.
+
+- Add tram shelters, lit trade signs and rooftop tanks/service pipes.
+- Batch soft pavement light pools for street fixtures and signs at dusk, keeping real point lights bounded.
+- Retain glowing windows in distant models as flat quads with matching room seeds.
+- Separate tower cornice/deck top planes to fix roof flicker; adjust snow clearance.
+
+## 2026-09-10 — Victorian city variety and refined surfaces
+
+- Add seven distinct tower, terrace and industrial appearances, seeded facade tints and two tree proportions to the shared miniature kit.
+- Apply shared generated-world grain to city ground, soil, paths and planting; add bounded tree-side pebbles and grass tufts with infrastructure clearance.
+- Add an infantry-scaled patrol airship above the skyline, animated propellers and an Airship inspection camera.
+- Verify model envelopes, TypeScript, production build and full-city browser views.
+
 ## 2026-09-10 — Infantry-referenced city props
 
 - Correct oversized benches and civic walls/pillars, including shared obstacle widths.
@@ -135,6 +180,26 @@ Pointed the existing Tailscale Funnel at the live model preview on port 5181 and
 - Added a standalone map-overlay infantry preview with small low-poly models, independent squad motion and firing cadence, instanced geometry, and shared cached animation.
 - Added a repeatable 500–4,000-soldier rendering benchmark with viewport/count validation, cancellation, and measured performance history.
 - Published this as an isolated visual prototype, without changing campaign simulation or the live unit renderer.
+## 2026-09-10 — Grand scale applied to the running project
+
+- Identified D:/ironfront as the active Vite project; earlier edits to the partial Documents copy had not affected the preview.
+- Applied global settlement budgets, doubled world width/height, and fixed physical city/dock dimensions.
+- Kept global settlement budgets scaled for the larger map.
+- Verified the live preview reports 28,800 × 19,200 and inspected settlement artwork at tactical zoom. Recorded sample density and remaining travel-balance limits in decision 029.
+
+## 2026-09-10 — Eight-direction port-town artwork
+
+- Added a genuine-alpha 4 × 2 atlas with authored N, NE, E, SE, S, SW, W and NW port-town graphics.
+- Qualifying coastal settlements select the closest authored direction from their dock normal, then rotate by no more than 22.5 degrees to follow the local shoreline curve.
+- Removed the mistakenly added rule that guaranteed a port for every nation; port graphics do not alter campaign starts or settlement placement.
+- Corrected the generated atlas's reversed vertical frame order and now select direction from sampled visible open water, preventing docks from pointing inland on bays and narrow peninsulas.
+
+## 2026-09-09 — Smooth farmland and settlement artwork
+
+- Matched farmland rendering to the shared smoothed region geometry, eliminating raster-stepped coastal and regional field edges while preserving infrastructure clearances.
+- Capped new-map agriculture by both passable area and region count, with deterministic multi-seed regression coverage.
+- Restored five tiered transparent settlement illustrations inside detail-view city clearings while keeping readable ownership/type badges and fallback behavior.
+- Replaced circular farm/scenery exclusions around settlements with tier-specific elliptical footprints fitted to the visible sprite dimensions.
 
 ## 2026-09-09 — Clear tactical terrain
 
@@ -779,3 +844,43 @@ Added Iron Directorate heavy landship, Crownward Armored Guards, Aether twin-tur
 Added a selectable friendly jeep and dynamic vehicle cover: tank full, jeep partial, with directional hull checks and cover updates after vehicle movement.
 
 Documented future attacker-relative line-of-fire cover, flanking, dynamic vehicle hulls, authoritative integration, performance gates and regression criteria; no gameplay changes.
+## 2026-09-10 — Countryside scenery
+
+- Added cosmetic woodland pockets, marsh pools and reeds, and tiny farmsteads with gardens and lanes.
+- Reused tree artwork and world-scale graphics; retained land, farm, road, river and settlement exclusions and chunk culling.
+- Typecheck/build and all three browser visual checks pass. Full suite: 106/107 during separate city-padding work; remaining settlement-clearance assertion documented in session notes.
+
+## 2026-09-10 — Physical region-layout foundation
+
+- Generate scrapyard, lake-crossing and mountain-pass layouts before settlement placement, with protected approaches and connectivity checks.
+- Share saved obstacle/deck geometry across rendering, pathfinding, direct motion, stale-route checks and directional terrain cover for either faction.
+- Add region guidance and a selected-unit cover indicator; replace the rejected decorative countryside pass.
+- Preserve old campaigns. Nine new terrain tests, the full regression suite, typecheck and build pass; isolated browser coverage verifies the bridge interaction, open-water rejection and desktop/phone rendering.
+- Initial artwork and balance remain provisional; details in decision 030.
+
+### 2026-09-10 — Terrain preview discovery
+
+- Refreshed stale live development-server source; verified both new terrain generation and rendering are served.
+- Added Explore terrain to new-map previews, framing actual landmark footprints.
+- Verified all three themes in the live Boreal preview; typecheck and production build pass. Existing saved maps are preserved.
+
+### 2026-09-10 — Correct harbor building scale
+
+Reduced directional port artwork from 2 times the settlement radius to 0.85 times, capped at 180 world units. The atlas contains a warehouse and dock office rather than a full city; fitting it to a city footprint exaggerated individual buildings. Kept orientation, settlement placement, badges and mechanics unchanged. Verified a side-by-side browser comparison against city art and the former harbor scale. Typecheck/build passed. Existing campaigns update on refresh.
+
+
+### 2026-09-10 — Harbor shoreline attachment
+
+Port artwork and its badge now anchor to the nearest rendered coastline edge around the validated dock. Internal territory borders are excluded. A short approach joins the saved settlement location to the compact harbor; gameplay locations remain unchanged. The coastline normal selects the view, with corrected diagonal atlas mapping N/NE/E/SE/S/SW/W/NW = 4/7/2/3/0/1/6/5. All eight orientations were visually checked against shoreline fixtures. Settlement tests, typecheck and build pass. Existing campaigns update on refresh.
+
+### 2026-09-10 — Efficient authoritative squad damage
+
+Added fixed-step seeded volleys, saved reload state and delayed shell events, target retention and spatial queries, polygon line-of-fire caching, and distinct armor effectiveness. Casualties resolve simultaneously. API scheduling skips unnecessary campaign writes between simulation steps. Added damage/cover/target/restart/split-step regression coverage and a sustained combat-kernel benchmark. The standalone city preview is not yet wired to campaign fire geometry or shot events. Tuning remains provisional; see docs/02-systems/squad-fire-model.md and docs/05-decisions/fixed-step-squad-fire.md.
+
+### 2026-09-10 — Commanded full-city battle
+
+Connected the full-city view to isolated authoritative server skirmishes: six friendly infantry and a tank versus six defenders, with selection, move/attack, start/pause/reset, live health, casualties and firing effects. Shared fire kernel and city obstacle geometry drive damage. Background city-plan generation avoids blocking the main API during staging. See docs/02-systems/city-battle-trial.md for controls and prototype limits.
+
+### 2026-09-10 — Promote full-city direction
+
+User approved the experimental city direction as primary. Default entry opens the full-city skirmish; previous campaign retained at /legacy.html. Archive target: codex/archive-pre-city-2026-09-10 at c5e407e. Publication awaits destination approval.

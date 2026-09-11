@@ -5,6 +5,7 @@ test("scenery footprint clears farmland and the complete road shoulder", () => {
   const clear = landscapeClearance(
     [
       {
+        region: 0,
         kind: "crop",
         points: [
           { x: 0, y: 0 },

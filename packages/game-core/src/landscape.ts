@@ -1,4 +1,10 @@
-import { farmClipper, farmCircle, farmCorridor } from "./farmClipping.ts";
+import {
+  farmClipper,
+  farmCircle,
+  farmCorridor,
+  farmEllipse,
+  farmExclusionClipper,
+} from "./farmClipping.ts";
 import type { World, Region } from "./index.ts";
 import type { CityPoint } from "./cityLayout.ts";
 import type { CityRoad } from "./cityRoads.ts";
@@ -6,10 +12,42 @@ import type { AccentCity, TerrainAccent } from "./terrainAccents.ts";
 import { onLocalLand, localSegment } from "./localMovement.ts";
 import { visualScale } from "./visualScale.ts";
 export interface FieldParcel {
+  region: number;
   points: CityPoint[];
   kind: "pasture" | "plowed" | "crop";
   district?: string;
   fragments?: CityPoint[][];
+  /** Infrastructure-clipped geometry for the renderer's shared smoothed-region mask. */
+  displayFragments?: CityPoint[][];
+}
+const settlementArtAspect = {
+  hamlet: 171 / 256,
+  village: 254 / 320,
+  town: 345 / 384,
+  city: 460 / 512,
+  metropolis: 575 / 640,
+} as const;
+
+/** Match the farm/scenery clearing to the visible world-space settlement sprite. */
+export function settlementClearance(city: AccentCity, cell: number) {
+  const aspect = settlementArtAspect[city.size ?? "hamlet"];
+  const artHalfWidth = city.layout.radius * 0.86;
+  const margin = cell * 0.45;
+  const dock = city.layout.docks[Math.floor(city.layout.docks.length / 2)];
+  const direction = dock
+    ? {
+        x: dock[1].x - dock[0].x,
+        y: dock[1].y - dock[0].y,
+      }
+    : undefined;
+  const length = direction ? Math.hypot(direction.x, direction.y) || 1 : 1;
+  const shift = direction ? city.layout.radius * 0.72 : 0;
+  return {
+    x: city.x - ((direction?.x ?? 0) / length) * shift,
+    y: city.y - ((direction?.y ?? 0) / length) * shift,
+    radiusX: artHalfWidth + margin,
+    radiusY: artHalfWidth * aspect + margin,
+  };
 }
 /** Cosmetic land use: clusters have a landscape footprint, while plants retain world scale. */
 export function generateLandscape(
@@ -53,10 +91,13 @@ export function generateLandscape(
   }
   const near = (p: CityPoint, radius: number, list: typeof segments) =>
     list.some(([a, b]) => distance(p, a, b) < radius);
+  const cityClearances = cities.map((city) => settlementClearance(city, cell));
   const clearCity = (p: CityPoint, radius: number) =>
-    cities.every(
-      (c) => Math.hypot(c.x - p.x, c.y - p.y) > c.layout.radius + radius,
-    );
+    cityClearances.every((city) => {
+      const dx = (p.x - city.x) / (city.radiusX + radius),
+        dy = (p.y - city.y) / (city.radiusY + radius);
+      return dx * dx + dy * dy > 1;
+    });
   const placed: { x: number; y: number; radius: number }[] = [];
   const lanes: CityPoint[][] = [];
   const district = new Map<number, number>();
@@ -106,14 +147,18 @@ export function generateLandscape(
       maxX = Math.ceil(Math.max(...boundary.map((p) => p.x)) / step) + 1;
     const minY = Math.floor(Math.min(...boundary.map((p) => p.y)) / step) - 1,
       maxY = Math.ceil(Math.max(...boundary.map((p) => p.y)) / step) + 1;
-    const clip = farmClipper(r, [
+    const exclusions = [
       ...segments.map(([a, b]) => farmCorridor(a, b, scale.road * 2.5)),
       ...rivers.map(([a, b]) => farmCorridor(a, b, cell * 0.55)),
-      ...cities.map((c) => farmCircle(c.x, c.y, c.layout.radius + cell * 0.4)),
+      ...cityClearances.map((city) =>
+        farmEllipse(city.x, city.y, city.radiusX, city.radiusY),
+      ),
       ...(r.mountainObstacles ?? []).map((o) =>
         farmCircle(o.x, o.y, o.radius + cell * 0.2),
       ),
-    ]);
+    ];
+    const clip = farmClipper(r, exclusions);
+    const clipForDisplay = farmExclusionClipper(exclusions);
     const vertices = new Map<string, CityPoint>();
     const vertex = (x: number, y: number) => {
       const key = `${x}:${y}`;
@@ -149,8 +194,10 @@ export function generateLandscape(
         const fragments = clip(points);
         if (!fragments.length) continue;
         fields.push({
+          region: r.id,
           points,
           fragments,
+          displayFragments: clipForDisplay(points),
           district: `farmland-${districtId}`,
           kind: (["pasture", "plowed", "crop", "crop"] as const)[
             Math.floor(random() * 4)

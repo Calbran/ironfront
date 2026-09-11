@@ -27,6 +27,7 @@ function App() {
     return () => window.clearInterval(timer);
   }, []);
   const [tacticalResult, setTacticalResult] = useState("");
+  const [streetCamera, setStreetCamera] = useState(false);
   const inspectTactics = (mover: "infantry" | "vehicle") => {
     const result = api.current?.showTactics(true, mover);
     setTacticalResult(
@@ -62,9 +63,9 @@ function App() {
       api.current = cityDiorama(host.current, setStats);
       window.__cityDiorama = api.current;
       const query = new URLSearchParams(location.search),
-        requested = query.get("case");
+        requested = query.get("case") ?? (location.pathname === "/" || location.pathname === "/index.html" ? "citywide" : null);
       if (requested && seedCases.includes(requested as SeedCase)) {
-        const seed = Number(query.get("seed") ?? 731) >>> 0,
+        const seed = Number(query.get("seed") ?? 732) >>> 0,
           o = seedCaseOptions(requested as SeedCase);
         setSeed(seed);
         setCount(o.count);
@@ -143,6 +144,9 @@ function App() {
           </p>
         ) : null}
         <div className="views">
+          <button aria-pressed={!streetCamera} onClick={()=>{api.current?.setStreetMode(false);setStreetCamera(false);}}>Planning view</button>
+          <button aria-pressed={streetCamera} onClick={()=>{api.current?.setStreetMode(true);setStreetCamera(true);}}>Street view</button>
+          <button onClick={() => api.current?.focusAirship()}>Airship</button>
           {(
             [
               "city",
@@ -314,13 +318,15 @@ function App() {
         )}
         {fullTile && combined && (
           <fieldset>
-            <legend>Test soldiers</legend>
+            <legend>City battle</legend>
             <p>
               Left-drag to box-select; Shift adds soldiers. Right-click to
-              order; right-drag sets destination and facing. Middle-drag orbits
-              around the clicked point. WASD pans. Escape deselects.
+              move; click red enemies to attack. Middle-drag orbits
+              the camera focus. WASD pans. Escape deselects.
             </p>
-            {[1, 2, 3, 4, 5].map((id) => (
+            <button onClick={() => api.current?.selectBattleSquad()}>Select infantry squad</button>
+            <p>{unitStatus?.units.filter(u=>u.friendly&&u.health>0).length ?? 7} friendly · {unitStatus?.units.filter(u=>!u.friendly&&u.health>0).length ?? 6} enemy remaining</p>
+            {[1, 2, 3, 4, 6, 7, 8].map((id) => (
               <button
                 key={id}
                 aria-pressed={unitStatus?.selectedIds.includes(id)}
@@ -348,28 +354,16 @@ function App() {
                       ? "Jeep"
                       : "Tank"
                     : `Soldier ${u.id}`}
-                  : {u.cover} cover · {u.health}/100 test health
+                  : {u.cover} cover · {Math.ceil(u.health)}/100 health
                 </p>
               ))}
             <p>
               Stopped infantry crouch behind low cover or brace against
               buildings. Cover protects only from fire passing through it.
             </p>
-            <button
-              disabled={!unitStatus?.selected}
-              onClick={() => api.current?.testCoverShot(false)}
-            >
-              Test shot across cover
-            </button>
-            <button
-              disabled={!unitStatus?.selected}
-              onClick={() => api.current?.testCoverShot(true)}
-            >
-              Test shot from exposed side
-            </button>
-            <button onClick={() => api.current?.resetTestHealth()}>
-              Reset test health
-            </button>
+            <button onClick={() => api.current?.toggleBattle()}>{unitStatus?.running ? "Pause battle" : "Start / resume battle"}</button>
+            <button onClick={() => location.reload()}>Reset battle</button>
+            <p>Select cyan units; click red enemies to focus fire. Right-click ground to move. Units fire automatically when in range with a clear shot. Start the battle to execute orders.</p>
             <output aria-live="polite">
               {unitStatus?.message ?? "Preparing test soldiers…"}
             </output>
@@ -379,7 +373,7 @@ function App() {
               commit. Reachability is checked on release.
             </p>
             <p>
-              Local movement and cover tests; orders do not affect a campaign.
+              Server-controlled skirmish; orders do not affect a campaign.
             </p>
           </fieldset>
         )}
@@ -431,8 +425,8 @@ function App() {
               area · green: sample route.
             </p>
             <p>
-              Geometry preview only. Vehicle routes follow roads; infantry can
-              enter the square. No campaign combat or ownership changes.
+              Vehicles can use roads and the paved civic plaza. Walls and planted
+              beds block vehicles. This is a local movement study.
             </p>
             {tacticalResult && <output>{tacticalResult}</output>}
           </fieldset>
@@ -462,12 +456,12 @@ function App() {
           Dusk lighting
         </label>
         <p>
-          Smoke rises from active chimneys. Dusk reveals warm light around the
-          civic street lamps.
+          Dusk lights the windows, trade signs and tram shelters, with warm pools
+          of light beneath street fixtures.
         </p>
         <p>
           {fullTile
-            ? "Three running soldiers, a tank and a jeep establish scale."
+            ? "Six friendly infantry and a tank face six enemy infantry."
             : "144 infantry and two jeeps establish scale."}{" "}
           Building counts include the capital.
         </p>

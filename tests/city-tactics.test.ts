@@ -43,14 +43,14 @@ test("city tactical geometry blocks buildings and water, preserves gates and bri
     assert.equal(
       data.walkable({ x: 16, z: 8 }, "vehicle"),
       false,
-      "vehicle roads unchanged",
+      "vehicles cannot cross planted civic beds",
     );
     assert.equal(data.inControlArea({ x: 0, z: -5 }), false);
     assert.equal(data.inControlArea({ x: 0, z: 30 }), false);
     assert.equal(
       data.walkable({ x: 0, z: 10 }, "vehicle"),
-      false,
-      "vehicles stay on roadways",
+      true,
+      "vehicles can enter paved civic space",
     );
     assert.equal(
       data.segmentClear({ x: 20, z: -8 }, { x: 23, z: -8 }),
@@ -70,6 +70,10 @@ test("city tactical geometry blocks buildings and water, preserves gates and bri
     }
     const gate = data.route({ x: 0, z: 20 }, { x: 0, z: 10 });
     assert.ok(gate.length > 0);
+    const tankGate = data.route({ x: 0, z: 20 }, { x: 0, z: 10 }, "vehicle");
+    assert.ok(tankGate.length > 0, "tank can drive through the plaza gate");
+    for (let i=1;i<tankGate.length;i++) assert.ok(data.segmentClear(tankGate[i-1],tankGate[i],"vehicle"));
+    assert.equal(data.segmentClear({x:20,z:-8},{x:23,z:-8},"vehicle"),false,"plaza access does not permit driving through walls");
     const start = combinedPosition({ x: 80, z: -106 }, seed, "worldgen"),
       end = combinedPosition({ x: 80, z: -82 }, seed, "worldgen");
     const bridge = data.route(start, end, "vehicle");

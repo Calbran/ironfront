@@ -363,7 +363,7 @@ test("explicit attacks prioritize a visible target, persist, and cancel on Hold 
   w.tactics!.squads.push(enemy);
   command(w, 0, { type: "squad-attack", squads: [s.id], target: enemy.id });
   assert.equal(s.localOrder!.attackTarget, enemy.id);
-  advanceTactics(w, 0.01);
+  advanceTactics(w, 0.05);
   assert.equal(s.target, enemy.id);
   assert.equal(s.action, "firing");
   assert(enemy.strength < 100);

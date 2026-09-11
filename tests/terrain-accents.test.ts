@@ -4,10 +4,36 @@ import assert from "node:assert/strict";
 import { createWorld } from "../packages/game-core/src/index.ts";
 import { generateCityLayout } from "../packages/game-core/src/cityLayout.ts";
 import { generateTerrainAccents } from "../packages/game-core/src/terrainAccents.ts";
+import { settlementClearance } from "../packages/game-core/src/landscape.ts";
 import {
   onLocalLand,
   localSegment,
 } from "../packages/game-core/src/localMovement.ts";
+
+test("settlement farmland clearance follows sprite aspect instead of a circle", () => {
+  const clearance = settlementClearance(
+    {
+      x: 100,
+      y: 200,
+      region: 0,
+      size: "hamlet",
+      layout: {
+        archetype: "market",
+        radius: 110,
+        buildings: [],
+        blocks: [],
+        roads: [],
+        docks: [],
+        plaza: { x: 100, y: 200 },
+      },
+    },
+    24,
+  );
+  assert(clearance.radiusX < 110);
+  assert(clearance.radiusY < clearance.radiusX * 0.75);
+  assert(clearance.radiusY > 60, "retains a modest margin around the sprite");
+});
+
 test("terrain accents are stable, cosmetic, land-bound and include natural and settlement detail", () => {
   const w = createWorld("ACCENTS", "Boreal", 4, 3600000, 0);
   const cities = w.regions.flatMap((r) =>
@@ -22,6 +48,16 @@ test("terrain accents are stable, cosmetic, land-bound and include natural and s
   const before = JSON.stringify(w),
     roads = generateCityRoads(w),
     a = generateTerrainAccents(w, cities, roads);
+  const outsideSettlement = (
+    point: { x: number; y: number },
+    city: (typeof cities)[number],
+    padding = 0,
+  ) => {
+    const clearing = settlementClearance(city, w.geography?.cellSize ?? 8);
+    const dx = (point.x - clearing.x) / (clearing.radiusX + padding),
+      dy = (point.y - clearing.y) / (clearing.radiusY + padding);
+    return dx * dx + dy * dy > 1;
+  };
   assert.equal(JSON.stringify(w), before);
   assert.deepEqual(
     generateTerrainAccents(JSON.parse(before), cities, roads),
@@ -55,9 +91,7 @@ test("terrain accents are stable, cosmetic, land-bound and include natural and s
       );
       for (const p of fragment)
         assert(
-          cities.every(
-            (c) => Math.hypot(c.x - p.x, c.y - p.y) > c.layout.radius,
-          ),
+          cities.every((city) => outsideSettlement(p, city)),
           "fields clear settlements",
         );
     }
@@ -65,9 +99,7 @@ test("terrain accents are stable, cosmetic, land-bound and include natural and s
   assert(a.lines.some((l) => l.kind === "field"));
   for (const p of a.sprites) {
     assert(w.regions.some((r) => onLocalLand(r, p)));
-    assert(
-      cities.every((c) => Math.hypot(c.x - p.x, c.y - p.y) > c.layout.radius),
-    );
+    assert(cities.every((city) => outsideSettlement(p, city, p.width * 0.55)));
   }
   for (const line of a.lines)
     for (let i = 1; i < line.points.length; i++)

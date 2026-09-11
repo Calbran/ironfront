@@ -1,3 +1,4 @@
+import { cityBattleRoutes } from "./cityBattleRoutes.ts";
 import Fastify from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import staticFiles from "@fastify/static";
@@ -58,6 +59,7 @@ const order = z.discriminatedUnion("type", [
 export async function makeServer(store: Store) {
   const app = Fastify({ logger: false, bodyLimit: 8192 });
   await app.register(rateLimit, { max: 180, timeWindow: "1 minute" });
+  cityBattleRoutes(app);
   app.setErrorHandler((error, req, reply) => {
     const e = error as Error & { statusCode?: number };
     reply.code(e.statusCode || 400).send({

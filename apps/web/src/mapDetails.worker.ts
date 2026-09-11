@@ -3,11 +3,13 @@ import type { CityLayout } from "../../../packages/game-core/src/cityLayout.ts";
 import { generateCityRoads } from "../../../packages/game-core/src/cityRoads.ts";
 import { generateTerrainAccents } from "../../../packages/game-core/src/terrainAccents.ts";
 import type { World } from "../../../packages/game-core/src/index.ts";
+import type { RegionFeature } from "../../../packages/game-core/src/index.ts";
 
 export interface MapDetailCity {
   x: number;
   y: number;
   region: number;
+  size?: RegionFeature["size"];
   layout: CityLayout;
 }
 
