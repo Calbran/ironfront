@@ -1,0 +1,5 @@
+# 3D pacing world review
+
+Added a toggleable Three.js scene directly to the pacing preview. It receives the same study and placement references used by the 2D overlay, transforms coordinates using WORLD_TO_MODEL, and never generates another world. Region contours become ground meshes; river polylines, reserved-zone outlines, city footprints and base candidates retain their source coordinates. Representative instanced Victorian buildings, mills/warehouses and a schematic drilling rig provide scale. Camera focus covers every settlement, resource objective and candidate base.
+
+Scope: terrain is flat and schematic, city buildings are representative kit clusters rather than full city-diorama layouts, and forest decoration is sparse. No terrain elevation, campaign routing, economy state or ownership is altered. Canvas controls and source geometry are disposed when hidden or rebuilt. Production build and typecheck pass. Browser inspection verified overview rendering and focus on Shared regional city 1. Detailed landscape and tactical-layout integration remain separate work.

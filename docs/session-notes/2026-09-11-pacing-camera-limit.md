@@ -1,0 +1,3 @@
+# Pacing camera floor limit
+
+OrbitControls minDistance protects distance to the target, not world-ground height. Cursor-directed zoom can move that target, so the old limit did not stop the camera entering the map. Added a world-floor guard on control changes and after damping, plus ground-plane panning. Camera minimum height is four model units; below-ground pivots are recovered. Existing minDistance remains ten. Tests cover repeated zoom penetration, low-angle clearance and preservation of valid overview positions. This preview is flat; future elevation and building collision require separate constraints.

@@ -1,3 +1,4 @@
+import {COVER_ORDER_REACH,coverSlots,sameCoverSide} from "./cityCoverOrders";
 import type { CityPoint } from "./organicCity";
 import {
   obstacleDistance,
@@ -8,11 +9,17 @@ export const CITY_RUN_SPEED = 1.43;
 export const CITY_RUN_STRIDE = 1.144;
 export const CITY_TANK_TURN_RATE = 0.55;
 export type TrialUnit = CityPoint & {
+  visible?: boolean;
+  moveGroup?: number;
   id: number;
   kind: "infantry" | "vehicle";
   vehicleType?: "tank" | "jeep";
   friendly?: boolean;
   facing?: number;
+  aimAngle?: number;
+  turretAngle?: number;
+  firing?: boolean;
+  stance?: "move"|"attack"|"hold";
   health: number;
   cover: "none" | "partial" | "full";
   angle: number;
@@ -165,6 +172,13 @@ export function createCityUnitTrial(
   }
   function previewOrder(p: CityPoint, facing?: number) {
     const selected = units.filter((u) => selectedIds.includes(u.id));
+    const vehicles = vehicleCover();
+    const nearby = [...tactics.obstacles, ...vehicles].filter(o => o.kind !== "garden" && obstacleDistance(p, o) <= 7);
+    const coveredOrder = nearby.some(o => obstacleDistance(p, o) <= COVER_ORDER_REACH);
+    const protectedSlots = coveredOrder ? coverSlots(p, nearby) : [];
+    const previewCoverAt = (q: CityPoint, threat?: CityPoint) => tactics.coverAt(q, threat, vehicles);
+    const coverLevels = new Map<CityPoint, ReturnType<typeof previewCoverAt>>();
+    const cachedCover = (q: CityPoint) => { let result = coverLevels.get(q); if (!result) { result = previewCoverAt(q); coverLevels.set(q, result); } return result; };
     const chosen: {
       id: number;
       kind: TrialUnit["kind"];
@@ -182,17 +196,17 @@ export function createCityUnitTrial(
         x: p.x + Math.cos(facing ?? 0) * offset,
         z: p.z - Math.sin(facing ?? 0) * offset,
       };
-      const candidates: CityPoint[] = [desired];
+      const candidates: CityPoint[] = [desired,...(unit.kind==="infantry"?protectedSlots:[])];
       const clear = (q: CityPoint) =>
         tactics.walkable(q, unit.kind) &&
-        !vehicleCover().some(
+        !vehicles.some(
           (o) =>
             o.id !== `vehicle:${unit.id}` &&
             obstacleDistance(q, o) <= (unit.kind === "infantry" ? 0.25 : 0.9),
         ) &&
         !units.some(
           (u) =>
-            !selectedIds.includes(u.id) &&
+            u.health>0 && !selectedIds.includes(u.id) &&
             Math.hypot(u.x - q.x, u.z - q.z) <
               (u.kind === "vehicle" || unit.kind === "vehicle" ? 1.5 : 0.9),
         ) &&
@@ -203,7 +217,7 @@ export function createCityUnitTrial(
         // Project onto real oriented faces, then slide along those faces to fit neighbors.
         for (const o of [
           ...tactics.obstacles,
-          ...vehicleCover().filter((o) => o.id !== `vehicle:${unit.id}`),
+          ...vehicles.filter((o) => o.id !== `vehicle:${unit.id}`),
         ]) {
           if (o.kind === "garden" && unit.kind === "infantry") continue;
           if (
@@ -241,14 +255,18 @@ export function createCityUnitTrial(
       }
       const distance = (q: CityPoint) =>
         Math.hypot(q.x - desired.x, q.z - desired.z);
-      const goal =
-        candidates
-          .filter((q) => distance(q) <= 4.5 && clear(q))
-          .sort(
-            (a, b) => distance(a) - distance(b) || a.x - b.x || a.z - b.z,
-          )[0] ?? desired;
-      const valid = clear(goal),
-        near = coverAt(goal);
+      const protectedScore=(q:CityPoint)=>unit.kind==="infantry"&&coveredOrder&&sameCoverSide(p,q,nearby)&&cachedCover(q).level!=="none" ? 0 : 1;
+      let goal = desired, bestScore = Infinity, bestDistance = Infinity;
+      for (const q of candidates) {
+        const d = distance(q);
+        if (d > 4.5 || !clear(q) || (coveredOrder && unit.kind === "infantry" && !sameCoverSide(p,q,nearby))) continue;
+        const score = protectedScore(q);
+        if (score < bestScore || (score === bestScore && (d < bestDistance || (d === bestDistance && (q.x < goal.x || (q.x === goal.x && q.z < goal.z)))))) {
+          goal = q; bestScore = score; bestDistance = d;
+        }
+      }
+      const valid = clear(goal) && (!coveredOrder||unit.kind!=="infantry"||sameCoverSide(p,goal,nearby)),
+        near = cachedCover(goal);
       const angle =
         facing ??
         (near.level !== "none" && unit.kind === "infantry"
@@ -256,7 +274,7 @@ export function createCityUnitTrial(
           : Math.atan2(goal.x - unit.x, goal.z - unit.z));
       const cover =
         unit.kind === "infantry"
-          ? coverAt(goal, {
+          ? previewCoverAt(goal, {
               x: goal.x + Math.sin(angle) * 60,
               z: goal.z + Math.cos(angle) * 60,
             }).level
@@ -273,6 +291,7 @@ export function createCityUnitTrial(
     }
     return chosen;
   }
+  let nextMoveGroup=0;
   function order(p: CityPoint, facing?: number) {
     const preview = previewOrder(p, facing);
     if (!preview.length) return false;
@@ -299,7 +318,9 @@ export function createCityUnitTrial(
         angle: goal.angle,
       });
     }
+    const group=planned.length>1?++nextMoveGroup:undefined;
     for (const { unit, path, guide, angle } of planned) {
+      unit.moveGroup=group;
       unit.facing = angle;
       unit.path = path;
       unit.guide = guide;
@@ -310,8 +331,15 @@ export function createCityUnitTrial(
   }
   function tick(dt: number) {
     if (!Number.isFinite(dt) || dt <= 0) return;
+    const groupCaps=new Map<number,number>();
+    for(const u of units){if(!u.moveGroup||u.health<=0||!u.path.length)continue;
+      let speed=u.kind==='vehicle'?1.05:CITY_RUN_SPEED*(u.firing?.65:1);
+      if(u.kind==='vehicle'){const p=u.path[0],desired=Math.atan2(p.x-u.x,p.z-u.z),error=Math.abs(Math.atan2(Math.sin(desired-u.angle),Math.cos(desired-u.angle)));speed=error>CITY_TANK_TURN_RATE*Math.min(dt,.1)+.001?0:Math.min(speed,u.speed+Math.min(dt,.1)*.7);}
+      groupCaps.set(u.moveGroup,Math.min(groupCaps.get(u.moveGroup)??Infinity,speed));
+    }
     for (const unit of units) {
       if(unit.health<=0)continue;
+      const groupCap=unit.moveGroup?groupCaps.get(unit.moveGroup)??Infinity:Infinity;
       unit.cover =
         unit.kind === "infantry"
           ? coverAt(
@@ -343,7 +371,7 @@ export function createCityUnitTrial(
           unit.angle += turn;
           // Track pivot first: never translate sideways while the hull catches up.
           const aligned = Math.abs(error - turn) < 0.001;
-          unit.speed = aligned ? Math.min(1.05, unit.speed + elapsed * 0.7) : 0;
+          unit.speed = aligned ? Math.min(1.05, groupCap, unit.speed + elapsed * 0.7) : 0;
           const travel = aligned ? Math.min(d, unit.speed * elapsed) : 0;
           if (d > 1e-8) {
             unit.x += (dx / d) * travel;
@@ -391,11 +419,12 @@ export function createCityUnitTrial(
         continue;
       }
       const targetSpeed = unit.moving
-        ? CITY_RUN_SPEED *
-          (1 + 0.035 * Math.sin(unit.id * 2)) *
-          (1 + 0.06 * Math.sin((unit.distance / CITY_RUN_STRIDE) * Math.PI * 4))
+        ? Math.min(groupCap,CITY_RUN_SPEED * (unit.firing ? .65 : 1) *
+          (unit.moveGroup ? 1 : 1 + 0.035 * Math.sin(unit.id * 2)) *
+          (unit.moveGroup ? 1 : 1 + 0.06 * Math.sin((unit.distance / CITY_RUN_STRIDE) * Math.PI * 4)))
         : 0;
-      unit.speed += (targetSpeed - unit.speed) * Math.min(1, elapsed * 5);
+      unit.speed = unit.moveGroup ? targetSpeed : unit.speed + (targetSpeed - unit.speed) * Math.min(1, elapsed * 5);
+      unit.speed=Math.min(unit.speed,groupCap);
       let remaining = elapsed * unit.speed;
       while (remaining > 0 && unit.path.length) {
         const p = unit.path[0],
@@ -410,6 +439,8 @@ export function createCityUnitTrial(
               Math.cos(desired - unit.angle),
             );
           unit.angle += turn * Math.min(1, elapsed * 8);
+          const next={x:unit.x+(dx/d)*step,z:unit.z+(dz/d)*step};
+          if(!tactics.segmentClear(unit,next,"infantry")){unit.path=[];unit.speed=0;break;}
           unit.x += (dx / d) * step;
           unit.z += (dz / d) * step;
           unit.distance += step;

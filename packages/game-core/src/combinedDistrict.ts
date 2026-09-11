@@ -1,3 +1,13 @@
+import {
+  CURVED_OCEAN_WATERFRONT,
+  coastDisplacement,
+  shoreAt,
+  validateWaterfront,
+  coastalFootprintOnLand,
+  portInfrastructure,
+  portVariants,
+  type CityWaterfront,
+} from "./portDistrict";
 import { cityBuildingFootprint, cityBuildingEnvelope } from "./cityBuildingKit";
 import { worldRiverBend } from "./worldRiverSample";
 import {
@@ -12,7 +22,8 @@ import {
   type CityPoint,
   type CityLot,
 } from "./organicCity";
-export type TerrainProfile = "normal" | "tight-bend" | "steep" | "worldgen";
+export type TerrainProfile =
+  "normal" | "tight-bend" | "steep" | "worldgen" | "ocean";
 export function riverBend(
   x: number,
   seed = 731,
@@ -37,7 +48,19 @@ export function combinedCanonicalZ(
   p: CityPoint,
   seed = 731,
   profile: TerrainProfile = "normal",
+  coast: CityWaterfront | undefined = profile === "ocean"
+    ? CURVED_OCEAN_WATERFRONT
+    : undefined,
 ) {
+  // The coast's linear inland fade has an exact inverse. Its band is disjoint
+  // from the river, so ordinary city sampling keeps the existing fast path.
+  if (p.z >= 60) {
+    if (coast?.kind !== "ocean" || !coast.shoreline) return p.z;
+    const delta = shoreAt(coast, p.x) - coast.shoreZ;
+    return p.z <= coast.shoreZ + delta
+      ? 60 + (p.z - 60) / (1 + delta / (coast.shoreZ - 60))
+      : p.z - delta;
+  }
   const bend = riverBend(p.x, seed, profile);
   let lo = p.z - Math.abs(bend) - 1,
     hi = p.z + Math.abs(bend) + 1;
@@ -52,10 +75,16 @@ export function combinedPosition(
   p: CityPoint,
   seed = 731,
   profile: TerrainProfile = "normal",
+  coast: CityWaterfront | undefined = profile === "ocean"
+    ? CURVED_OCEAN_WATERFRONT
+    : undefined,
 ) {
   return {
     x: p.x,
-    z: p.z + riverBend(p.x, seed, profile) * influence(p.z),
+    z:
+      p.z +
+      riverBend(p.x, seed, profile) * influence(p.z) +
+      coastDisplacement(coast, p),
   };
 }
 export function combinedHeight(
@@ -78,12 +107,16 @@ export function combinedLot(
   lot: CityLot,
   seed = 731,
   profile: TerrainProfile = "normal",
+  coast: CityWaterfront | undefined = profile === "ocean"
+    ? CURVED_OCEAN_WATERFRONT
+    : undefined,
 ): CityLot {
-  const center = combinedPosition(lot, seed, profile);
+  const center = combinedPosition(lot, seed, profile, coast);
   const tip = combinedPosition(
     { x: lot.x + Math.sin(lot.angle), z: lot.z + Math.cos(lot.angle) },
     seed,
     profile,
+    coast,
   );
   return {
     ...lot,
@@ -96,11 +129,27 @@ export function planCombinedDistrict(
   seed = 731,
   profile: TerrainProfile = "normal",
   fullTile = false,
+  waterfront: CityWaterfront | undefined = profile === "ocean"
+    ? CURVED_OCEAN_WATERFRONT
+    : undefined,
 ) {
-  const source = planAngledDistrict(seed, true, undefined, fullTile);
+  validateWaterfront(waterfront);
+  const position = (p: CityPoint, s = seed, profileArg = profile) =>
+    combinedPosition(p, s, profileArg, waterfront);
+  const canonicalZ = (p: CityPoint, s = seed, profileArg = profile) =>
+    combinedCanonicalZ(p, s, profileArg, waterfront);
+  const worldLot = (p: CityLot, s = seed, profileArg = profile) =>
+    combinedLot(p, s, profileArg, waterfront);
+  const source = planAngledDistrict(
+    seed,
+    true,
+    undefined,
+    fullTile,
+    waterfront ? { ...waterfront, shoreline: undefined } : undefined,
+  );
   const streets = source.streets.map((s) => ({
     ...s,
-    points: s.points.map((p) => combinedPosition(p, seed, profile)),
+    points: s.points.map((p) => position(p, seed, profile)),
   }));
   const kept: CityLot[] = [],
     world: CityLot[] = [],
@@ -119,19 +168,19 @@ export function planCombinedDistrict(
     const originalAccess = source.access.find((a) => a.lotIndex === i);
     const canonical = (p: CityPoint) => ({
       x: p.x,
-      z: combinedCanonicalZ(p, seed, profile),
+      z: canonicalZ(p, seed, profile),
     });
     const tangent = {
       x: Math.cos(original.angle),
       z: -Math.sin(original.angle),
     };
     const anchor = originalAccess?.street ?? original;
-    const start = combinedPosition(
+    const start = position(
       { x: anchor.x - tangent.x * 0.5, z: anchor.z - tangent.z * 0.5 },
       seed,
       profile,
     );
-    const end = combinedPosition(
+    const end = position(
       { x: anchor.x + tangent.x * 0.5, z: anchor.z + tangent.z * 0.5 },
       seed,
       profile,
@@ -141,7 +190,7 @@ export function planCombinedDistrict(
       x: -(end.z - start.z) / length,
       z: (end.x - start.x) / length,
     };
-    const streetPoint = combinedPosition(anchor, seed, profile);
+    const streetPoint = position(anchor, seed, profile);
     const attempts =
       i < source.civicLotCount
         ? [original]
@@ -165,15 +214,10 @@ export function planCombinedDistrict(
           );
     let accepted = false;
     for (const [attempt, lot] of attempts.entries()) {
-      const placed = combinedLot(lot, seed, profile),
+      const placed = worldLot(lot, seed, profile),
         corners = lotCorners(placed);
       const heights = corners.map((p) =>
-        combinedHeight(
-          p.x,
-          combinedCanonicalZ(p, seed, profile),
-          profile,
-          fullTile,
-        ),
+        combinedHeight(p.x, canonicalZ(p, seed, profile), profile, fullTile),
       );
       const low = Math.min(...heights),
         base = Math.max(...heights);
@@ -190,13 +234,14 @@ export function planCombinedDistrict(
       const path = access
         ? {
             points: [
-              combinedPosition(access.entrance, seed, profile),
-              combinedPosition(access.street, seed, profile),
+              position(access.entrance, seed, profile),
+              position(access.street, seed, profile),
             ],
             width: 1.25,
             alley: true,
           }
         : undefined;
+      if (!coastalFootprintOnLand(corners, waterfront, 1)) continue;
       if (
         i >= source.civicLotCount &&
         ((parcel &&
@@ -207,7 +252,7 @@ export function planCombinedDistrict(
               (blockContains(parcel.court, lot) ||
                 lotIntersectsStreet(placed, {
                   points: [...parcel.court, parcel.court[0]].map((p) =>
-                    combinedPosition(p, seed, profile),
+                    position(p, seed, profile),
                   ),
                   width: 0.6,
                   alley: true,
@@ -239,11 +284,12 @@ export function planCombinedDistrict(
   let infill = 0;
   const canonicalPoint = (p: CityPoint) => ({
     x: p.x,
-    z: combinedCanonicalZ(p, seed, profile),
+    z: canonicalZ(p, seed, profile),
   });
   for (const parcel of source.parcels) {
-    const variants =
-      parcel.kind === "industrial"
+    const variants = parcel.portZone
+      ? portVariants(parcel.portZone)
+      : parcel.kind === "industrial"
         ? fullTile
           ? [
               "workshopRowCanopy",
@@ -266,8 +312,8 @@ export function planCombinedDistrict(
               x: a.x + (dx * along) / length,
               z: a.z + (dz * along) / length,
             };
-            const wp = combinedPosition(anchor, seed, profile),
-              tip = combinedPosition(
+            const wp = position(anchor, seed, profile),
+              tip = position(
                 {
                   x: anchor.x + (dx / length) * 0.25,
                   z: anchor.z + (dz / length) * 0.25,
@@ -293,8 +339,9 @@ export function planCombinedDistrict(
               variant,
               fullEnvelope: true,
             };
-            const placed = combinedLot(lot, seed, profile),
+            const placed = worldLot(lot, seed, profile),
               corners = lotCorners(placed);
+            if (!coastalFootprintOnLand(corners, waterfront, 1)) continue;
             if (
               !corners.every((p) =>
                 blockContains(parcel.boundary, canonicalPoint(p), 2.8),
@@ -306,7 +353,7 @@ export function planCombinedDistrict(
               (blockContains(parcel.court, lot) ||
                 lotIntersectsStreet(placed, {
                   points: [...parcel.court, parcel.court[0]].map((p) =>
-                    combinedPosition(p, seed, profile),
+                    position(p, seed, profile),
                   ),
                   width: 0.6,
                   alley: true,
@@ -316,7 +363,7 @@ export function planCombinedDistrict(
             const heights = corners.map((p) =>
                 combinedHeight(
                   p.x,
-                  combinedCanonicalZ(p, seed, profile),
+                  canonicalZ(p, seed, profile),
                   profile,
                   fullTile,
                 ),
@@ -343,8 +390,8 @@ export function planCombinedDistrict(
               [...fittedAccess.values()].some((access) =>
                 lotIntersectsStreet(placed, {
                   points: [
-                    combinedPosition(access.entrance, seed, profile),
-                    combinedPosition(access.street, seed, profile),
+                    position(access.entrance, seed, profile),
+                    position(access.street, seed, profile),
                   ],
                   width: 1.25,
                   alley: true,
@@ -375,8 +422,8 @@ export function planCombinedDistrict(
     if (i === undefined) continue;
     const path = {
       points: [
-        combinedPosition(a.entrance, seed, profile),
-        combinedPosition(a.street, seed, profile),
+        position(a.entrance, seed, profile),
+        position(a.street, seed, profile),
       ],
       width: 1.25,
       alley: true,
@@ -426,15 +473,10 @@ export function planCombinedDistrict(
             }))
         )
           continue;
-        const candidate = combinedLot(local, seed, profile),
+        const candidate = worldLot(local, seed, profile),
           corners = lotCorners(candidate);
         const heights = corners.map((p) =>
-          combinedHeight(
-            p.x,
-            combinedCanonicalZ(p, seed, profile),
-            profile,
-            fullTile,
-          ),
+          combinedHeight(p.x, canonicalZ(p, seed, profile), profile, fullTile),
         );
         if (
           Math.max(...heights) - Math.min(...heights) > 0.3 ||
@@ -455,8 +497,8 @@ export function planCombinedDistrict(
           [...fittedAccess.values()].some((a) =>
             lotIntersectsStreet(candidate, {
               points: [
-                combinedPosition(a.entrance, seed, profile),
-                combinedPosition(a.street, seed, profile),
+                position(a.entrance, seed, profile),
+                position(a.street, seed, profile),
               ],
               width: 2,
               alley: true,
@@ -480,6 +522,8 @@ export function planCombinedDistrict(
   }
   return {
     ...source,
+    waterfront: source.waterfront ? waterfront : undefined,
+    portInfrastructure: portInfrastructure(waterfront, source.parcels, true),
     lots,
     foundations: foundations
       .filter((f) => !blocked.has(f.lotIndex))

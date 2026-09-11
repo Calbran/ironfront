@@ -122,3 +122,5 @@ Current farmland density and settlement presentation: [027: smooth farmland and 
 Current harbor presentation: [028: eight-direction port-town artwork](05-decisions/028-national-coast-aligned-ports.md), [port art kit](06-art/port-kit-prompts.md).
 
 Physical themed regions and their movement/cover geometry: [030: physical region layouts](05-decisions/030-physical-region-layouts.md).
+
+- [Country set-piece library](02-systems/country-set-pieces.md): templates, farming, cover metadata and global preview integration.

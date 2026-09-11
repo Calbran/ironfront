@@ -1,0 +1,3 @@
+# Battlefield awareness
+Added frozen server-side contact memory with 30-second simulation-time expiry, noninteractive dashed question-mark markers, and selected-friendly sight outlines clipped against building rectangles. Outlines use 64 rays and update at most four times per second. Reacquisition, observed death and seeing an empty remembered location clear contacts. Contact objects contain no hidden health, route or live position.
+Validation: all 216 tests pass; typecheck/build pass. Browser verified the connected paused battle, awareness instructions, contact overlay container and selection/overhead view. Contact aging and loss/reacquisition are covered by deterministic core and player-snapshot tests.

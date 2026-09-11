@@ -36,3 +36,20 @@ test("city battle fires real shots and applies casualties deterministically", ()
   for (const u of a.trial.units)
     if (u.health === 0) assert.equal(u.path.length, 0);
 });
+
+test('turret aiming does not steer the hull toward its target',()=>{
+ const b=setup(),tank=b.trial.units.find(u=>u.kind==='vehicle')!;
+ const hull=tank.angle;b.command([],'run');for(let i=0;i<80;i++)b.tick(.05);
+ assert.equal(tank.angle,hull);assert.notEqual(tank.turretAngle,hull);assert(Number.isFinite(tank.turretAngle));
+});
+
+test('city tank shots respect a five-second reload under sustained fire',()=>{
+ const b=setup(),seen=new Set<number>(),times:number[]=[];b.command([],'run');
+ for(let i=0;i<300;i++){
+   for(const u of b.trial.units)u.health=100;
+   b.tick(.05);
+   for(const shot of b.state().shots)if(shot.shell&&!shot.impact&&!seen.has(shot.id)){seen.add(shot.id);times.push(i*.05);}
+ }
+ assert(times.length>=2);assert(times.length<=3);
+ for(let i=1;i<times.length;i++)assert(times[i]-times[i-1]>=4.99);
+});

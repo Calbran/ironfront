@@ -1,0 +1,3 @@
+# Map-wide cities
+
+The request for one or two additional cities was clarified: no regional city entitlement per starting zone. Replaced four per-player city slots plus two proposed extras with five map-wide placement attempts. Existing generator settlements remain. Search origins use distributed land regions and no city travel-time acceptance band. Clearances, sampled footprint legality and a reference ground connection are retained. All shared cities appear in every selected start's route list and isolated economy sandbox; regional cities do not affect the nearby-resource pass count. This does not guarantee five successful placements or equal competitive access. Regression and typecheck pass.

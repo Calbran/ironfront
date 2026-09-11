@@ -59,7 +59,12 @@ export const CITY_CONTROL_AREA = {
 };
 export type CityMover = "infantry" | "vehicle";
 /** Shared with the rendered civic paving, including its approaches outside the gates. */
-export const CITY_PLAZA_SURFACE = { x: 0, z: -6, width: 72, depth: 56 } as const;
+export const CITY_PLAZA_SURFACE = {
+  x: 0,
+  z: -6,
+  width: 72,
+  depth: 56,
+} as const;
 export type CityCover = {
   position: CityPoint;
   normal: CityPoint;
@@ -82,8 +87,17 @@ export function createCityTactics(
   seed: number,
   profile: TerrainProfile,
 ) {
+  const worldLot = (
+    p: Parameters<typeof combinedLot>[0],
+    s = seed,
+    pr = profile,
+  ) => combinedLot(p, s, pr, plan.waterfront);
+  const position = (p: CityPoint, s = seed, pr = profile) =>
+    combinedPosition(p, s, pr, plan.waterfront);
+  const canonicalZ = (p: CityPoint, s = seed, pr = profile) =>
+    combinedCanonicalZ(p, s, pr, plan.waterfront);
   const obstacles: CityObstacle[] = plan.lots.map((lot, i) => {
-    const p = combinedLot(lot, seed, profile),
+    const p = worldLot(lot, seed, profile),
       d = cityBuildingFootprint(lot.variant);
     return {
       ...p,
@@ -150,27 +164,47 @@ export function createCityTactics(
   }
   // Spatial buckets keep repeated route/collision queries independent of city building count.
   const buckets = new Map<string, CityObstacle[]>();
-  for (const o of obstacles) {
-    const r = Math.hypot(o.width, o.depth) / 2 + 2;
-    for (
-      let x = Math.floor((o.x - r) / 16);
-      x <= Math.floor((o.x + r) / 16);
-      x++
-    )
+  function rebuildBuckets() {
+    buckets.clear();
+    for (const o of obstacles) {
+      const r = Math.hypot(o.width, o.depth) / 2 + 2;
       for (
-        let z = Math.floor((o.z - r) / 16);
-        z <= Math.floor((o.z + r) / 16);
-        z++
-      ) {
-        const key = `${x},${z}`,
-          list = buckets.get(key) ?? [];
-        list.push(o);
-        buckets.set(key, list);
-      }
+        let x = Math.floor((o.x - r) / 16);
+        x <= Math.floor((o.x + r) / 16);
+        x++
+      )
+        for (
+          let z = Math.floor((o.z - r) / 16);
+          z <= Math.floor((o.z + r) / 16);
+          z++
+        ) {
+          const key = `${x},${z}`,
+            list = buckets.get(key) ?? [];
+          list.push(o);
+          buckets.set(key, list);
+        }
+    }
+  }
+  rebuildBuckets();
+  function setSandbags(
+    items: { id: number; x: number; z: number; angle: number }[],
+  ) {
+    for (let i = obstacles.length - 1; i >= 0; i--)
+      if (obstacles[i].id.startsWith("built-sandbag:")) obstacles.splice(i, 1);
+    obstacles.push(
+      ...items.map((p) => ({
+        ...p,
+        id: "built-sandbag:" + p.id,
+        width: 4,
+        depth: 1,
+        kind: "sandbag" as const,
+      })),
+    );
+    rebuildBuckets();
   }
   const streets = plan.streets.map((s) => ({
     ...s,
-    points: s.points.map((p) => combinedPosition(p, seed, profile)),
+    points: s.points.map((p) => position(p, seed, profile)),
   }));
   const bridgeXs = plan.streets
     .filter(
@@ -205,7 +239,7 @@ export function createCityTactics(
           streetBuckets.set(key, list);
         }
     }
-  const canonical = (p: CityPoint) => combinedCanonicalZ(p, seed, profile);
+  const canonical = (p: CityPoint) => canonicalZ(p, seed, profile);
   const height = (p: CityPoint) =>
     combinedHeight(p.x, canonical(p), profile, true);
   function walkable(p: CityPoint, mover: CityMover = "infantry") {
@@ -214,7 +248,7 @@ export function createCityTactics(
       !Number.isFinite(p.x) ||
       !Number.isFinite(p.z) ||
       Math.abs(p.x) > 160 - r ||
-      Math.abs(p.z) > 160 - r
+      Math.abs(canonical(p)) > 160 - r
     )
       return false;
     if (
@@ -223,6 +257,7 @@ export function createCityTactics(
       ).some(
         (o) =>
           (mover !== "infantry" || o.kind !== "garden") &&
+          !(mover === "vehicle" && o.id.startsWith("built-sandbag:")) &&
           obstacleDistance(p, o) <= r,
       )
     )
@@ -237,7 +272,8 @@ export function createCityTactics(
     if (
       mover === "vehicle" &&
       !(
-        Math.abs(p.x - CITY_PLAZA_SURFACE.x) <= CITY_PLAZA_SURFACE.width / 2 - r &&
+        Math.abs(p.x - CITY_PLAZA_SURFACE.x) <=
+          CITY_PLAZA_SURFACE.width / 2 - r &&
         Math.abs(z - CITY_PLAZA_SURFACE.z) <= CITY_PLAZA_SURFACE.depth / 2 - r
       ) &&
       !(
@@ -464,6 +500,7 @@ export function createCityTactics(
   }
   return {
     obstacles,
+    setSandbags,
     cover,
     coverAt,
     streets,

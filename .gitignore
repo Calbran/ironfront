@@ -7,3 +7,6 @@ playwright-report/
 test-results/
 
 /node_modules
+
+# Local development and validation output
+/*.log

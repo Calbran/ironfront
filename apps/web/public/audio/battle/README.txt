@@ -1,0 +1,1 @@
+Original procedurally synthesized Ironfront prototype SFX. No third-party recordings or attribution dependencies. Rebuild with node --import tsx scripts/generate-battle-sfx.ts. Mono 24 kHz PCM variants; stereo demo contrasts close and distant fire. These are replaceable sound-design prototypes, not field recordings.

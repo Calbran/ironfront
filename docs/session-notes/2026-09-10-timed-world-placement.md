@@ -1,0 +1,9 @@
+# Timed world placement
+
+Implemented the approved experimental placement pass in the pacing preview. For each proposed zone, search deterministic radial candidates around its first land-valid base site. Accept expansion hamlets at 1–2h, three nearby alternatives at 2–4h, and a regional city at 6–12h using actual existing ground routes with a provisional 6× strategic multiplier. This does not change live unit speeds or detailed city scale. Existing settlements remain in place; new objectives are isolated proposal records rendered at their existing settlement radii.
+
+Reject overlaps with old/new settlements and candidate bases, sample sixteen footprint perimeter locations for traversable land, and reject route misses or out-of-band times. Perimeter sampling is not a complete polygon/building-footprint proof. Audit all displayed candidate sites against their zone's proposed nearby objectives, not merely the reference site. Other objectives and cross-player access are not part of this pass's acceptance gate. Failed candidates remain inspectable, not approved for actual base deployment.
+
+Meridian: 15 of 20 objectives placed, 10/15 candidates meet nearby targets. All Player 2 placement slots fail. The zone needs relocation or generator redesign; no balance claim is made. Regional cities have distance targets but are not yet validated as jointly contested. Resource outposts are proposals, not economic producers. Detailed 3D settlement instantiation and authoritative campaign placement remain separate work.
+
+Validation: three focused tests pass, covering route times, determinism, immutable source world, candidate coverage and separation. TypeScript and production build pass (existing bundle-size warning). Browser shows the placement count, failed slots and the new footprint overlays.

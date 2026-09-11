@@ -22,7 +22,7 @@ export function markerPosition(x:number,y:number,placed:{x:number;y:number}[],wi
   return {x:clamp(x,width),y:clamp(y-26,height)};
 }
 
-type Unit={id:number;x:number;z:number;kind:string;vehicleType?:string;friendly?:boolean;health?:number};
+type Unit={id:number;x:number;z:number;kind:string;vehicleType?:string;friendly?:boolean;health?:number;visible?:boolean};
 export function cityUnitMarkers(canvas:HTMLCanvasElement, units:Unit[], select:(id:number,add:boolean)=>void, focus:(unit:Unit)=>void) {
   const overlay=document.createElement('div');
   Object.assign(overlay.style,{position:'absolute',inset:'0',overflow:'hidden',pointerEvents:'none'});
@@ -49,7 +49,7 @@ export function cityUnitMarkers(canvas:HTMLCanvasElement, units:Unit[], select:(
       for(const {unit,button,stem} of entries){
         const world=root.localToWorld(new T.Vector3(unit.x,heightAt(unit)+.7,unit.z));
         const p=markerProjection(world,camera,width,height);
-        const show=p.visible&&p.opacity>.05&&(unit.health??100)>0;
+        const show=unit.visible!==false&&p.visible&&p.opacity>.05&&(unit.health??100)>0;
         button.hidden=!show;stem.hidden=!show;
         if(!show)continue;
         const pos=markerPosition(p.x,p.y,placed,width,height);placed.push(pos);

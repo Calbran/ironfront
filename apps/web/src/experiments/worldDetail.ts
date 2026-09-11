@@ -1,3 +1,4 @@
+import {countryWorldPOIs} from "./countryWorldPOIs";
 import * as T from 'three';
 import {createMiniatureKit} from './referenceAssets';
 import {bakeInfantry} from '../infantryModel';
@@ -6,10 +7,11 @@ import {WORLD_TO_MODEL as S} from './miniatureData';
 export function worldDetail(scene:T.Scene,data:MiniatureData){
  const kit=createMiniatureKit(),chunkSize=70;
  type Placement={x:number;z:number;scale:number;angle:number;variant:string};
+ const country=countryWorldPOIs(scene,data,kit);
  const placements=new Map<string,Placement[]>();
  function push(p:Placement){const key=`${Math.floor(p.x/chunkSize)},${Math.floor(p.z/chunkSize)}`;const list=placements.get(key)??[];list.push(p);placements.set(key,list);}
  data.cities.forEach(c=>c.layout.buildings.forEach((b,i)=>push({x:b.x*S,z:b.y*S,scale:b.width*S/7,angle:-b.angle,variant:(b as typeof b & {model?:string}).model??(b.role==='landmark'?'hall':b.role==='industry'?'factory':i%4===0?'shop':'home')})));
- data.scenery.filter(t=>t.kind==='tree').forEach((t,i)=>push({x:t.x*S,z:t.y*S,scale:t.width*S/4*.9,angle:i*.71,variant:i%4===0?'pine':'tree'}));
+ data.scenery.filter(t=>t.kind==='tree'&&!country.sites.some(p=>Math.hypot(p.x-t.x,p.y-t.y)<p.radius)).forEach((t,i)=>push({x:t.x*S,z:t.y*S,scale:t.width*S/4*.9,angle:i*.71,variant:i%4===0?'pine':'tree'}));
  const resident=new Map<string,{group:T.Group;last:number}>(),frustum=new T.Frustum(),matrix=new T.Matrix4(),dummy=new T.Object3D(),box=new T.Box3();
  let tick=0,created=0,mode='regional';
  function build(key:string){const group=new T.Group();const rows=placements.get(key)!;for(const variant of new Set(rows.map(p=>p.variant))){const objects=rows.filter(p=>p.variant===variant);for(const part of kit.variants.get(variant)!){const mesh=new T.InstancedMesh(part.geometry,part.material,objects.length);objects.forEach((p,i)=>{dummy.position.set(p.x,0,p.z);dummy.scale.setScalar(p.scale);dummy.rotation.set(0,p.angle,0);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.computeBoundingSphere();mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.snow=part.snow;mesh.userData.building=variant!=='tree'&&variant!=='pine';group.add(mesh);}}scene.add(group);created++;return group;}
@@ -20,6 +22,7 @@ export function worldDetail(scene:T.Scene,data:MiniatureData){
  let shown=0,visibleChunks=0;
  function update(camera:T.OrthographicCamera,winter:boolean,strategy:boolean,full:boolean,time:number,focus:T.Vector3,sprites=false){
   tick++;mode=full?'full':camera.zoom>1?'tactical':camera.zoom>.3?'regional':'continent';
+  country.update(focus,!strategy&&(full||mode!=='continent'),strategy,time);
   camera.updateMatrixWorld();matrix.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);frustum.setFromProjectionMatrix(matrix);
   const detail=!strategy&&(full||mode==='tactical');let budget=8;visibleChunks=0;
   for(const [key]of placements){const [cx,cz]=key.split(',').map(Number);box.min.set(cx*chunkSize-12,-2,cz*chunkSize-12);box.max.set((cx+1)*chunkSize+12,30,(cz+1)*chunkSize+12);const visible=detail&&frustum.intersectsBox(box);let entry=resident.get(key);if(visible){visibleChunks++;if(!entry&&budget-->0){entry={group:build(key),last:tick};resident.set(key,entry);}if(entry)entry.last=tick;}if(entry){entry.group.visible=visible;for(const child of entry.group.children)child.visible=(!child.userData.snow||winter)&&(!sprites||!child.userData.building);}}
@@ -30,5 +33,5 @@ export function worldDetail(scene:T.Scene,data:MiniatureData){
   for(const mesh of soldiers){mesh.count=shown;mesh.visible=shown>0;mesh.instanceMatrix.needsUpdate=true;}
   return mode;
  }
- return {update,setLoad(count:number,battle:boolean,motion=true){population=Math.max(0,Math.min(8000,count));concentrated=battle;animate=motion;},stats:()=>({mode,residentChunks:resident.size,visibleChunks,totalChunks:placements.size,createdChunks:created,population,visibleSoldiers:shown}),dispose(){for(const key of [...resident.keys()])remove(key);kit.dispose();cityMarkers.geometry.dispose();(cityMarkers.material as T.Material).dispose();cityMarkers.dispose();scene.remove(cityMarkers);soldiers.forEach(m=>{m.dispose();scene.remove(m);});material.dispose();}};
+ return {update,setLoad(count:number,battle:boolean,motion=true){population=Math.max(0,Math.min(8000,count));concentrated=battle;animate=motion;},sites:country.sites,stats:()=>({countrySites:country.sites.length,mode,residentChunks:resident.size,visibleChunks,totalChunks:placements.size,createdChunks:created,population,visibleSoldiers:shown}),dispose(){country.dispose();for(const key of [...resident.keys()])remove(key);kit.dispose();cityMarkers.geometry.dispose();(cityMarkers.material as T.Material).dispose();cityMarkers.dispose();scene.remove(cityMarkers);soldiers.forEach(m=>{m.dispose();scene.remove(m);});material.dispose();}};
 }

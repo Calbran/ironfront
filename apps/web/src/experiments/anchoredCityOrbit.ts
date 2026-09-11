@@ -40,10 +40,11 @@ export function anchoredCityOrbit(
         dragged: boolean;
         pointer: number;
         command: boolean;
+        mode: "pan" | "orbit";
       }
     | undefined;
   let lastAnchor: T.Vector3 | undefined;
-  const aim = (e: PointerEvent) => {
+  const aim = (e: { clientX: number; clientY: number }) => {
     const camera = getCamera();
     camera.updateMatrixWorld(true);
     const rect = canvas.getBoundingClientRect();
@@ -55,7 +56,7 @@ export function anchoredCityOrbit(
       camera,
     );
   };
-  const ground = (e: PointerEvent) => {
+  const ground = (e: { clientX: number; clientY: number }) => {
     aim(e);
     const g = root();
     g.updateMatrixWorld(true);
@@ -71,6 +72,13 @@ export function anchoredCityOrbit(
     }
     return g.localToWorld(p);
   };
+  const floorFocus = () => {
+    const g = root();
+    g.updateMatrixWorld(true);
+    const p = g.worldToLocal(controls.target.clone());
+    p.y = height({ x: p.x, z: p.z });
+    return g.localToWorld(p);
+  };
   const down = (e: PointerEvent) => {
     const command = e.button === 2 && selected();
     const orbit = e.button === 1;
@@ -78,7 +86,7 @@ export function anchoredCityOrbit(
     e.stopImmediatePropagation();
     e.preventDefault();
     const floor = ground(e);
-    const anchor = command ? floor : floor ?? controls.target.clone();
+    const anchor = command ? floor : (floor ?? floorFocus());
     if (!anchor) return;
     drag = {
       x: e.clientX,
@@ -89,6 +97,7 @@ export function anchoredCityOrbit(
       dragged: false,
       pointer: e.pointerId,
       command,
+      mode: e.altKey ? "pan" : "orbit",
     };
     if (drag.command) {
       const p = root().worldToLocal(anchor.clone());
@@ -122,11 +131,34 @@ export function anchoredCityOrbit(
       arrow.style.display = "block";
       return;
     }
+    if (drag.mode === "pan") {
+      aim(e);
+      const point = raycaster.ray.intersectPlane(
+        new T.Plane(new T.Vector3(0, 1, 0), -drag.anchor.y),
+        new T.Vector3(),
+      );
+      if (point) {
+        const delta = drag.anchor.clone().sub(point);
+        delta.y = 0;
+        getCamera().position.add(delta);
+        controls.target.add(delta);
+        controls.update();
+      }
+      return;
+    }
     const yaw = -(e.clientX - drag.lastX) * 0.005,
       requestedPitch = -(e.clientY - drag.lastY) * 0.005;
     drag.lastX = e.clientX;
     drag.lastY = e.clientY;
-    rotateCityOrbit(getCamera(), controls.target, drag.anchor, yaw, requestedPitch, controls.minPolarAngle, controls.maxPolarAngle);
+    rotateCityOrbit(
+      getCamera(),
+      controls.target,
+      drag.anchor,
+      yaw,
+      requestedPitch,
+      controls.minPolarAngle,
+      controls.maxPolarAngle,
+    );
     controls.update();
   };
   const cancel = () => {
@@ -152,6 +184,38 @@ export function anchoredCityOrbit(
     if (command) order({ x: start.x, z: start.z }, facing);
   };
   const context = (e: Event) => e.preventDefault();
+  const wheel = (e: WheelEvent) => {
+    const camera = getCamera();
+    if (!(camera instanceof T.OrthographicCamera)) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const anchor = ground(e);
+    const delta =
+      e.deltaY *
+      (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? canvas.clientHeight : 1);
+    camera.zoom = T.MathUtils.clamp(
+      camera.zoom * Math.exp(T.MathUtils.clamp(delta, -300, 300) * 0.002),
+      controls.minZoom,
+      controls.maxZoom,
+    );
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld(true);
+    if (anchor) {
+      aim(e);
+      const point = raycaster.ray.intersectPlane(
+        new T.Plane(new T.Vector3(0, 1, 0), -anchor.y),
+        new T.Vector3(),
+      );
+      if (point) {
+        const shift = anchor.clone().sub(point);
+        shift.y = 0;
+        camera.position.add(shift);
+        controls.target.add(shift);
+      }
+    }
+    controls.update();
+  };
+  canvas.addEventListener("wheel", wheel, { capture: true, passive: false });
   canvas.addEventListener("pointerdown", down, true);
   canvas.addEventListener("pointermove", move, true);
   canvas.addEventListener("pointerup", up, true);
@@ -160,6 +224,18 @@ export function anchoredCityOrbit(
   window.addEventListener("blur", cancel);
   return {
     cancel,
+    rotate(yaw: number) {
+      rotateCityOrbit(
+        getCamera(),
+        controls.target,
+        floorFocus(),
+        yaw,
+        0,
+        controls.minPolarAngle,
+        controls.maxPolarAngle,
+      );
+      controls.update();
+    },
     anchor: () => lastAnchor?.toArray(),
     dispose() {
       cancel();
@@ -169,6 +245,7 @@ export function anchoredCityOrbit(
       canvas.removeEventListener("pointerup", up, true);
       canvas.removeEventListener("pointercancel", cancel);
       canvas.removeEventListener("contextmenu", context);
+      canvas.removeEventListener("wheel", wheel, true);
       window.removeEventListener("blur", cancel);
     },
   };

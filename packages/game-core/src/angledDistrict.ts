@@ -1,3 +1,10 @@
+import {
+  portZoneForParcel,
+  portVariants,
+  portInfrastructure,
+  type CityWaterfront,
+  type PortZone,
+} from "./portDistrict";
 import { planCraftedNeighborhood } from "./craftedNeighborhood";
 import { cityBuildingEnvelope, cityBuildingFootprint } from "./cityBuildingKit";
 import {
@@ -71,6 +78,7 @@ export function planAngledDistrict(
   riverThrough = false,
   northEdge?: number,
   fullTile = false,
+  waterfront?: CityWaterfront,
 ) {
   const base = planCraftedNeighborhood(),
     lots: CityLot[] = fullTile ? [] : [...base.lots],
@@ -137,6 +145,7 @@ export function planAngledDistrict(
             ];
   const parcels: {
     kind: "commercial" | "residential" | "industrial";
+    portZone?: PortZone;
     boundary: CityPoint[];
     court: CityPoint[];
     lotIndices: number[];
@@ -318,20 +327,28 @@ export function planAngledDistrict(
           }),
           { x: 0, z: 0 },
         );
-        const kind: "commercial" | "residential" | "industrial" = fullTile
-          ? Math.abs(center.z - riverZ) < 40 && Math.abs(center.x) > 65
-            ? "industrial"
-            : Math.hypot(center.x, center.z) < 100
-              ? "commercial"
-              : "residential"
-          : Math.abs(center.z - riverZ) < 32 &&
-              (family % 2 ? center.x > 20 : center.x < -20)
-            ? "industrial"
-            : center.z > riverZ || Math.abs(center.x) < 22
-              ? "commercial"
-              : "residential";
+        const portZone = fullTile
+          ? portZoneForParcel(poly, waterfront)
+          : undefined;
+        const kind: "commercial" | "residential" | "industrial" = portZone
+          ? portZone === "harbor-market"
+            ? "commercial"
+            : "industrial"
+          : fullTile
+            ? Math.abs(center.z - riverZ) < 40 && Math.abs(center.x) > 65
+              ? "industrial"
+              : Math.hypot(center.x, center.z) < 100
+                ? "commercial"
+                : "residential"
+            : Math.abs(center.z - riverZ) < 32 &&
+                (family % 2 ? center.x > 20 : center.x < -20)
+              ? "industrial"
+              : center.z > riverZ || Math.abs(center.x) < 22
+                ? "commercial"
+                : "residential";
         const parcel = {
           kind,
+          portZone,
           boundary: poly,
           court: kind === "industrial" ? [] : insetBlock(poly, 17),
           lotIndices: [] as number[],
@@ -387,6 +404,11 @@ export function planAngledDistrict(
               else if (variant === "warehouse")
                 variant = choice % 2 ? "warehouseFoundry" : "warehouseEngine";
             }
+            if (portZone)
+              variant =
+                portVariants(portZone)[
+                  ((seed >>> 0) + i + edge) % portVariants(portZone).length
+                ];
             const setback =
               2.9 + (cityBuildingEnvelope(variant).depth * 0.85) / 2;
             const lot: CityLot = {
@@ -458,6 +480,13 @@ export function planAngledDistrict(
     ...base,
     lots,
     civicLotCount,
+    waterfront:
+      fullTile &&
+      waterfront?.kind === "ocean" &&
+      parcels.some((p) => p.portZone)
+        ? waterfront
+        : undefined,
+    portInfrastructure: portInfrastructure(waterfront, parcels),
     rivers: riverThrough
       ? [
           ...(fullTile ? [] : base.rivers),

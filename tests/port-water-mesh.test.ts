@@ -1,0 +1,20 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import * as T from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { portWaterfront } from "../apps/web/src/experiments/portWaterfront";
+import { CURVED_OCEAN_WATERFRONT, portInfrastructure } from "../packages/game-core/src/portDistrict";
+test("curved ocean geometry batches with existing water and retains upward normals",()=>{
+  const material=new T.MeshStandardMaterial();
+  const coast=CURVED_OCEAN_WATERFRONT;
+  const piers=portInfrastructure(coast,[{portZone:"cargo-quay",boundary:[{x:-120,z:125},{x:-80,z:125},{x:-80,z:160},{x:-120,z:160}]}],true);
+  const parts=portWaterfront(coast,piers,{water:material,stone:material,wood:material,iron:material,brass:material,roof:material,brick:material});
+  const box=new T.BoxGeometry(2,1,3);
+  const normalized=[box,...parts.map(p=>p.geometry)].map(g=>g.index?g.toNonIndexed():g);
+  const merged=mergeGeometries(normalized);
+  assert.ok(merged,"new coast mesh must share the standard position, normal and UV attributes");
+  const normals=parts[0].geometry.getAttribute("normal");
+  for(let i=0;i<normals.count;i++) assert.ok(normals.getY(i)>.99);
+  merged.dispose(); box.dispose(); material.dispose();
+  new Set([...normalized,...parts.map(p=>p.geometry)]).forEach(g=>g.dispose());
+});

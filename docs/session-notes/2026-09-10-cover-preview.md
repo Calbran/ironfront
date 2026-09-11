@@ -1,0 +1,2 @@
+# Cover preview responsiveness
+Expanded cover-order activation from 1.1 to 3 scene units. Kept physical protection unchanged. Limited previews to one solve per 80 ms and eliminated repeated whole-city candidate scans. Regression suite: 202 passing. Full-city solver benchmark: 887 obstacles, 200 samples, mean 1.29 ms, p95 2.92 ms. Browser verified a six-unit order behind the courtyard wall; no controlled drag FPS comparison was collected.

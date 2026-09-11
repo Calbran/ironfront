@@ -1,0 +1,5 @@
+# Resource-site economy study
+
+Added typed fuel/industry/agriculture opportunities to the full-world timing preview, with an economy sandbox below the selected base's map. The sandbox simulates capture and connectivity explicitly; it does not mutate campaign state. New core helpers cover construction costs, timed completion and automatic output. City works have a larger provisional return; warehouses remain a logistics design rather than an income source.
+
+Browser verified Meridian P1 fuel deposit: construction deducts 36 industry (80 to 44), completes at hour 12, and increases fuel income from 1 to 3 per hour. At completion fuel is 52, reflecting only baseline production during construction. Focused tests cover control/connection gates, duplicate build rejection, no retroactive output, lost-control suppression, immutable transactions and split-time equivalence. Three focused tests pass alongside typecheck/build (existing bundle-size warning). Full campaign regression suite was not rerun for this isolated study.

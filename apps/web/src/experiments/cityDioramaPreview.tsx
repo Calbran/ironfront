@@ -63,7 +63,11 @@ function App() {
       api.current = cityDiorama(host.current, setStats);
       window.__cityDiorama = api.current;
       const query = new URLSearchParams(location.search),
-        requested = query.get("case") ?? (location.pathname === "/" || location.pathname === "/index.html" ? "citywide" : null);
+        requested =
+          query.get("case") ??
+          (location.pathname === "/" || location.pathname === "/index.html"
+            ? "citywide"
+            : null);
       if (requested && seedCases.includes(requested as SeedCase)) {
         const seed = Number(query.get("seed") ?? 732) >>> 0,
           o = seedCaseOptions(requested as SeedCase);
@@ -130,12 +134,14 @@ function App() {
       >
         <p>
           {fullTile && combined
-            ? "Full city: a central civic square and commercial skyline, connected residential blocks, and waterfront industry."
+            ? profile === "ocean"
+              ? "Ocean port: cargo quays and bonded warehouses line the shore, with a harbor quarter connecting them to the civic city."
+              : "Full city: a central civic square and commercial skyline, connected residential blocks, and waterfront industry."
             : "District city study: commercial frontages near the civic core, residential blocks beyond them, and industry along the lower quay. Select 28 for the original neighborhood."}
         </p>
         {stats?.districts?.length ? (
           <p>
-            {["commercial", "residential", "industrial"]
+            {[...new Set(stats.districts.map((d) => d.kind))]
               .map(
                 (kind) =>
                   `${kind}: ${stats.districts!.filter((d) => d.kind === kind).reduce((n, d) => n + d.buildings, 0)} buildings`,
@@ -144,8 +150,49 @@ function App() {
           </p>
         ) : null}
         <div className="views">
-          <button aria-pressed={!streetCamera} onClick={()=>{api.current?.setStreetMode(false);setStreetCamera(false);}}>Planning view</button>
-          <button aria-pressed={streetCamera} onClick={()=>{api.current?.setStreetMode(true);setStreetCamera(true);}}>Street view</button>
+          {fullTile && combined && profile === "ocean" && (
+            <button
+              onClick={() => {
+                api.current?.focusHarbor();
+                setStreetCamera(false);
+              }}
+            >
+              Harbor
+            </button>
+          )}
+          {(["overview", "neighborhood", "overhead"] as const).map((view) => (
+            <button
+              key={view}
+              onClick={() => {
+                api.current?.cameraPreset(view);
+                setStreetCamera(false);
+              }}
+            >
+              {view === "overview"
+                ? "Overview / Reset"
+                : view === "neighborhood"
+                  ? "Neighborhood"
+                  : "Overhead"}
+            </button>
+          ))}
+          <button
+            aria-pressed={!streetCamera}
+            onClick={() => {
+              api.current?.setStreetMode(false);
+              setStreetCamera(false);
+            }}
+          >
+            Planning view
+          </button>
+          <button
+            aria-pressed={streetCamera}
+            onClick={() => {
+              api.current?.setStreetMode(true);
+              setStreetCamera(true);
+            }}
+          >
+            Street view
+          </button>
           <button onClick={() => api.current?.focusAirship()}>Airship</button>
           {(
             [
@@ -303,8 +350,16 @@ function App() {
                 );
               }}
             >
-              {["normal", "tight-bend", "steep", "worldgen"].map((p) => (
-                <option key={p}>{p}</option>
+              {[
+                "normal",
+                "tight-bend",
+                "steep",
+                "worldgen",
+                ...(fullTile ? ["ocean"] : []),
+              ].map((p) => (
+                <option key={p} value={p}>
+                  {p === "ocean" ? "Ocean shore / port" : p}
+                </option>
               ))}
             </select>
           </label>
@@ -320,12 +375,23 @@ function App() {
           <fieldset>
             <legend>City battle</legend>
             <p>
-              Left-drag to box-select; Shift adds soldiers. Right-click to
-              move; click red enemies to attack. Middle-drag orbits
-              the camera focus. WASD pans. Escape deselects.
+              Left-drag to box-select; Shift adds soldiers. Right-click to move;
+              click red enemies to attack. WASD or Alt–middle-drag pans.
+              Middle-drag orbits around the floor under the cursor with limited
+              tilt. Q/E rotates. Scroll down zooms in toward the cursor. Escape
+              deselects.
             </p>
-            <button onClick={() => api.current?.selectBattleSquad()}>Select infantry squad</button>
-            <p>{unitStatus?.units.filter(u=>u.friendly&&u.health>0).length ?? 7} friendly · {unitStatus?.units.filter(u=>!u.friendly&&u.health>0).length ?? 6} enemy remaining</p>
+            <button onClick={() => api.current?.selectBattleSquad()}>
+              Select infantry squad
+            </button>
+            <p>
+              {unitStatus?.units.filter((u) => u.friendly && u.health > 0)
+                .length ?? 7}{" "}
+              friendly ·{" "}
+              {unitStatus?.units.filter((u) => !u.friendly && u.health > 0)
+                .length ?? 0}{" "}
+              enemies visible
+            </p>
             {[1, 2, 3, 4, 6, 7, 8].map((id) => (
               <button
                 key={id}
@@ -343,7 +409,7 @@ function App() {
               disabled={!unitStatus?.selected}
               onClick={() => api.current?.stopTestUnit()}
             >
-              Stop selected units
+              Hold position
             </button>
             {unitStatus?.units
               .filter((u) => unitStatus.selectedIds.includes(u.id))
@@ -358,12 +424,22 @@ function App() {
                 </p>
               ))}
             <p>
-              Stopped infantry crouch behind low cover or brace against
-              buildings. Cover protects only from fire passing through it.
+              Dashed ? markers show last-known enemies and fade over 30 battle
+              seconds. Selected units show an approximate sight boundary,
+              clipped by buildings. Stopped infantry crouch behind low cover or
+              brace against buildings. Cover protects only from fire passing
+              through it.
             </p>
-            <button onClick={() => api.current?.toggleBattle()}>{unitStatus?.running ? "Pause battle" : "Start / resume battle"}</button>
+            <button onClick={() => api.current?.toggleBattle()}>
+              {unitStatus?.running ? "Pause battle" : "Start / resume battle"}
+            </button>
             <button onClick={() => location.reload()}>Reset battle</button>
-            <p>Select cyan units; click red enemies to focus fire. Right-click ground to move. Units fire automatically when in range with a clear shot. Start the battle to execute orders.</p>
+            <p>
+              Select cyan units; click red enemies to focus fire. Infantry may
+              adjust a few steps for cover; Hold position prevents relocation.
+              Right-click ground to move. Units fire automatically when in range
+              with a clear shot. Start the battle to execute orders.
+            </p>
             <output aria-live="polite">
               {unitStatus?.message ?? "Preparing test soldiers…"}
             </output>
@@ -372,9 +448,7 @@ function App() {
               cover, green full cover; red positions are blocked. Release to
               commit. Reachability is checked on release.
             </p>
-            <p>
-              Server-controlled skirmish; orders do not affect a campaign.
-            </p>
+            <p>Server-controlled skirmish; orders do not affect a campaign.</p>
           </fieldset>
         )}
         <label>
@@ -425,8 +499,8 @@ function App() {
               area · green: sample route.
             </p>
             <p>
-              Vehicles can use roads and the paved civic plaza. Walls and planted
-              beds block vehicles. This is a local movement study.
+              Vehicles can use roads and the paved civic plaza. Walls and
+              planted beds block vehicles. This is a local movement study.
             </p>
             {tacticalResult && <output>{tacticalResult}</output>}
           </fieldset>
@@ -456,8 +530,8 @@ function App() {
           Dusk lighting
         </label>
         <p>
-          Dusk lights the windows, trade signs and tram shelters, with warm pools
-          of light beneath street fixtures.
+          Dusk lights the windows, trade signs and tram shelters, with warm
+          pools of light beneath street fixtures.
         </p>
         <p>
           {fullTile
@@ -494,8 +568,9 @@ function App() {
         360° CITY CAMERA
         <span>
           Left-drag selects · right-click orders · right-drag faces ·
-          middle-drag orbits · WASD pans · scroll zooms · buildings and units
-          retain their scale across density tests
+          middle-drag orbits a floor anchor (40–75°) · WASD / Alt–middle-drag
+          pans · Q/E rotates · scroll down zooms in · buildings and units retain
+          their scale across density tests
         </span>
       </footer>
     </main>

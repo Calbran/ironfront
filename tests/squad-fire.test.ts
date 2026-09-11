@@ -108,3 +108,11 @@ test("target retention, ordered override, dead targets, and deterministic tie br
     "c",
   );
 });
+
+test('moving fire reduces hit damage at the same range',()=>{
+ const target=unit('target',1,10),standing=unit('shooter'),moving=unit('shooter');
+ moving.localOrder={path:[{x:20,y:0}]} as typeof moving.localOrder;
+ let still=0,mobile=0;
+ for(let i=0;i<1000;i++){still+=fireVolley(standing,target,10,100,1,1).damage;mobile+=fireVolley(moving,target,10,100,1,1).damage;}
+ assert(mobile<still*.75);assert(mobile>0);
+});

@@ -1,0 +1,146 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #182e2e;
+  color: #e9e3cb;
+  font: 14px/1.5 system-ui;
+}
+header {
+  height: 112px;
+  padding: 18px 28px;
+  border-bottom: 1px solid #5d7065;
+}
+header span {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #b6bd9f;
+}
+h1 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  font-size: 28px;
+  margin: 2px 0;
+}
+a {
+  color: #c3d8c1;
+}
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  height: calc(100vh - 112px);
+}
+#viewport {
+  position: relative;
+  min-width: 0;
+  min-height: 400px;
+}
+canvas {
+  display: block;
+}
+#caption {
+  position: absolute;
+  left: 18px;
+  bottom: 20px;
+  padding: 10px 16px;
+  background: #1a302cdd;
+  border-left: 2px solid #c2aa6d;
+  pointer-events: none;
+}
+aside {
+  padding: 18px;
+  overflow: auto;
+  background: #e8e5d7;
+  color: #263e38;
+}
+h2 {
+  font: 24px Georgia;
+  margin: 0;
+}
+h3 {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 22px 0 6px;
+}
+button {
+  display: block;
+  width: 100%;
+  padding: 9px 11px;
+  text-align: left;
+  margin: 4px 0;
+  background: transparent;
+  color: inherit;
+  border: 1px solid #a9b2a1;
+  border-radius: 3px;
+  cursor: pointer;
+}
+button:hover,
+button[aria-pressed="true"] {
+  background: #36564b;
+  color: #faf5e3;
+}
+button:focus-visible {
+  outline: 3px solid #b99842;
+}
+label {
+  display: block;
+  margin: 10px 0;
+}
+input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  background: #f5f1e5;
+  border: 1px solid #a9b2a1;
+}
+p {
+  font-size: 12px;
+  color: #56665b;
+}
+#stats,
+#probe {
+  padding: 10px;
+  background: #d8dfcf;
+  color: #334b40;
+}
+@media (max-width: 700px) {
+  main {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  #viewport {
+    height: 58vh;
+  }
+  aside {
+    height: 42vh;
+  }
+  header {
+    height: auto;
+    padding: 12px 18px;
+  }
+  h1 {
+    font-size: 23px;
+  }
+}
+#attribution {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  max-width: 90%;
+  padding: 5px 8px;
+  background: #142e30dd;
+  color: #e4dfcd;
+  font-size: 11px;
+  z-index: 2;
+}
+#attribution:empty {
+  display: none;
+}
+#attribution a {
+  color: inherit;
+}
+aside select {
+  max-width: 100%;
+  padding: 5px;
+}

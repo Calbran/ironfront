@@ -38,8 +38,9 @@ export function cityBattleRoutes(app: FastifyInstance) {
   app.post("/api/city-battle", async (req, reply) => {
     const parsed = z
       .object({
+        multipleBattles: z.boolean().default(false),
         seed: z.number().int().min(0).max(4294967295),
-        profile: z.enum(["normal", "tight-bend", "steep", "worldgen"]),
+        profile: z.enum(["normal", "tight-bend", "steep", "worldgen", "ocean"]),
       })
       .safeParse(req.body);
     if (!parsed.success)
@@ -50,20 +51,21 @@ export function cityBattleRoutes(app: FastifyInstance) {
       key = randomBytes(24).toString("hex");
     creating++;
     try {
-      const battle=createCityBattle(createCityTactics(await plan(seed,profile),seed,profile));
-      sessions.set(key,{battle,seen:Date.now()});return {key,state:battle.state()};
+      const battle=createCityBattle(createCityTactics(await plan(seed,profile),seed,profile),parsed.data.multipleBattles);
+      sessions.set(key,{battle,seen:Date.now()});return {key,state:battle.playerState()};
     } finally {creating--;}
   });
   const input = z.object({
-    action: z.enum(["move", "attack", "stop", "run"]),
+    action: z.enum(["move", "attack", "stop", "hold", "run", "build-sandbags", "remove-sandbags"]),
     ids: z.array(z.number().int()).max(16).default([]),
     x: z.number().finite().min(-1000).max(1000).optional(),
     z: z.number().finite().min(-1000).max(1000).optional(),
     target: z.number().int().optional(),
+    facing:z.number().finite().optional(),
   });
   app.post(
     "/api/city-battle/command",
-    { config: { rateLimit: { max: 900, timeWindow: "1 minute" } } },
+    { config: { rateLimit: { max: 900, timeWindow: "1 minute", groupId: "city-battle", keyGenerator: (req) => {const key=req.headers.authorization?.replace(/^Bearer /, "");return key && sessions.has(key) ? key : req.ip;} } } },
     async (req, reply) => {
       const key = req.headers.authorization?.replace(/^Bearer /, ""),
         s = key ? sessions.get(key) : undefined;
@@ -76,13 +78,15 @@ export function cityBattleRoutes(app: FastifyInstance) {
         return reply.code(400).send({ error: "Invalid battle command" });
       const p = parsed.data;
       s.seen = Date.now();
-      s.battle.command(p.ids, p.action, p.x, p.z, p.target);
-      return s.battle.state();
+      if(p.action==="build-sandbags"){if(p.x===undefined||p.z===undefined)return reply.code(400).send({error:"Placement coordinates required"});s.battle.buildSandbags(p.x,p.z,p.facing??0);}
+      else if(p.action==="remove-sandbags"){if(p.target===undefined)return reply.code(400).send({error:"Placement ID required"});s.battle.removeSandbags(p.target);}
+      else s.battle.command(p.ids, p.action, p.x, p.z, p.target, p.facing);
+      return s.battle.playerState();
     },
   );
   app.get(
     "/api/city-battle/state",
-    { config: { rateLimit: { max: 900, timeWindow: "1 minute" } } },
+    { config: { rateLimit: { max: 900, timeWindow: "1 minute", groupId: "city-battle", keyGenerator: (req) => {const key=req.headers.authorization?.replace(/^Bearer /, "");return key && sessions.has(key) ? key : req.ip;} } } },
     async (req, reply) => {
       const key = req.headers.authorization?.replace(/^Bearer /, ""),
         s = key ? sessions.get(key) : undefined;
@@ -91,7 +95,7 @@ export function cityBattleRoutes(app: FastifyInstance) {
           .code(404)
           .send({ error: "Battle expired. Reload to stage another." });
       s.seen = Date.now();
-      return s.battle.state();
+      return s.battle.playerState();
     },
   );
   app.delete("/api/city-battle", async (req) => {

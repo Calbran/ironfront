@@ -1,3 +1,9 @@
+import { portWaterfront } from "./portWaterfront";
+import {
+  PORT_ZONE_LABELS,
+  shoreAt,
+  type CityWaterfront,
+} from "../../../../packages/game-core/src/portDistrict";
 import { anchoredCityOrbit } from "./anchoredCityOrbit";
 import { cityLightPools } from "./cityLightPools";
 import { cityOcclusion } from "./cityOcclusion";
@@ -79,16 +85,31 @@ export function cityDiorama(
   host.append(renderer.domElement);
   const scene = new T.Scene();
   scene.background = new T.Color("#263933");
-  const planningCamera = new T.OrthographicCamera(-110, 110, 90, -90, 0.1, 1500);
-  const streetCamera = new T.PerspectiveCamera(50, host.clientWidth / host.clientHeight, .1, 1500);
+  const planningCamera = new T.OrthographicCamera(
+    -110,
+    110,
+    90,
+    -90,
+    0.1,
+    1500,
+  );
+  const streetCamera = new T.PerspectiveCamera(
+    36,
+    host.clientWidth / host.clientHeight,
+    0.1,
+    1500,
+  );
   let camera: T.OrthographicCamera | T.PerspectiveCamera = planningCamera;
   let streetMode = false;
-  let savedPlanning: {position:T.Vector3;target:T.Vector3;zoom:number}|undefined;
+  let savedPlanning:
+    | { position: T.Vector3; target: T.Vector3; zoom: number; minPolar: number }
+    | undefined;
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.zoomSpeed = -1;
   controls.enableRotate = true;
-  controls.minPolarAngle = 0.15;
-  controls.maxPolarAngle = Math.PI / 2 - 0.08;
+  controls.minPolarAngle = T.MathUtils.degToRad(15);
+  controls.maxPolarAngle = T.MathUtils.degToRad(50);
+  controls.screenSpacePanning = false;
   controls.enableDamping = true;
   controls.mouseButtons = {
     LEFT: -1 as T.MOUSE,
@@ -107,7 +128,7 @@ export function cityDiorama(
   const keyDown = (event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
     if (
-      !"wasd".includes(key) ||
+      !"wasdqe".includes(key) ||
       key.length !== 1 ||
       typing(event.target) ||
       event.ctrlKey ||
@@ -152,9 +173,17 @@ export function cityDiorama(
     rig = bakeInfantry(0),
     dummy = new T.Object3D(),
     smokeFacing = new T.Quaternion();
-  const cutaway = cityOcclusion([...kit.variants.entries(),...kit.distantVariants.entries()]
-    .filter(([name])=>!name.startsWith('tree')&&name!=='pine'&&!name.startsWith('ground')&&!name.startsWith('street'))
-    .flatMap(([,parts])=>parts.map(p=>p.material)));
+  const cutaway = cityOcclusion(
+    [...kit.variants.entries(), ...kit.distantVariants.entries()]
+      .filter(
+        ([name]) =>
+          !name.startsWith("tree") &&
+          name !== "pine" &&
+          !name.startsWith("ground") &&
+          !name.startsWith("street"),
+      )
+      .flatMap(([, parts]) => parts.map((p) => p.material)),
+  );
   let group = new T.Group(),
     count = 0,
     extent = 100,
@@ -292,6 +321,7 @@ export function cityDiorama(
   let modelCounts: Record<string, number> = {};
   const overviewBounds = new T.Box3();
   let districtSummary: { kind: string; buildings: number }[] = [];
+  let activeWaterfront: CityWaterfront | undefined;
   scene.add(group);
   const ownedTextures: T.Texture[] = [];
   const materials: T.Material[] = [],
@@ -501,6 +531,8 @@ export function cityDiorama(
           seed,
           profile,
         );
+    const oceanCoast = terrainPlan?.waterfront;
+    activeWaterfront = oceanCoast;
     const lots = layout.lots;
     const foundationLevels = new Map<object, number>();
     if (terrainPlan)
@@ -536,6 +568,23 @@ export function cityDiorama(
             buildings: d.buildings,
           }))
         : [];
+    if (terrainPlan?.waterfront) {
+      districtSummary = ["commercial", "residential", "industrial"].map(
+        (kind) => ({
+          kind,
+          buildings: terrainPlan.parcels
+            .filter((p) => p.kind === kind && !p.portZone)
+            .reduce((n, p) => n + p.lotIndices.length, 0),
+        }),
+      );
+      for (const [zone, label] of Object.entries(PORT_ZONE_LABELS))
+        districtSummary.push({
+          kind: label,
+          buildings: terrainPlan.parcels
+            .filter((p) => p.portZone === zone)
+            .reduce((n, p) => n + p.lotIndices.length, 0),
+        });
+    }
     extent = layout.extent;
     count = lots.length + 1;
     sun.position.set(-extent * 0.8, extent * 1.4, extent * 0.6);
@@ -547,7 +596,15 @@ export function cityDiorama(
       far: extent * 6,
     });
     sun.shadow.camera.updateProjectionMatrix();
-    box(ground, 0, -0.65, 0, extent * 2 + 32, 1.2, extent * 2 + 32);
+    box(
+      ground,
+      0,
+      -0.65,
+      oceanCoast ? (oceanCoast.shoreZ - extent - 16) / 2 : 0,
+      extent * 2 + 32,
+      1.2,
+      oceanCoast ? oceanCoast.shoreZ + extent + 16 : extent * 2 + 32,
+    );
     if (crafted) {
       const terrain = new T.PlaneGeometry(
         extent * 2 + 32,
@@ -556,6 +613,9 @@ export function cityDiorama(
         terrainFit || riverThrough ? 256 : 64,
       ).rotateX(-Math.PI / 2);
       const pos = terrain.getAttribute("position");
+      if (oceanCoast)
+        for (let i = 0; i < pos.count; i++)
+          pos.setZ(i, Math.min(pos.getZ(i), oceanCoast.shoreZ));
       for (let i = 0; i < pos.count; i++)
         pos.setY(
           i,
@@ -579,7 +639,15 @@ export function cityDiorama(
       terrain.computeVertexNormals();
       add(terrain, ground, 0, 0, 0);
       // Continuous developed blocks: civic paving, residential yards and lower quay.
-      box(paving, CITY_PLAZA_SURFACE.x, 0.025, CITY_PLAZA_SURFACE.z, CITY_PLAZA_SURFACE.width, 0.1, CITY_PLAZA_SURFACE.depth);
+      box(
+        paving,
+        CITY_PLAZA_SURFACE.x,
+        0.025,
+        CITY_PLAZA_SURFACE.z,
+        CITY_PLAZA_SURFACE.width,
+        0.1,
+        CITY_PLAZA_SURFACE.depth,
+      );
       if (!fullTile) {
         box(soil, 0, 0.04, 36, 76, 0.12, 22);
         box(stone, 0, 0.09, 45, 76, 0.2, 2);
@@ -934,6 +1002,24 @@ export function cityDiorama(
         }
     }
     const water = mat("#477d84");
+    if (oceanCoast && terrainPlan) {
+      worldRoadSurface = true;
+      for (const part of portWaterfront(
+        oceanCoast,
+        terrainPlan.portInfrastructure,
+        {
+          water,
+          stone,
+          wood,
+          iron: roof,
+          brass,
+          roof: kit.architecture.roof,
+          brick: kit.architecture.walls,
+        },
+      ))
+        add(part.geometry, part.material, 0, 0, 0);
+      worldRoadSurface = false;
+    }
     for (const river of layout.rivers) {
       ribbon(
         river,
@@ -1359,7 +1445,7 @@ export function cityDiorama(
     }
     worldRoadSurface = false;
     const lampPositions: { x: number; z: number }[] = [];
-    const spillPositions: {x:number;z:number;radius:number}[]=[];
+    const spillPositions: { x: number; z: number; radius: number }[] = [];
     const lampGlass = mat("#efd696");
     lampGlass.emissive.set("#d4a353");
     lampGlass.emissiveIntensity = 0.5;
@@ -1464,9 +1550,11 @@ export function cityDiorama(
           );
           box(brass, lampX, 2.52, lampZ, 0.46, 0.1, 0.46, armAngle);
           // A bounded set of lamps illuminates nearby paving and facades.
-          const spill = {x:x+(lampX-x)*.7,z:z+(lampZ-z)*.7};
-          const mappedSpill = combined ? combinedPosition(spill,seed,profile) : spill;
-          spillPositions.push({...mappedSpill,radius:2.4});
+          const spill = { x: x + (lampX - x) * 0.7, z: z + (lampZ - z) * 0.7 };
+          const mappedSpill = combined
+            ? combinedPosition(spill, seed, profile)
+            : spill;
+          spillPositions.push({ ...mappedSpill, radius: 2.4 });
           if (localLights.length < 3 && Math.abs(x) < 26 && Math.abs(z) < 30) {
             const light = new T.PointLight("#ffc77d", 24, 13, 1.5);
             const lx = x + (lampX - x) * 0.7,
@@ -2122,15 +2210,31 @@ export function cityDiorama(
       if (CITY_STREET_PROP_SCALE[p.variant] !== undefined)
         p.scale = CITY_STREET_PROP_SCALE[p.variant];
     for (const p of placements) {
-      const shop = p.variant.startsWith("urban") && !["urbanBuild","urbanCourt"].includes(p.variant);
-      if (!shop && p.variant !== "streetTramStop" && p.variant !== "streetKiosk") continue;
-      const placed = combined ? combinedLot(p,seed,profile) : p;
-      const offset = shop ? 6.35*p.scale : 0;
-      spillPositions.push({x:placed.x+Math.sin(placed.angle)*offset,z:placed.z+Math.cos(placed.angle)*offset,radius:shop?1.1:1.5});
+      const shop =
+        p.variant.startsWith("urban") &&
+        !["urbanBuild", "urbanCourt"].includes(p.variant);
+      if (
+        !shop &&
+        p.variant !== "streetTramStop" &&
+        p.variant !== "streetKiosk"
+      )
+        continue;
+      const placed = combined ? combinedLot(p, seed, profile) : p;
+      const offset = shop ? 6.35 * p.scale : 0;
+      spillPositions.push({
+        x: placed.x + Math.sin(placed.angle) * offset,
+        z: placed.z + Math.cos(placed.angle) * offset,
+        radius: shop ? 1.1 : 1.5,
+      });
     }
-    fixtureCount=spillPositions.length;
-    fixturePools=cityLightPools(spillPositions,(x,z)=>elevation(combined?combinedCanonicalZ({x,z},seed,profile):z,x));
-    if(fixturePools){group.add(fixturePools.mesh);fixturePools.setDusk(dusk);}
+    fixtureCount = spillPositions.length;
+    fixturePools = cityLightPools(spillPositions, (x, z) =>
+      elevation(combined ? combinedCanonicalZ({ x, z }, seed, profile) : z, x),
+    );
+    if (fixturePools) {
+      group.add(fixturePools.mesh);
+      fixturePools.setDusk(dusk);
+    }
     modelCounts = {};
     for (const p of placements)
       modelCounts[p.variant] = (modelCounts[p.variant] ?? 0) + 1;
@@ -2339,13 +2443,13 @@ export function cityDiorama(
         renderer.domElement,
         rig,
         tacticalData,
-        {seed,profile},
+        { seed, profile },
         (p) => {
           const target = group.localToWorld(
             new T.Vector3(p.x, tacticalData!.surfaceHeight(p) + 1, p.z),
           );
           const offset = camera.position.clone().sub(controls.target);
-          if(streetMode) offset.setLength(18);
+          if (streetMode) offset.setLength(18);
           controls.target.copy(target);
           camera.position.copy(target).add(offset);
           camera.zoom = streetMode ? 1 : 4;
@@ -2359,30 +2463,60 @@ export function cityDiorama(
     focus("city");
   }
   function setStreetMode(enabled: boolean) {
-    if(enabled===streetMode)return;
+    if (enabled === streetMode) return;
     anchoredOrbit.cancel();
-    let autoSelect:number|undefined;
-    if(enabled){
-      savedPlanning={position:camera.position.clone(),target:controls.target.clone(),zoom:camera.zoom};
-      const state=testUnits?.state();
-      const selected=state?.units.find(u=>state.selectedIds.includes(u.id));
-      const anchor=anchoredOrbit.anchor();
-      const unit=selected ?? (!anchor ? state?.units[0] : undefined);
-      if(unit&&!selected)autoSelect=unit.id;
-      const target=unit ? group.localToWorld(new T.Vector3(unit.x,(tacticalData?.surfaceHeight(unit)??0)+.7,unit.z))
-        : anchor ? new T.Vector3(...anchor) : controls.target.clone();
-      camera=streetCamera;camera.zoom=1;
-      controls.object=camera;
+    let autoSelect: number | undefined;
+    if (enabled) {
+      savedPlanning = {
+        position: camera.position.clone(),
+        target: controls.target.clone(),
+        zoom: camera.zoom,
+        minPolar: controls.minPolarAngle,
+      };
+      const state = testUnits?.state();
+      const selected = state?.units.find((u) =>
+        state.selectedIds.includes(u.id),
+      );
+      const anchor = anchoredOrbit.anchor();
+      const unit = selected ?? (!anchor ? state?.units[0] : undefined);
+      if (unit && !selected) autoSelect = unit.id;
+      const target = unit
+        ? group.localToWorld(
+            new T.Vector3(
+              unit.x,
+              (tacticalData?.surfaceHeight(unit) ?? 0) + 0.7,
+              unit.z,
+            ),
+          )
+        : anchor
+          ? new T.Vector3(...anchor)
+          : controls.target.clone();
+      camera = streetCamera;
+      camera.zoom = 1;
+      controls.object = camera;
       controls.target.copy(target);
-      camera.position.copy(target).add(new T.Vector3(11,7,11));
-    }else{
-      camera=planningCamera;controls.object=camera;
-      if(savedPlanning){camera.position.copy(savedPlanning.position);controls.target.copy(savedPlanning.target);camera.zoom=savedPlanning.zoom;}
+      camera.position.copy(target).add(new T.Vector3(11, 7, 11));
+    } else {
+      camera = planningCamera;
+      controls.object = camera;
+      if (savedPlanning) {
+        camera.position.copy(savedPlanning.position);
+        controls.target.copy(savedPlanning.target);
+        camera.zoom = savedPlanning.zoom;
+      }
     }
-    streetMode=enabled;
-    controls.minDistance=enabled?3:0;controls.maxDistance=enabled?600:Infinity;
-    camera.updateProjectionMatrix();controls.update();
-    if(autoSelect!==undefined)testUnits?.select(autoSelect);
+    streetMode = enabled;
+    controls.minPolarAngle = enabled
+      ? 0.15
+      : (savedPlanning?.minPolar ?? T.MathUtils.degToRad(15));
+    controls.maxPolarAngle = enabled
+      ? Math.PI / 2 - 0.08
+      : T.MathUtils.degToRad(50);
+    controls.minDistance = enabled ? 3 : 0;
+    controls.maxDistance = enabled ? 600 : Infinity;
+    camera.updateProjectionMatrix();
+    controls.update();
+    if (autoSelect !== undefined) testUnits?.select(autoSelect);
   }
   function focus(
     view:
@@ -2412,7 +2546,14 @@ export function cityDiorama(
     if (view === "city") overviewBounds.getCenter(target);
     else target.applyAxisAngle(new T.Vector3(0, 1, 0), worldBearing);
     controls.target.copy(target);
-    camera.position.copy(target).add(new T.Vector3(180, 180, 180));
+    controls.minPolarAngle = streetMode ? 0.15 : T.MathUtils.degToRad(15);
+    camera.position
+      .copy(target)
+      .add(
+        new T.Vector3(1, Math.SQRT2 * Math.tan(T.MathUtils.degToRad(55)), 1)
+          .normalize()
+          .multiplyScalar(312),
+      );
     camera.zoom =
       view === "angled"
         ? 1.5
@@ -2425,9 +2566,18 @@ export function cityDiorama(
             : 4;
     camera.updateProjectionMatrix();
     controls.update();
-    if(streetMode){
-      camera.position.copy(target).add(new T.Vector3(1,.65,1).normalize().multiplyScalar(view==='city'?extent*2.8:22));
-      camera.zoom=1;camera.updateProjectionMatrix();controls.update();return;
+    if (streetMode) {
+      camera.position
+        .copy(target)
+        .add(
+          new T.Vector3(1, 0.65, 1)
+            .normalize()
+            .multiplyScalar(view === "city" ? extent * 2.8 : 22),
+        );
+      camera.zoom = 1;
+      camera.updateProjectionMatrix();
+      controls.update();
+      return;
     }
     if (view === "city") {
       camera.zoom = 1;
@@ -2448,7 +2598,7 @@ export function cityDiorama(
     dusk = evening;
     kit.setDusk(dusk);
     fixturePools?.setDusk(dusk);
-    if(fixtureGlass) fixtureGlass.emissiveIntensity=dusk?2:0.15;
+    if (fixtureGlass) fixtureGlass.emissiveIntensity = dusk ? 2 : 0.15;
     hemi.intensity = dusk ? 0.65 : 2;
     sun.intensity = dusk ? 0.45 : 3;
     scene.background = new T.Color(dusk ? "#202b38" : "#263933");
@@ -2468,7 +2618,8 @@ export function cityDiorama(
     planningCamera.left = (-90 * w) / h;
     planningCamera.right = (90 * w) / h;
     planningCamera.updateProjectionMatrix();
-    streetCamera.aspect=w/h;streetCamera.updateProjectionMatrix();
+    streetCamera.aspect = w / h;
+    streetCamera.updateProjectionMatrix();
   });
   observer.observe(host);
   let last = performance.now(),
@@ -2484,7 +2635,12 @@ export function cityDiorama(
         }
       | undefined;
   function updateDetail() {
-    const pixelsPerUnit = streetMode ? host.clientHeight/(2*Math.tan(T.MathUtils.degToRad(streetCamera.fov/2))*Math.max(1,camera.position.distanceTo(controls.target))) : (host.clientHeight * camera.zoom) / 180;
+    const pixelsPerUnit = streetMode
+      ? host.clientHeight /
+        (2 *
+          Math.tan(T.MathUtils.degToRad(streetCamera.fov / 2)) *
+          Math.max(1, camera.position.distanceTo(controls.target)))
+      : (host.clientHeight * camera.zoom) / 180;
     if (distant ? pixelsPerUnit > 4.5 : pixelsPerUnit < 3.5) distant = !distant;
     detailMeshes.forEach(
       (m) => (m.visible = !distant && (!lodSnow.has(m) || winter)),
@@ -2499,6 +2655,11 @@ export function cityDiorama(
     const dt = Math.min(0.05, (now - lastPan) / 1000);
     lastPan = now;
     if (panKeys.size) {
+      const yaw =
+        (Number(panKeys.has("q")) - Number(panKeys.has("e"))) * dt * 1.1;
+      if (yaw) {
+        anchoredOrbit.rotate(yaw);
+      }
       camera.getWorldDirection(panForward);
       panForward.y = 0;
       panForward.normalize();
@@ -2511,15 +2672,34 @@ export function cityDiorama(
           Number(panKeys.has("d")) - Number(panKeys.has("a")),
         );
       if (panMove.lengthSq() > 0) {
-        panMove.normalize().multiplyScalar(streetMode ? 7*dt : (40 * dt) / Math.sqrt(camera.zoom));
+        panMove
+          .normalize()
+          .multiplyScalar(
+            streetMode ? 7 * dt : (40 * dt) / Math.sqrt(camera.zoom),
+          );
         camera.position.add(panMove);
         controls.target.add(panMove);
       }
     }
     controls.update();
     testUnits?.update(dt);
-    const selection=testUnits?.state();
-    cutaway.update(camera,streetMode && selection ? selection.units.filter(u=>selection.selectedIds.includes(u.id)).map(u=>group.localToWorld(new T.Vector3(u.x,(tacticalData?.surfaceHeight(u)??0)+.7,u.z))) : []);
+    const selection = testUnits?.state();
+    cutaway.update(
+      camera,
+      streetMode && selection
+        ? selection.units
+            .filter((u) => selection.selectedIds.includes(u.id))
+            .map((u) =>
+              group.localToWorld(
+                new T.Vector3(
+                  u.x,
+                  (tacticalData?.surfaceHeight(u) ?? 0) + 0.7,
+                  u.z,
+                ),
+              ),
+            )
+        : [],
+    );
     if (airship && !reviewingAirship) {
       airshipTime += dt;
       const t = airshipTime * 0.012;
@@ -2603,6 +2783,40 @@ export function cityDiorama(
   generate();
   render();
   return {
+    focusHarbor() {
+      reviewingAirship = false;
+      setStreetMode(false);
+      focus("city");
+      const offset = camera.position.clone().sub(controls.target);
+      controls.target.set(
+        -45,
+        2,
+        (activeWaterfront ? shoreAt(activeWaterfront, -45) : 164) + 5,
+      );
+      camera.position.copy(controls.target).add(offset);
+      camera.zoom = 1.7;
+      camera.updateProjectionMatrix();
+      controls.update();
+    },
+    cameraPreset(view: "overview" | "neighborhood" | "overhead") {
+      reviewingAirship = false;
+      setStreetMode(false);
+      if (view === "overview") {
+        focus("city");
+        return;
+      }
+      const offset = camera.position.clone().sub(controls.target);
+      const spherical = new T.Spherical().setFromVector3(offset);
+      spherical.phi = view === "overhead" ? 0.001 : T.MathUtils.degToRad(35);
+      controls.minPolarAngle =
+        view === "overhead" ? 0.001 : T.MathUtils.degToRad(15);
+      camera.position
+        .copy(controls.target)
+        .add(new T.Vector3().setFromSpherical(spherical));
+      if (view === "neighborhood") camera.zoom = 4;
+      camera.updateProjectionMatrix();
+      controls.update();
+    },
     generate,
     setStreetMode,
     testUnitState: () => testUnits?.state(),
@@ -2671,7 +2885,7 @@ export function cityDiorama(
         position: camera.position.toArray(),
         target: controls.target.toArray(),
         zoom: camera.zoom,
-        mode: streetMode ? 'street' : 'planning',
+        mode: streetMode ? "street" : "planning",
       };
     },
     modelCounts() {

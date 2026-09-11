@@ -21,13 +21,14 @@ export const seedCases = [
   "combined",
   "worldgen",
   "citywide",
+  "ocean-port",
   "tight-bend",
   "steep",
 ] as const;
 export type SeedCase = (typeof seedCases)[number];
 export function seedCaseOptions(mode: SeedCase) {
   return {
-    fullTile: mode === "citywide",
+    fullTile: mode === "citywide" || mode === "ocean-port",
     count: mode === "town" ? 28 : mode === "large-district" ? 256 : 128,
     combined: [
       "combined",
@@ -35,12 +36,15 @@ export function seedCaseOptions(mode: SeedCase) {
       "steep",
       "worldgen",
       "citywide",
+      "ocean-port",
     ].includes(mode),
-    profile: (mode === "citywide"
-      ? "worldgen"
-      : mode === "tight-bend" || mode === "steep" || mode === "worldgen"
-        ? mode
-        : "normal") as TerrainProfile,
+    profile: (mode === "ocean-port"
+      ? "ocean"
+      : mode === "citywide"
+        ? "worldgen"
+        : mode === "tight-bend" || mode === "steep" || mode === "worldgen"
+          ? mode
+          : "normal") as TerrainProfile,
   };
 }
 function intersects(a: CityPoint, b: CityPoint, c: CityPoint, d: CityPoint) {
