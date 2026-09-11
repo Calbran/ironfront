@@ -1,0 +1,167 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #172b2c;
+  color: #eee4c8;
+  font: 14px system-ui;
+}
+.slice {
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: 48px 40px minmax(0, 1fr) 112px;
+}
+header,
+.slice-tools,
+footer {
+  background: #1e302f;
+  border-bottom: 1px solid #8e8161;
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+header strong {
+  font: 20px Georgia;
+  letter-spacing: 3px;
+}
+header a {
+  margin-left: auto;
+  color: #dccc9c;
+}
+.slice-tools {
+  gap: 5px;
+  font-size: 12px;
+}
+.slice-tools button {
+  padding: 6px;
+  white-space: nowrap;
+}
+button,
+select {
+  background: #283c39;
+  color: #f1e6c9;
+  border: 1px solid #777963;
+  padding: 7px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.4;
+}
+button[aria-pressed="true"] {
+  border-color: #f2d480;
+  background: #4b5544;
+}
+.slice-map {
+  min-height: 0;
+  position: relative;
+}
+.slice-map canvas {
+  display: block;
+  touch-action: none;
+}
+footer {
+  border-top: 1px solid #8e8161;
+  border-bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: 44px 20px 15px;
+  gap: 5px;
+}
+.slice-units,
+.slice-orders {
+  display: flex;
+  gap: 7px;
+}
+.slice-units button {
+  min-width: 100px;
+  text-align: left;
+}
+.slice-units small {
+  display: block;
+  color: #afc0b2;
+  font-size: 11px;
+}
+footer p {
+  grid-column: 1/-1;
+  margin: 0;
+  color: #ead5a0;
+  font-size: 12px;
+}
+footer > small {
+  grid-column: 1/-1;
+  font-size: 11px;
+  color: #a8b7ac;
+}
+@media (max-width: 750px) {
+  .slice {
+    grid-template-rows: 48px 72px minmax(0, 1fr) 140px;
+  }
+  .slice-tools {
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .slice-tools button {
+    font-size: 11px;
+    padding: 5px;
+  }
+  header > span {
+    display: none;
+  }
+  footer {
+    grid-template-columns: 1fr;
+    grid-template-rows: 40px 28px 16px 14px;
+  }
+  .slice-units button {
+    min-width: 0;
+    flex: 1;
+    padding: 5px;
+  }
+  .slice-orders button {
+    font-size: 11px;
+    padding: 4px;
+  }
+}
+
+body {
+  overflow: hidden;
+}
+.slice {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+}
+header,
+footer,
+.slice-map {
+  min-width: 0;
+}
+header select {
+  max-width: 125px;
+}
+.slice-site-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  background: #1d302ede;
+  color: #f4dfaa;
+  font-size: 12px;
+  white-space: nowrap;
+  padding: 4px 8px;
+  z-index: 2;
+}
+footer a {
+  color: #dccc9c;
+}
+.slice-preview-hint {
+  position: absolute;
+  pointer-events: none;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: #182b2e;
+  color: #eee4c8;
+  border: 1px solid #998c68;
+  z-index: 4;
+}

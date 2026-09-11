@@ -13,10 +13,12 @@ import './pacingWorld3D.css';
 import {generatePacingCountryside} from '../../../../packages/game-core/src/pacingCountryside';
 import {createPacingRuralScene} from './pacingRuralScene';
 import {buildPacingCorridor,corridorClearsField} from '../../../../packages/game-core/src/pacingCorridor';
-import {CITY_RUN_SPEED} from './pacingPhysicalScale';
+import {buildCountryRoadNetwork,countryRoadFieldFilter} from '../../../../packages/game-core/src/countryRoadNetwork';
+import {pacingRoadDestinations} from '../../../../packages/game-core/src/pacingRoadDestinations';
+import {createCountryRoadScene} from './countryRoadScene';
 import {constrainPacingCamera} from './pacingCameraLimits';
-import {planPacingRelief,reliefHeight} from '../../../../packages/game-core/src/pacingRelief';
-import {createPacingReliefScene} from './pacingReliefScene';
+import {buildConnectedTerrain,terrainHeight as sampleTerrainHeight} from '../../../../packages/game-core/src/connectedTerrain';
+import {createConnectedTerrainScene} from './connectedTerrainScene';
 import {createCorridorDetail} from './pacingCorridorDetail';
 import {refinedGrain,refineSurface} from './refinedSurface';
 type Props={study:ReturnType<typeof createPacingStudy>;objectives:TimedObjective[];physical:boolean};
@@ -24,16 +26,20 @@ export function PacingWorld3D({study,objectives,physical}:Props){
  const host=useRef<HTMLDivElement>(null),api=useRef<{focus:(id:string)=>void;zoom:(factor:number)=>void;roadside:()=>void}|undefined>(undefined);
  const [focused,setFocused]=useState('overview');
  const [error,setError]=useState('');
+ const [showLocations,setShowLocations]=useState(true);
  const locations=[...study.world.regions.flatMap(r=>(r.features??[]).filter(f=>f.kind==='settlement').map(f=>({id:`existing-${r.id}-${f.id}`,name:f.name,x:f.x,y:f.y,size:f.size??'hamlet' as const}))),...objectives];
  const rural=useMemo(()=>physical?generatePacingCountryside(study.world,S*PHYSICAL_SEPARATION,[...locations.map(c=>({x:c.x,y:c.y,radius:SETTLEMENT_RADII[c.size]/PHYSICAL_SEPARATION})),...study.sites.map(s=>({x:s.x,y:s.y,radius:12/(S*PHYSICAL_SEPARATION)}))]):{farms:[],pois:[]},[study,objectives,physical]);
  const corridor=useMemo(()=>physical?buildPacingCorridor(study.world,locations.filter(c=>c.size==='city'||c.size==='metropolis').map(c=>({...c,radius:SETTLEMENT_RADII[c.size]*S})),rural,S*PHYSICAL_SEPARATION):null,[study,objectives,physical,rural]);
  const dressedRural=useMemo(()=>({...rural,farms:rural.farms.map(f=>({...f,fields:f.fields.filter(p=>corridorClearsField(p,corridor,S*PHYSICAL_SEPARATION))}))}),[rural,corridor]);
- const relief=useMemo(()=>{
-  if(!physical)return [];
+ const surface=useMemo(()=>{
+  if(!physical)return undefined;
   const reserves=[...locations.map(c=>({x:c.x,y:c.y,radius:SETTLEMENT_RADII[c.size]/PHYSICAL_SEPARATION})),...rural.farms.map(f=>({x:f.x,y:f.y,radius:f.extent/(S*PHYSICAL_SEPARATION)})),...rural.pois.map(p=>({x:p.x,y:p.y,radius:p.extent/(S*PHYSICAL_SEPARATION)})),...study.sites.map(s=>({x:s.x,y:s.y,radius:12/(S*PHYSICAL_SEPARATION)}))];
-  for(let i=1;i<(corridor?.path.length??0);i++){const a=corridor!.path[i-1],b=corridor!.path[i],n=Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/20);for(let j=0;j<=n;j++)reserves.push({x:a.x+(b.x-a.x)*j/(n||1),y:a.y+(b.y-a.y)*j/(n||1),radius:20});}
-  return planPacingRelief(study.world,S*PHYSICAL_SEPARATION,reserves);
+  return buildConnectedTerrain(study.world,S*PHYSICAL_SEPARATION,reserves,corridor?[corridor.path]:[]);
  },[study,objectives,rural,corridor,physical]);
+ const destinations=useMemo(()=>pacingRoadDestinations(locations.map(c=>({...c,radius:SETTLEMENT_RADII[c.size]*S,major:c.size==='city'||c.size==='metropolis'})),rural.pois,study.sites,S*PHYSICAL_SEPARATION),[study,objectives,rural]);
+ const roads=useMemo(()=>surface?buildCountryRoadNetwork(study.world,surface,destinations):undefined,[surface,destinations,study]);
+ const roadRural=useMemo(()=>{const clear=roads?countryRoadFieldFilter(roads):()=>true;return {...dressedRural,farms:dressedRural.farms.map(f=>({...f,fields:f.fields.filter(clear)}))};},[dressedRural,roads]);
+ const relief=surface?.ranges??[];
  useEffect(()=>{
   if(!host.current)return;const el=host.current;let renderer:T.WebGLRenderer;
   try{renderer=new T.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true});}catch(e){setError(String(e));return;}
@@ -42,7 +48,7 @@ export function PacingWorld3D({study,objectives,physical}:Props){
   const anchor=(x:number,y:number)=>physicalAnchor({x,y},separation,origin);
   const point=(x:number,y:number,height=0)=>{const p=anchor(x,y);return new T.Vector3(p.x,height,p.y);};
   const logical=(p:{x:number;z:number})=>({x:p.x/(S*separation)+origin.x,y:p.z/(S*separation)+origin.y});
-  const terrainHeight=(p:{x:number;z:number})=>{const w=logical(p);let height=0;for(const s of relief){if(Math.hypot(w.x-s.x,w.y-s.y)>s.radius)continue;const step=s.radius/48,x=Math.floor((w.x-s.x+s.radius)/step)*step+s.x-s.radius,y=Math.floor((w.y-s.y+s.radius)/step)*step+s.y-s.radius;for(const dx of [0,step])for(const dy of [0,step])height=Math.max(height,reliefHeight(s,x+dx,y+dy));}return height;};
+  const terrainHeight=(p:{x:number;z:number})=>{const w=logical(p);return surface?sampleTerrainHeight(surface,w.x,w.y):0;};
   const scene=new T.Scene();scene.background=new T.Color('#183c48');
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(el.clientWidth,600);el.append(renderer.domElement);
   renderer.domElement.setAttribute('aria-label','3D pacing world: drag to orbit, right-drag to pan, scroll to zoom');
@@ -54,9 +60,10 @@ export function PacingWorld3D({study,objectives,physical}:Props){
   controls.addEventListener('change',guardGround);
   scene.add(new T.HemisphereLight('#e6eee7','#4b4935',2));const sun=new T.DirectionalLight('#ffe3b0',2.4);sun.position.set(300,900,100);scene.add(sun);
   const kit=createMiniatureKit(),ownedGeometry:T.BufferGeometry[]=[],ownedMaterials:T.Material[]=[];
-  const ruralScene=createPacingRuralScene(scene,kit,dressedRural,point,corridor);
-  const reliefScene=createPacingReliefScene(scene,relief,S*separation,point);
-  const corridorDetail=createCorridorDetail(scene,study.world,dressedRural,corridor,kit,point,logical);
+  const ruralScene=createPacingRuralScene(scene,kit,roadRural,point,null);
+  const roadScene=roads&&surface?createCountryRoadScene(scene,roads,surface,point):undefined;
+  const reliefScene=surface?createConnectedTerrainScene(scene,surface,point):undefined;
+  const corridorDetail=createCorridorDetail(scene,study.world,roadRural,corridor,kit,point,logical,roads,terrainHeight);
   const grain=refinedGrain();
   const mat=(color:string)=>{const m=new T.MeshStandardMaterial({color,roughness:1});refineSurface(m,grain);ownedMaterials.push(m);return m;};
   const terrain={plains:mat('#8c9566'),forest:mat('#526e4b'),highlands:mat('#8b8871'),mountains:mat('#777e79')};
@@ -74,7 +81,7 @@ export function PacingWorld3D({study,objectives,physical}:Props){
   }
   for(const river of study.world.geography?.rivers??[])line(river.map(p=>point(p[0],p[1],.15)),'#69b5cb');
   const batches=new Map<string,T.Matrix4[]>(),pose=new T.Object3D();
-  function model(name:string,x:number,z:number,scale=1,angle=0){pose.position.set(x,0,z);pose.rotation.set(0,angle,0);pose.scale.setScalar(scale);pose.updateMatrix();const list=batches.get(name)??[];list.push(pose.matrix.clone());batches.set(name,list);}
+  function model(name:string,x:number,z:number,scale=1,angle=0){pose.position.set(x,terrainHeight({x,z}),z);pose.rotation.set(0,angle,0);pose.scale.setScalar(scale);pose.updateMatrix();const list=batches.get(name)??[];list.push(pose.matrix.clone());batches.set(name,list);}
   const ground=mat('#b8ae85');
   function disk(x:number,z:number,radius:number,color?:string){const g=new T.CircleGeometry(radius,40);g.rotateX(-Math.PI/2);ownedGeometry.push(g);const m=color?mat('#'+new T.Color(color).lerp(new T.Color('#a39c79'),.75).getHexString()):ground;const mesh=new T.Mesh(g,m);mesh.position.set(x,.12,z);scene.add(mesh);}
   for(const c of locations){
@@ -108,8 +115,8 @@ export function PacingWorld3D({study,objectives,physical}:Props){
   camera.far=Math.max(20000,span*12/Math.min(1,camera.aspect));camera.updateProjectionMatrix();controls.maxDistance=camera.far/3;
   function focus(id:string){if(id==='unit-scale'){controls.target.copy(scalePoint).add(new T.Vector3(0,.7,0));camera.position.copy(controls.target).add(new T.Vector3(7,6,12));controls.update();return;}const target=locations.find(l=>l.id===id)??study.sites.find(s=>s.id===id)??rural.farms.find(s=>s.id===id)??rural.pois.find(s=>s.id===id);const p=target?point(target.x,target.y):center;const distance=target?('extent' in target?target.extent*3:'size' in target?SETTLEMENT_RADII[target.size]*S*4:90):span*.9/Math.min(1,camera.aspect);controls.target.copy(p);camera.position.copy(p).add(new T.Vector3(.6,.8,.8).normalize().multiplyScalar(distance));controls.update();}
   const ordinaryFocus=focus;
-  function roadside(){if(!corridor)return;const segments=corridor.path.slice(1).map((b,i)=>({a:corridor.path[i],b})).sort((a,b)=>Math.hypot(b.a.x-b.b.x,b.a.y-b.b.y)-Math.hypot(a.a.x-a.b.x,a.a.y-a.b.y));const s=segments[0];controls.target.copy(point((s.a.x+s.b.x)/2,(s.a.y+s.b.y)/2,.5));camera.position.copy(controls.target).add(new T.Vector3(18,12,25));controls.update();}
-  function visit(id:string){const mountain=relief.find(s=>s.mountain),hill=relief.find(s=>!s.mountain);if(id==='tunnel-study'&&reliefScene.tunnel){controls.target.copy(reliefScene.tunnel).add(new T.Vector3(-45,4,0));camera.position.copy(controls.target).add(new T.Vector3(-45,12,28));controls.update();return;}const s=id==='mountain-study'?mountain:id==='hill-study'?hill:undefined;if(s){controls.target.copy(point(s.x,s.y));camera.position.copy(controls.target).add(new T.Vector3(.5,.65,1).normalize().multiplyScalar(s.radius*S*separation*2.8));controls.update();return;}if(id==='review-corridor'&&corridor){const box=new T.Box3().setFromPoints(corridor.path.map(p=>point(p.x,p.y))),p=box.getCenter(new T.Vector3());controls.target.copy(p);camera.position.copy(p).add(new T.Vector3(.25,1,.6).normalize().multiplyScalar(Math.max(100,box.getSize(new T.Vector3()).length()*1.25)));controls.update();}else ordinaryFocus(id);}
+  function roadside(){const road=roads?.roads.find(r=>r.id.startsWith('entrance-'));if(!road)return;const p=road.path[0];controls.target.copy(point(p.x,p.y,surface?sampleTerrainHeight(surface,p.x,p.y)+.5:.5));camera.position.copy(controls.target).add(new T.Vector3(18,12,25));controls.update();}
+  function visit(id:string){if(id==='road-bridge'&&roads?.bridges[0]){const b=roads.bridges[0];controls.target.copy(point(b.x,b.y,surface?sampleTerrainHeight(surface,b.x,b.y):0));camera.position.copy(controls.target).add(new T.Vector3(30,24,30));controls.update();return;}const mountain=relief.find(s=>s.mountain),hill=relief.find(s=>!s.mountain);const s=relief.find(s=>s.id===id)??(id==='mountain-study'?mountain:id==='hill-study'?hill:undefined);if(s){controls.target.copy(point(s.x,s.y,s.height*.25));camera.position.copy(controls.target).add(new T.Vector3(.5,.65,1).normalize().multiplyScalar(s.radius*S*separation*2.4/Math.min(1,camera.aspect)));controls.update();return;}if(id==='review-corridor'&&corridor){const box=new T.Box3().setFromPoints(corridor.path.map(p=>point(p.x,p.y))),p=box.getCenter(new T.Vector3());controls.target.copy(p);camera.position.copy(p).add(new T.Vector3(.25,1,.6).normalize().multiplyScalar(Math.max(100,box.getSize(new T.Vector3()).length()*1.25)));controls.update();}else ordinaryFocus(id);}
   // HTML markers retain a fixed screen footprint; local world meshes stay true scale.
   const overlay=document.createElement('div');overlay.className='pacing-label-layer';el.append(overlay);
   const markers:{button:HTMLButtonElement;label:HTMLSpanElement;position:T.Vector3;range:number}[]=[];
@@ -140,22 +147,26 @@ export function PacingWorld3D({study,objectives,physical}:Props){
   const zoom=(factor:number)=>{const offset=camera.position.clone().sub(controls.target);offset.setLength(T.MathUtils.clamp(offset.length()*factor,controls.minDistance,controls.maxDistance));camera.position.copy(controls.target).add(offset);controls.update();};
   api.current={focus:visit,zoom,roadside};focus('overview');setFocused('overview');let raf=0;
   const observer=new ResizeObserver(()=>{camera.aspect=el.clientWidth/600;camera.updateProjectionMatrix();renderer.setSize(el.clientWidth,600);});observer.observe(el);
-  const render=()=>{controls.zoomSpeed=camera.position.distanceTo(controls.target)>1000?5:1.5;controls.update();guardGround();camera.updateMatrixWorld();updateMarkers();ruralScene.update(camera,controls.target,performance.now());corridorDetail.update(camera,controls.target,performance.now());renderer.render(scene,camera);raf=requestAnimationFrame(render);};render();
-  return ()=>{api.current=undefined;cancelAnimationFrame(raf);observer.disconnect();overlay.remove();controls.dispose();tank.dispose();corridorDetail.dispose();reliefScene.dispose();grain.dispose();ruralScene.dispose();scene.traverse(o=>{if(o instanceof T.InstancedMesh)o.dispose();});ownedGeometry.forEach(g=>g.dispose());ownedMaterials.forEach(m=>m.dispose());kit.dispose();renderer.dispose();renderer.domElement.remove();};
+  const render=()=>{controls.zoomSpeed=camera.position.distanceTo(controls.target)>1000?5:1.5;controls.update();guardGround();const near=Math.max(.15,camera.position.distanceTo(controls.target)/1200);if(Math.abs(camera.near-near)>.01){camera.near=near;camera.updateProjectionMatrix();}camera.updateMatrixWorld();updateMarkers();ruralScene.update(camera,controls.target,performance.now());corridorDetail.update(camera,controls.target,performance.now());roadScene?.update(camera,controls.target);renderer.render(scene,camera);raf=requestAnimationFrame(render);};render();
+  return ()=>{api.current=undefined;cancelAnimationFrame(raf);observer.disconnect();overlay.remove();controls.dispose();tank.dispose();corridorDetail.dispose();reliefScene?.dispose();roadScene?.dispose();grain.dispose();ruralScene.dispose();scene.traverse(o=>{if(o instanceof T.InstancedMesh)o.dispose();});ownedGeometry.forEach(g=>g.dispose());ownedMaterials.forEach(m=>m.dispose());kit.dispose();renderer.dispose();renderer.domElement.remove();};
  },[study,objectives,physical]);
  return <section><h2>3D world placement review</h2>
  <p>{physical?'Physical country scale: expanded countryside, unchanged local models.':'Compact comparison: countryside detail is available in Physical country scale.'} Representative cities; full tactical cities are not connected.</p>
- {physical&&<p>{relief.filter(s=>s.mountain).length} mountain ranges with open pass studies · {relief.filter(s=>!s.mountain).length} hill groups. Mountains use terrain meshes. Pass roads and the hollow cut-and-cover tunnel are visual engineering studies, not new campaign routes. Nearby corridor detail adds shared ground grain, grass, shrubs, pebbles and trees in at most nine local chunks.</p>}
- {physical&&<p>{rural.farms.length} farmland districts · {dressedRural.farms.reduce((n,f)=>n+f.fields.length,0)} crop parcels · {rural.pois.length} compact country POIs. Scenery only: no extra income or ownership. At most six nearby POIs load detailed assets. Only the review corridor is connected; other local lanes remain isolated.</p>}
- {physical&&<p>{corridor?`Review corridor: ${corridor.name}. ${corridor.width}-unit road width · ${(corridor.modelLength/CITY_RUN_SPEED/3600).toFixed(2)} hours walking at the unchanged soldier reference speed. Sampled land clearance, no river bridges. Fields intersecting the road are omitted. Not an authoritative travel order.`:'No safe review corridor found for this seed; no road was forced across unsuitable terrain.'}</p>}
+ {physical&&<p>{relief.filter(s=>s.mountain).length} connected mountain ranges · {relief.filter(s=>!s.mountain).length} upland areas. Continuous ridges, foothills and river valleys follow the land. Select a range below to inspect it. Ground detail appears near roads.</p>}
+ {physical&&<p>{rural.farms.length} farmland districts · {roadRural.farms.reduce((n,f)=>n+f.fields.length,0)} crop parcels · {rural.pois.length} compact country POIs. Scenery only: no extra income or ownership. At most six nearby POIs load detailed assets. Generated roads join local entrances to the country network.</p>}
+ {roads&&<p>{roads.connectedSites}/{destinations.length} locations connected · {roads.components} land networks · {roads.bridges.length} river bridges. Highways 6 model units wide; local roads 3. Visual routes only; campaign travel rules are unchanged.</p>}
+ {roads&&roads.unreachable.length>0&&<details><summary>{roads.unreachable.length} locations without a safe road</summary>{roads.unreachable.map(s=><p key={s.id}>{s.name}: {s.reason}</p>)}</details>}
  <p>Click markers to visit. ◆ Settlement · F Fuel · I Industry · A Agriculture · ▧ Farmlands · ⌂ Base/country POI. Minor POI markers appear at regional zoom; every site is available in Focus. Hover crowded markers for names.</p>
  <div className="pacing-map-tools"><button onClick={()=>{api.current?.focus('overview');setFocused('overview');}}>Fit country</button><button onClick={()=>api.current?.zoom(.25)}>Zoom in 4×</button><button onClick={()=>api.current?.zoom(4)}>Zoom out 4×</button>
+ <label><input type="checkbox" checked={showLocations} onChange={e=>setShowLocations(e.target.checked)}/>Show locations</label>
  {rural.farms[0]&&<button onClick={()=>{api.current?.focus(rural.farms[0].id);setFocused(rural.farms[0].id);}}>Visit farmlands</button>}
  {rural.pois[0]&&<button onClick={()=>{api.current?.focus(rural.pois[0].id);setFocused(rural.pois[0].id);}}>Visit country POI</button>}
- {relief.some(s=>s.mountain)&&<><button onClick={()=>api.current?.focus('mountain-study')}>Mountain &amp; pass</button><button onClick={()=>api.current?.focus('tunnel-study')}>Tunnel study</button></>}
+ {relief.some(s=>s.mountain)&&<button onClick={()=>api.current?.focus('mountain-study')}>Mountain ranges</button>}
+ {relief.length>0&&<label>Terrain <select defaultValue="" onChange={e=>api.current?.focus(e.target.value)}><option value="" disabled>Visit a range or upland</option>{relief.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>}
  {relief.some(s=>!s.mountain)&&<button onClick={()=>api.current?.focus('hill-study')}>Visit hills</button>}
- {corridor&&<button onClick={()=>api.current?.roadside()}>Refined roadside</button>}
+ {roads&&<button onClick={()=>api.current?.roadside()}>Refined roadside</button>}
+ {roads&&roads.bridges.length>0&&<button onClick={()=>api.current?.focus('road-bridge')}>Visit river bridge</button>}
  {corridor&&<><button onClick={()=>{api.current?.focus(corridor.id);setFocused(corridor.id);}}>Review corridor</button><button onClick={()=>{api.current?.focus(corridor.cityId);setFocused(corridor.cityId);}}>Corridor city</button><button onClick={()=>{api.current?.focus(corridor.farmsteadId);setFocused(corridor.farmsteadId);}}>Corridor farm</button><button onClick={()=>{api.current?.focus(corridor.outpostId);setFocused(corridor.outpostId);}}>Corridor outpost</button></>}
  <label>Focus <select value={focused} onChange={e=>{setFocused(e.target.value);api.current?.focus(e.target.value);}}><option value="overview">Whole map</option><option value="unit-scale">Soldier + tank scale review</option>{corridor&&<option value="review-corridor">Review corridor</option>}{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}{study.sites.map(s=><option key={s.id} value={s.id}>Player {s.player+1} base {s.id}</option>)}<optgroup label="Farmland districts">{rural.farms.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}</optgroup><optgroup label="Compact countryside POIs">{rural.pois.map(p=><option key={p.id} value={p.id}>{p.name} [{p.id}]</option>)}</optgroup></select></label></div>
- <p>Soldier and tank are static scale references. Drag to orbit; right-drag to pan. Wheel zoom is faster at country scale and gentler near the ground.</p>{error&&<p role="alert">{error}</p>}<div ref={host} style={{position:'relative',height:600,width:'100%',border:'1px solid #728d7a',marginTop:12}}/></section>;
+ <p>Soldier and tank are static scale references. Drag to orbit; right-drag to pan. Wheel zoom is faster at country scale and gentler near the ground.</p>{error&&<p role="alert">{error}</p>}<div ref={host} className={showLocations?'':'pacing-hide-locations'} style={{position:'relative',height:600,width:'100%',border:'1px solid #728d7a',marginTop:12}}/></section>;
 }

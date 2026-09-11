@@ -41,12 +41,13 @@ export function createCityBattleAudio(
   root: T.Group,
   getCamera: () => T.Camera,
   canvas: HTMLCanvasElement,
+  overlayRoot: HTMLElement = canvas.parentElement!,
 ) {
   const panel = document.createElement("div");
   panel.className = "city-audio";
   panel.innerHTML =
     '<button class="audio-toggle" aria-pressed="false">Sound off</button><div class="audio-controls" hidden><label>Volume <input aria-label="Battle volume" type="range" min="0" max="100" value="35"></label><button class="audio-test">Test SFX</button><span class="audio-status" role="status"></span></div>';
-  canvas.parentElement!.append(panel);
+  overlayRoot.append(panel);
   const toggle = panel.querySelector<HTMLButtonElement>(".audio-toggle")!,
     controls = panel.querySelector<HTMLElement>(".audio-controls")!,
     volume = panel.querySelector<HTMLInputElement>("input")!,
@@ -191,9 +192,7 @@ export function createCityBattleAudio(
         (kind === "engine" || kind === "tracks" ? 0 : variation.variant),
     )!;
     source.loop = !!loopKey;
-    source.playbackRate.value = loopKey
-      ? 1
-      : variation.rate;
+    source.playbackRate.value = loopKey ? 1 : variation.rate;
     filter.type = "lowpass";
     filter.Q.value = 0.45;
     filter.frequency.value = m.cutoff;
@@ -238,7 +237,11 @@ export function createCityBattleAudio(
         reverbInput = context.createGain();
         reverbInput.gain.value = 0.18;
         const reflection = synthesizeCityImpulse(context.sampleRate);
-        impulse = context.createBuffer(1, reflection.length, context.sampleRate);
+        impulse = context.createBuffer(
+          1,
+          reflection.length,
+          context.sampleRate,
+        );
         impulse.copyToChannel(new Float32Array(reflection), 0);
         resetReverb();
       }

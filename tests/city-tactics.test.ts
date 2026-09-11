@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { segmentDistance } from "../packages/game-core/src/organicCity";
 import {
   createCityTactics,
   obstacleDistance,
@@ -17,6 +18,35 @@ test("city tactical geometry blocks buildings and water, preserves gates and bri
       "worldgen",
     );
     assert.ok(data.obstacles.length > 600);
+    const openGround = [];
+    for (let x = -140; x <= 140 && !openGround.length; x += 5)
+      for (let z = -140; z <= 140; z += 5) {
+        const p = { x, z };
+        if (
+          data.walkable(p, "vehicle") &&
+          Math.hypot(x, z) > 40 &&
+          data.streets.every((s) =>
+            s.points
+              .slice(1)
+              .every(
+                (b, i) => segmentDistance(p, s.points[i], b) > s.width / 2 + 2,
+              ),
+          )
+        ) {
+          openGround.push(p);
+          break;
+        }
+      }
+    assert.ok(
+      openGround.length,
+      "tanks can occupy clear ground outside streets and the plaza",
+    );
+    const destination = openGround[0],
+      nearby = { x: destination.x + 0.1, z: destination.z };
+    assert.ok(
+      data.route(nearby, destination, "vehicle").length,
+      "off-road destinations accept tank routes",
+    );
     for (const o of data.obstacles.filter((o) => o.kind !== "garden"))
       assert.equal(data.walkable(o), false, o.id);
     assert.equal(
@@ -72,8 +102,13 @@ test("city tactical geometry blocks buildings and water, preserves gates and bri
     assert.ok(gate.length > 0);
     const tankGate = data.route({ x: 0, z: 20 }, { x: 0, z: 10 }, "vehicle");
     assert.ok(tankGate.length > 0, "tank can drive through the plaza gate");
-    for (let i=1;i<tankGate.length;i++) assert.ok(data.segmentClear(tankGate[i-1],tankGate[i],"vehicle"));
-    assert.equal(data.segmentClear({x:20,z:-8},{x:23,z:-8},"vehicle"),false,"plaza access does not permit driving through walls");
+    for (let i = 1; i < tankGate.length; i++)
+      assert.ok(data.segmentClear(tankGate[i - 1], tankGate[i], "vehicle"));
+    assert.equal(
+      data.segmentClear({ x: 20, z: -8 }, { x: 23, z: -8 }, "vehicle"),
+      false,
+      "plaza access does not permit driving through walls",
+    );
     const start = combinedPosition({ x: 80, z: -106 }, seed, "worldgen"),
       end = combinedPosition({ x: 80, z: -82 }, seed, "worldgen");
     const bridge = data.route(start, end, "vehicle");

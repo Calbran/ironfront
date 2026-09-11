@@ -1,3 +1,5 @@
+import { cityBuildingFootprint } from "../../../../packages/game-core/src/cityBuildingKit";
+import { createStreetTexture } from "./streetTexture";
 import { countryFieldGeometry } from "./countryFieldGeometry";
 import * as T from "three";
 import type { MiniatureKit } from "./referenceAssets";
@@ -53,6 +55,21 @@ export function countryPOIAssets(
   };
   if (ground)
     box(0, -0.13, 0, plan.extent * 2, 0.2, plan.extent * 2, mat(0x777956));
+  const streetTexture = createStreetTexture();
+  const developed = mat(0x979180);
+  for (const building of plan.buildings) {
+    const bounds = cityBuildingFootprint(building.variant);
+    box(
+      building.x,
+      0.035,
+      building.z,
+      bounds.width + 1.6,
+      0.05,
+      bounds.depth + 2.2,
+      developed,
+      building.angle,
+    );
+  }
   const roadLayer = (
     roads: NonNullable<CountryPOI["paths"]>,
     color: number,
@@ -62,6 +79,13 @@ export function countryPOIAssets(
     const material = mat(color),
       mesh = new T.InstancedMesh(boxGeometry, material, roads.length),
       o = new T.Object3D();
+    material.polygonOffset = true;
+    material.polygonOffsetFactor = -2;
+    material.polygonOffsetUnits = -4;
+    if (roads === plan.roads) {
+      material.map = streetTexture;
+      material.color.set(0xc4c6bd);
+    }
     roads.forEach((r, i) => {
       o.position.set(r.x, y, r.z);
       o.rotation.y = r.angle ?? 0;
@@ -206,6 +230,7 @@ export function countryPOIAssets(
       ownedGeometry.forEach((g) => g.dispose());
       ownedMaterial.forEach((m) => m.dispose());
       grain.dispose();
+      streetTexture.dispose();
     },
   };
 }

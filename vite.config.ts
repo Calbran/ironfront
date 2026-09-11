@@ -14,6 +14,7 @@ export default defineConfig({
       input: {
         main: "apps/web/index.html",
         country: "apps/web/country-poi.html",
+        slice: "apps/web/country-slice.html",
         pacing: "apps/web/pacing-preview.html",
         legacy: "apps/web/legacy.html",
         jeep: "apps/web/jeep-preview.html",

@@ -1,3 +1,4 @@
+import { smoothVehiclePath } from "./vehiclePath";
 import { cityBuildingFootprint } from "./cityBuildingKit";
 import { CITY_PROP_SCALE } from "./cityPropScale";
 import {
@@ -214,31 +215,6 @@ export function createCityTactics(
         Math.max(s.points[0].z, s.points.at(-1)!.z) > -94,
     )
     .map((s) => ({ x: s.points[0].x, width: s.width }));
-  const streetBuckets = new Map<
-    string,
-    { a: CityPoint; b: CityPoint; width: number }[]
-  >();
-  for (const s of streets)
-    for (let i = 1; i < s.points.length; i++) {
-      const a = s.points[i - 1],
-        b = s.points[i],
-        r = s.width / 2;
-      for (
-        let x = Math.floor((Math.min(a.x, b.x) - r) / 16);
-        x <= Math.floor((Math.max(a.x, b.x) + r) / 16);
-        x++
-      )
-        for (
-          let z = Math.floor((Math.min(a.z, b.z) - r) / 16);
-          z <= Math.floor((Math.max(a.z, b.z) + r) / 16);
-          z++
-        ) {
-          const key = `${x},${z}`,
-            list = streetBuckets.get(key) ?? [];
-          list.push({ a, b, width: s.width });
-          streetBuckets.set(key, list);
-        }
-    }
   const canonical = (p: CityPoint) => canonicalZ(p, seed, profile);
   const height = (p: CityPoint) =>
     combinedHeight(p.x, canonical(p), profile, true);
@@ -265,23 +241,12 @@ export function createCityTactics(
     const z = canonical(p);
     // The narrow canal has built quays; crossing is allowed only on the actual bridge deck.
     if (
+      profile !== "inland" &&
       Math.abs(z + 94) < 2.7 + r &&
       !bridgeXs.some((b) => Math.abs(p.x - b.x) < b.width / 2 - r)
     )
       return false;
-    if (
-      mover === "vehicle" &&
-      !(
-        Math.abs(p.x - CITY_PLAZA_SURFACE.x) <=
-          CITY_PLAZA_SURFACE.width / 2 - r &&
-        Math.abs(z - CITY_PLAZA_SURFACE.z) <= CITY_PLAZA_SURFACE.depth / 2 - r
-      ) &&
-      !(
-        streetBuckets.get(`${Math.floor(p.x / 16)},${Math.floor(p.z / 16)}`) ??
-        []
-      ).some((s) => segmentDistance(p, s.a, s.b) <= s.width / 2 - r)
-    )
-      return false;
+    // Open ground is traversable; obstacles, water and slope checks still apply.
     return true;
   }
   function segmentClear(
@@ -323,76 +288,8 @@ export function createCityTactics(
         if (walkable(position))
           cover.push({ position, normal, obstacleId: o.id });
       }
-  function coverAt(
-    p: CityPoint,
-    threat?: CityPoint,
-    dynamic: CityObstacle[] = [],
-  ) {
-    const candidates = [
-      ...(buckets.get(`${Math.floor(p.x / 16)},${Math.floor(p.z / 16)}`) ?? []),
-      ...dynamic,
-    ].filter(
-      (o) =>
-        o.kind !== "garden" &&
-        obstacleDistance(p, o) > 0.01 &&
-        obstacleDistance(p, o) <= 1.1,
-    );
-    for (const o of candidates.sort(
-      (a, b) =>
-        Number(b.kind === "building" || b.coverLevel === "full") -
-          Number(a.kind === "building" || a.coverLevel === "full") ||
-        obstacleDistance(p, a) - obstacleDistance(p, b),
-    )) {
-      const c = Math.cos(o.angle),
-        s = Math.sin(o.angle),
-        dx = p.x - o.x,
-        dz = p.z - o.z;
-      const lx = dx * c - dz * s,
-        lz = dx * s + dz * c;
-      const nx = lx - Math.max(-o.width / 2, Math.min(o.width / 2, lx)),
-        nz = lz - Math.max(-o.depth / 2, Math.min(o.depth / 2, lz)),
-        length = Math.hypot(nx, nz) || 1;
-      const normal = {
-        x: (nx * c + nz * s) / length,
-        z: (-nx * s + nz * c) / length,
-      };
-      if (threat) {
-        const tx = (threat.x - o.x) * c - (threat.z - o.z) * s,
-          tz = (threat.x - o.x) * s + (threat.z - o.z) * c;
-        let lo = 0,
-          hi = 1;
-        for (const [start, delta, half] of [
-          [lx, tx - lx, o.width / 2],
-          [lz, tz - lz, o.depth / 2],
-        ]) {
-          if (Math.abs(delta) < 1e-9) {
-            if (Math.abs(start) > half) {
-              lo = 2;
-              break;
-            }
-          } else {
-            const a = (-half - start) / delta,
-              b = (half - start) / delta;
-            lo = Math.max(lo, Math.min(a, b));
-            hi = Math.min(hi, Math.max(a, b));
-          }
-        }
-        if (lo > hi || hi <= 0 || lo >= 1) continue;
-      }
-      return {
-        level: (o.coverLevel ??
-          (o.kind === "building" ? "full" : "partial")) as CityCoverLevel,
-        obstacleId: o.id,
-        normal,
-        damageScale: o.kind === "building" || o.coverLevel === "full" ? 0 : 0.5,
-      };
-    }
-    return {
-      level: "none" as CityCoverLevel,
-      obstacleId: undefined as string | undefined,
-      normal: { x: 0, z: 1 },
-      damageScale: 1,
-    };
+  function coverAt(p: CityPoint, threat?: CityPoint, dynamic: CityObstacle[] = []) {
+    return coverAtObstacles(p, threat, [...(buckets.get(`${Math.floor(p.x / 16)},${Math.floor(p.z / 16)}`) ?? []), ...dynamic]);
   }
   const inControlArea = (p: CityPoint) =>
     Math.abs(p.x) <= 24 && p.z >= -18 && p.z <= 19 && walkable(p);
@@ -496,7 +393,10 @@ export function createCityTactics(
     const result = [end];
     for (let i = to; i !== from; i = prev[i]) result.push(point(i));
     result.push(a, start);
-    return result.reverse();
+    const path = result.reverse();
+    return mover === "vehicle"
+      ? smoothVehiclePath(path, (a, b) => segmentClear(a, b, mover))
+      : path;
   }
   return {
     obstacles,
@@ -513,6 +413,7 @@ export function createCityTactics(
     surfaceHeight(p: CityPoint) {
       const z = canonical(p) + 94;
       const bridge =
+        profile !== "inland" &&
         Math.abs(z) <= 4.5 &&
         bridgeXs.some((b) => Math.abs(p.x - b.x) <= b.width / 2);
       const lawn = obstacles.some(
@@ -525,3 +426,63 @@ export function createCityTactics(
     },
   };
 }
+
+export function coverAtObstacles(p: CityPoint, threat: CityPoint | undefined, obstacles: CityObstacle[]) {
+    const candidates = obstacles.filter(o => o.kind !== "garden" && obstacleDistance(p,o) > .01 && obstacleDistance(p,o) <= 1.1);
+    for (const o of candidates.sort(
+      (a, b) =>
+        Number(b.kind === "building" || b.coverLevel === "full") -
+          Number(a.kind === "building" || a.coverLevel === "full") ||
+        obstacleDistance(p, a) - obstacleDistance(p, b),
+    )) {
+      const c = Math.cos(o.angle),
+        s = Math.sin(o.angle),
+        dx = p.x - o.x,
+        dz = p.z - o.z;
+      const lx = dx * c - dz * s,
+        lz = dx * s + dz * c;
+      const nx = lx - Math.max(-o.width / 2, Math.min(o.width / 2, lx)),
+        nz = lz - Math.max(-o.depth / 2, Math.min(o.depth / 2, lz)),
+        length = Math.hypot(nx, nz) || 1;
+      const normal = {
+        x: (nx * c + nz * s) / length,
+        z: (-nx * s + nz * c) / length,
+      };
+      if (threat) {
+        const tx = (threat.x - o.x) * c - (threat.z - o.z) * s,
+          tz = (threat.x - o.x) * s + (threat.z - o.z) * c;
+        let lo = 0,
+          hi = 1;
+        for (const [start, delta, half] of [
+          [lx, tx - lx, o.width / 2],
+          [lz, tz - lz, o.depth / 2],
+        ]) {
+          if (Math.abs(delta) < 1e-9) {
+            if (Math.abs(start) > half) {
+              lo = 2;
+              break;
+            }
+          } else {
+            const a = (-half - start) / delta,
+              b = (half - start) / delta;
+            lo = Math.max(lo, Math.min(a, b));
+            hi = Math.min(hi, Math.max(a, b));
+          }
+        }
+        if (lo > hi || hi <= 0 || lo >= 1) continue;
+      }
+      return {
+        level: (o.coverLevel ??
+          (o.kind === "building" ? "full" : "partial")) as CityCoverLevel,
+        obstacleId: o.id,
+        normal,
+        damageScale: o.kind === "building" || o.coverLevel === "full" ? 0 : 0.5,
+      };
+    }
+    return {
+      level: "none" as CityCoverLevel,
+      obstacleId: undefined as string | undefined,
+      normal: { x: 0, z: 1 },
+      damageScale: 1,
+    };
+  }

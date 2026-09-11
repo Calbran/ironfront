@@ -1,6 +1,6 @@
 # Ironfront
 
-Ironfront is moving to the full 3D city and commanded tactical battle direction. The default page opens the full city with a staged, paused skirmish. 
+Ironfront is moving to the full 3D city and commanded tactical battle direction. The default page opens the full city with a staged, paused skirmish.
 
 ## Start here
 
@@ -33,6 +33,8 @@ Production serves the built browser application and API together at http://local
 This is an early persistent multiplayer proof, not the complete game. Authentication uses private bearer session keys, not recoverable accounts. Treat invite codes as playtest invitations and save your session key before changing devices.
 
 ## Miniature city and Three.js development
+
+`/country-slice.html` opens the persisted playable Meridian sector. It shares the city battle controls: left-drag selects, right-click moves, right-drag chooses destination facing, middle-drag orbits, WASD pans and Q/E rotates; Shift adds selections or queues orders. Use Run to start. It includes city/hamlet/outpost geometry, a river bridge and ground/air routing; combat and ownership are not connected yet.
 
 The full-city Three.js view is now the default entry. The previous Pixi campaign remains at `/legacy.html`. The repository also includes these development studies:
 

@@ -2,15 +2,23 @@ import * as T from "three";
 import { rotateCityOrbit } from "./cityOrbitPivot";
 import type { OrbitControls } from "three/addons/controls/OrbitControls.js";
 /** Orbit the terrain under the cursor, never building geometry. */
-export function anchoredCityOrbit(
+export function tacticalViewportGestures(
   canvas: HTMLCanvasElement,
   getCamera: () => T.Camera,
   controls: OrbitControls,
-  root: () => T.Group,
+  root: () => T.Object3D,
   height: (p: { x: number; z: number }) => number,
   selected: () => boolean,
-  order: (p: { x: number; z: number }, facing?: number) => void,
-  preview: (p: { x: number; z: number }, facing?: number) => void,
+  order: (
+    p: { x: number; z: number },
+    facing?: number,
+    append?: boolean,
+  ) => void,
+  preview: (
+    p: { x: number; z: number },
+    facing?: number,
+    append?: boolean,
+  ) => void,
   clearPreview: () => void,
 ) {
   const arrow = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -40,6 +48,7 @@ export function anchoredCityOrbit(
         dragged: boolean;
         pointer: number;
         command: boolean;
+        append: boolean;
         mode: "pan" | "orbit";
       }
     | undefined;
@@ -97,11 +106,12 @@ export function anchoredCityOrbit(
       dragged: false,
       pointer: e.pointerId,
       command,
+      append: e.shiftKey,
       mode: e.altKey ? "pan" : "orbit",
     };
     if (drag.command) {
       const p = root().worldToLocal(anchor.clone());
-      preview({ x: p.x, z: p.z });
+      preview({ x: p.x, z: p.z }, undefined, drag.append);
     }
     if (!command) lastAnchor = anchor.clone();
     canvas.setPointerCapture(e.pointerId);
@@ -117,7 +127,11 @@ export function anchoredCityOrbit(
         b = ground(e);
       if (b) {
         root().worldToLocal(b);
-        preview({ x: a.x, z: a.z }, Math.atan2(b.x - a.x, b.z - a.z));
+        preview(
+          { x: a.x, z: a.z },
+          Math.atan2(b.x - a.x, b.z - a.z),
+          drag.append,
+        );
       }
       const dx = e.clientX - drag.x,
         dy = e.clientY - drag.y,
@@ -172,6 +186,7 @@ export function anchoredCityOrbit(
     if (!drag) return;
     e.stopImmediatePropagation();
     const command = drag.command,
+      append = drag.append,
       dragged = drag.dragged;
     const start = root().worldToLocal(drag.anchor.clone()),
       finish = dragged ? ground(e) : undefined;
@@ -181,18 +196,32 @@ export function anchoredCityOrbit(
         ? Math.atan2(end.x - start.x, end.z - start.z)
         : undefined;
     cancel();
-    if (command) order({ x: start.x, z: start.z }, facing);
+    if (command) order({ x: start.x, z: start.z }, facing, append);
   };
   const context = (e: Event) => e.preventDefault();
   const wheel = (e: WheelEvent) => {
     const camera = getCamera();
-    if (!(camera instanceof T.OrthographicCamera)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     const anchor = ground(e);
     const delta =
       e.deltaY *
       (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? canvas.clientHeight : 1);
+    if (camera instanceof T.PerspectiveCamera) {
+      const distance = camera.position.distanceTo(controls.target),
+        next = T.MathUtils.clamp(
+          distance * Math.exp(-T.MathUtils.clamp(delta, -300, 300) * 0.002),
+          controls.minDistance,
+          controls.maxDistance,
+        ),
+        ratio = next / Math.max(distance, 1e-6),
+        pivot = anchor ?? floorFocus();
+      camera.position.sub(pivot).multiplyScalar(ratio).add(pivot);
+      controls.target.sub(pivot).multiplyScalar(ratio).add(pivot);
+      controls.update();
+      return;
+    }
+    if (!(camera instanceof T.OrthographicCamera)) return;
     camera.zoom = T.MathUtils.clamp(
       camera.zoom * Math.exp(T.MathUtils.clamp(delta, -300, 300) * 0.002),
       controls.minZoom,
@@ -250,3 +279,6 @@ export function anchoredCityOrbit(
     },
   };
 }
+
+// Kept for the focused camera regression harness and older preview imports.
+export const anchoredCityOrbit = tacticalViewportGestures;

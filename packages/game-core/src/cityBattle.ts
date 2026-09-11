@@ -1,3 +1,5 @@
+import {coverReactionPosition} from "./cityCoverReaction";
+import {CITY_INFANTRY_FIRE_RANGE,CITY_VEHICLE_FIRE_RANGE} from "./cityCombatRules";
 import {createCityHearing} from './cityHearing';
 import {validateCityBuild} from "./cityBuildPlacement";
 import {obstacleDistance} from "./cityTactics";
@@ -304,15 +306,13 @@ export function createCityBattle(
         const d=squads.get(threat.id)!,exposure=sight.exposure(s,d),hurt=u.health<memory.health-.01,changed=memory.target!==d.id;
         memory.health=u.health;memory.target=d.id;
         if(!hurt&&!changed&&!(u.stance==='attack'&&exposure===0))continue;
-        const current=trial.coverAt(u,threat).damageScale;
-        const candidates=coverSlots(u,tactics.obstacles,4).filter(p=>Math.hypot(p.x-memory!.anchor.x,p.z-memory!.anchor.z)<=4&&tactics.walkable(p)&&!alive.some(v=>v.id!==u.id&&Math.hypot((v.path.at(-1)??v).x-p.x,(v.path.at(-1)??v).z-p.z)<1));
-        const quality=(p:{x:number;z:number})=>trial.coverAt(p,threat).damageScale;
-        const useful=candidates.filter(p=>quality(p)<current || (u.stance==='attack'&&exposure===0&&sight.exposure({...s,x:p.x,y:p.z},d)>0));
-        useful.sort((a,b)=>(quality(a)*3+Math.hypot(a.x-u.x,a.z-u.z)*.15)-(quality(b)*3+Math.hypot(b.x-u.x,b.z-u.z)*.15));
-        for(const p of useful.slice(0,3)){
-          if(!tactics.segmentClear(u,p,'infantry'))continue;const route=[{x:u.x,z:u.z},p];
-          u.path=route.slice(1);u.guide=route;u.moving=true;u.facing=Math.atan2(threat.x-p.x,threat.z-p.z);break;
-        }
+        const position=coverReactionPosition(u,memory.anchor,tactics.obstacles,
+          alive.filter(v=>v.id!==u.id).map(v=>v.path.at(-1)??v),
+          p=>trial.coverAt(p,threat).damageScale,p=>tactics.walkable(p),
+          (a,b)=>tactics.segmentClear(a,b,'infantry'),
+          u.stance==='attack'&&exposure===0?p=>sight.exposure({...s,x:p.x,y:p.z},d)>0:undefined);
+        if(position){u.path=[position];u.guide=[{x:u.x,z:u.z},position];u.moving=true;u.facing=Math.atan2(threat.x-position.x,threat.z-position.z);}
+
       }
       trial.selectMany(previousSelection);
       const index = new FireIndex(
@@ -340,7 +340,7 @@ export function createCityBattle(
       }
       for (const u of alive) {
         const s = squads.get(u.id)!,
-          range = u.kind === "vehicle" ? 38 : 26;
+          range = u.kind === "vehicle" ? CITY_VEHICLE_FIRE_RANGE : CITY_INFANTRY_FIRE_RANGE;
         const d = index.target(s, range, (a, b) => sight.exposure(a, b));
         u.firing=!!d;
         if (!d) {u.aimAngle=undefined;continue;}

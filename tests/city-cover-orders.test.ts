@@ -13,8 +13,8 @@ test('click and drag previews fit all six infantry behind an L-shaped wall',()=>
   for(const slot of slots){assert(slot.valid);assert(slot.x<4.5&&slot.z>.5);assert.equal(slot.cover,'partial');for(const other of slots)if(other.id!==slot.id)assert(Math.hypot(slot.x-other.x,slot.z-other.z)>=.9);}
  }
 });
-test('open-ground orders retain their straightforward formation',()=>{
- const slots=fixture().previewOrder({x:0,z:15});assert(slots.every(p=>p.valid&&p.z===15));
+test('open-ground orders use a loose formation with depth',()=>{
+ const slots=fixture().previewOrder({x:0,z:15});assert(slots.every(p=>p.valid));assert(Math.max(...slots.map(p=>p.z))-Math.min(...slots.map(p=>p.z))>1);
 });
 
 import {createCityBattle} from '../packages/game-core/src/cityBattle';
@@ -30,5 +30,6 @@ test('nearby cover reactions are bounded and Hold position prevents relocation',
  const slots=trial.previewOrder({x:0,z:3});
  assert(slots.every(p=>p.valid&&p.z<1.4));
  const outside=trial.previewOrder({x:0,z:4});
- assert(outside.every(p=>p.valid&&p.z===4&&p.cover==='none'));
+ assert(outside.every(p=>p.valid&&p.cover==='none'));
+ assert(Math.abs(outside.reduce((sum,p)=>sum+p.z,0)/outside.length-4)<1e-8);
  });

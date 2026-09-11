@@ -1,0 +1,5 @@
+# Country sector controls — 2026-09-11
+
+The sector had click-only selection/order handling, with 200 ms interpolation for 750 ms snapshots. Added marquee selection, additive selection, right-drag formation facing, authenticated server-side route previews, and middle-drag camera orbit. Rendering now samples a disposable authoritative-path snapshot continuously, with bounded projection and short correction blending. Tank final-facing rotation retains its turn limit and persists through state serialization.
+
+Validation: all 285 tests passed, including non-committing authenticated preview requests, centered formations, bounded/persisted tank facing, continuous movement sampling and stale/paused behavior. Typecheck and production build passed (existing large-chunk warnings). Browser review confirmed marquee multi-selection, empty-click deselection, right-click group orders and completed movement, with no reported browser errors. The automation interface cannot hold the right button during a drag, so the held preview/facing gesture still needs manual review. No combat or campaign-authority expansion.

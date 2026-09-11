@@ -1,5 +1,107 @@
 # Project State
 
+## Country squads, shared tactics and river banks — 2026-09-11
+
+Validation: 303 tests passed, plus typecheck/build and browser checks.
+
+Open-ground orders use loose staggered formations; clicking any living member selects its squad. Roads have no proximity preference, and the river surface extends under its banks to close the visible join.
+
+Country infantry now consist of six independently persisted soldiers grouped for selection. Live placement previews and authoritative destinations share the city battle placement solver; cover reactions, cover quality, infantry stepping and preview colors/poses also use shared helpers. Dragging updates local ghosts without delayed server-preview swaps. Members retain individual paths, health and reload state; dead members no longer move.
+
+The optional Deploy encounter review adds bridge/outpost objectives, authoritative fixed-step combat, saved casualties/projectiles/reloads and restart catch-up. Capture timing, force composition and a ten-minute encounter bound remain provisional review tuning, not campaign victory rules. River banks gain earth/sand, rocks, reeds and sparse lily pads with distance culling.
+
+Routing follow-up: removed the forced city-road portal for crossing settlement boundaries. Clear terrain routes go directly; obstructed crossings use the shared sector lattice and clearance checks. Existing queued routes are retained; issue a new order to replace an old detour.
+
+## Country atmosphere, channel and close detail — 2026-09-11
+
+Final verification: all 293 tests passed, plus typecheck/build. Close-view hatching now blends to twice the line density and half intensity over 450–100 units, retaining fixed world-space stroke positions and the existing thin-line filtering.
+
+Country presentation now has a procedural horizon/zenith sky, drifting stylized clouds, and soft sun-projected cloud shadows on ground. Sky and shadows share one cloud field and absolute time, with night colors driven by the existing lighting cycle. The sky uses one low-poly dome; clouds and shadows add no shadow maps or cloud meshes. Near ground gains procedural soil/grit and pebble flecks, filtered and faded from 65–220 units; grass uses five-blade miniature tufts in existing culled batches.
+
+Authoritative terrain version 9 adds broad rolling/ridged relief, a below-water river bed and raised sloped banks. Settlement transitions remain wide enough for road grades; roads and units consume the same height lattice. Saved version-8 routes migrate through the existing pause/clear/relocate-only-if-blocked procedure. Bridge decks now stay above water even over a negative river bed. Clouds are cosmetic sky shading and ground projections, not volumetric weather or gameplay visibility. Targeted terrain/road/movement/persistence tests pass; full validation recorded in the session note.
+
+## Country daylight and terrain ink — 2026-09-11
+
+Latest tuning softens ink contrast by roughly 18% and narrows strokes progressively at close zoom using screen derivatives; distant visibility/fade distances are retained.
+
+Visibility follow-up: hatching now responds to gentle country slopes, uses broader 14/18-unit strokes with stronger contrast, and fades independently of the ground texture between camera distances 2800–5500. Browser review confirms visible shading at the Sector overview; derivative filtering still suppresses subpixel lines. These values are provisional visual tuning.
+
+Daytime sun/fill are brighter while night intensities remain unchanged. The country lighting cycle now switches the shared kit and embedded city window/fixture lighting at dusk. Terrain adds subtle world-anchored crosshatching on slopes facing away from the sun, with derivative filtering and overview fading to avoid distant striping. This is inexpensive illustrative shading over existing geometry and shadows, not new relief or occlusion. Strength and lighting values remain provisional. Typecheck/build passed; browser checks verified warm night windows, brighter day, and close terrain without shader errors.
+
+## Country relief, lighting cycle and shared infantry routes — 2026-09-11
+
+The country slice now adds deterministic gentle rolling elevation (up to nine additional model units), easing to settlement reservations and river approaches. Rendering, road generation and authoritative movement consume the same heights; geometry version 8 safely migrates prior routes. Non-repeating value noise replaces periodic surface bands. At distance, ground colors/grain simplify and a coarse terrain mesh uses approximately 1/16 the ground triangles. Lighting is less washed out, with near-camera terrain/object shadows and atmospheric haze. The Light selector offers a synchronized wall-clock 20-minute visual day/night cycle plus fixed Day/Night review modes; it does not change simulation pace or visibility rules.
+
+City battle and sector infantry now share one deterministic route-variation helper: simplify grid stair-steps, then apply small collision-checked personal deviations. Sector guide lines are stored separately from actual footsteps, with exact destination/cover endpoints preserved. Long routes use bounded sampling; saved movement remains authoritative. Existing routes are cleared only by the geometry migration, not by client rendering.
+
+Validation: all 293 tests, typecheck and production build passed. Browser checks covered the Light selector, daytime bridge/terrain rendering and nighttime city rendering with no shader errors. Night brightness and the 20-minute visual cycle remain provisional tuning.
+
+## Miniature ground style — 2026-09-11
+
+Accepted the simpler miniature-landscape direction after the painterly image was judged too realistic. Country terrain now uses broad fields of muted meadow, lush green, dry grass and exposed-earth color, with soft lattice-shaped transitions and greatly reduced grain. Existing models, placement and terrain heights are unchanged. Browser review confirmed the revised ground alongside city models with no shader errors; typecheck and build passed.
+
+## Refined country landscape — 2026-09-11
+
+The country slice carries the original refined landscape's palette, grain, authored tree/pine models and small shrub/rock/grass accents across the sector. Seeded grove clusters leave settlement reservations, roads/powerline margins and rivers clear. Meadow/dry-ground color variation and slope tinting follow the existing terrain, with blended grain samples to reduce repetition. ACES tone mapping and near-camera soft shadows match the city renderer. Fine vegetation uses nearby tile visibility; distant groves use low-poly material-matched shapes. Browser overview review measured 14 draw calls. This is cosmetic scenery: it creates no new hills, cover or tree collision; authoritative heights and navigation remain unchanged.
+
+Validation: typecheck/build and the deterministic scenery-clearance test pass. Browser review confirmed city-scale groves, ground color variation, overview LOD and no logged shader errors after reload.
+
+## Tank steering and open ground — 2026-09-11
+
+City vehicles may now traverse clear off-road ground; building, wall, planted-bed, water and slope restrictions remain. Shared vehicle route planning removes lattice steps and rounds corners only when the complete sampled curve clears the vehicle envelope. The sector applies the same treatment to tank routes across the wider map. Tank heading corrections up to 0.25 radians occur during travel at the existing bounded turn rate; larger heading changes pivot down to that steering range first. This preserves elapsed-time movement and restart behavior. New orders use the updated routing; existing queued paths are retained. Turn thresholds and six-unit maximum corner cut remain provisional.
+
+Validation: all 290 tests, typecheck and production build pass. Regression checks cover off-road city destinations, collision-clear rounded corners, simultaneous steering/travel, snapshot cadence and persisted movement. Browser confirmed the updated sector loads; turn feel remains subject to user review.
+
+## Broader outskirts and consistent distance colors — 2026-09-11
+
+The country-sector city now has a smaller downtown proportion and wider lower-rise outskirts, retaining authored building scale and sidewalk setbacks. Occupied inner suburban blocks use textured developed soil/gravel, breaking into individual pads at the fringe. Town/city/metropolis lot budgets are provisionally 120/440/950. Geometry version 6 migrates saved routes using the existing safe pause/relocation behavior. Far city geometry uses instanced material-colored masses with the same appearance variants and lot tints as detailed buildings. Ground models persist until markers fully appear; airships transition at ten times the ground range. These are presentation and generator tuning, not balance changes.
+
+Validation: typecheck and production build pass, as do the settlement clearance/frontage test, all eight country-sector tests (including persistence/migration), and three marker tests. Browser review confirmed the expanded outskirts and developed ground. The bounded-concurrency retry completed with all 287 tests passing after the initial worker cancellation.
+
+Follow-up: satellite towns and POIs retain one small colored silhouette batch when detailed assets unload. Bridge approaches now keep bends outside their straight physical decks; a single raised carriageway carries the road surface over an untextured structural deck. Geometry version 7 migrates prior routes safely. Browser review confirmed the repaired crossing; four road tests and eight sector tests pass after this follow-up.
+
+Final verification: all 288 tests pass with bounded concurrency, along with typecheck and production build. Browser review confirmed the repaired bridge and persistent satellite settlement silhouettes at sector distance.
+
+## Shared tactical controls — 2026-09-11
+
+The city battle now owns the tactical interaction contract used by the playable country sector. Both views use the same marquee selection controller, terrain-anchored middle-mouse orbit/right-drag order controller, cursor-anchored zoom and WASD/Q/E keyboard camera controller. Shift adds selections; in the persisted sector it also queues orders. The sector replaces crosshair destinations with the city's translucent unit-ghost language while retaining server-validated routes and green/red acceptance feedback. Perspective zoom uses a fixed exponential ratio so it remains responsive near the city. Distant units are culled behind shared tactical markers. At overview distance, the sector replaces the embedded city with one instanced box-silhouette batch plus a single flat street mesh, and replaces detailed country roads with highway lines. Simulation remains intentionally separate: the city battle is a local combat test, while sector movement follows authoritative persisted server paths.
+
+The full 285-test suite passed after the shared control refactor. The final zoom/LOD pass additionally passed 11 focused camera, marker and road tests, typecheck and production build. Browser review confirmed city initialization, sector zoom/detail restoration, four distant unit badges and a measured overview reduction from 368 to 7 WebGL draw calls.
+
+## Sector selection and continuous movement — 2026-09-11
+
+The playable country sector now supports left-drag box selection, Shift-add selection, right-drag destination/facing previews, Shift-queued orders, empty-click/Escape deselection and middle-drag orbiting. Route previews are checked on a server-side copy without saving an order. Formations center on the target and tanks respect their turn rate when adopting the final facing. Rendering samples approved paths continuously between 750 ms snapshots, with short correction blending and a two-second projection cap; long gaps still snap to authoritative state. This remains a movement proof. Typecheck, build and all 285 tests passed. Browser checks covered marquee selection, deselection and accepted group movement; held right-drag preview interaction still needs manual review.
+
+## Contextual settlements and shared road art — 2026-09-11
+
+The country sector now reuses the diorama's detailed architecture/street renderer with a separately generated inland city, rather than copying its test layout. Seed and size control building selection; outward density falls off, smaller models line sidewalks, and only developed plots receive paving. The square city/POI preview bases are omitted. A roadside fuel/provisions POI and an offline Painswick-derived Riverward town connect to the country network. OSM attribution and source download accompany the preview. The authoritative navigation uses the same city plan and source-derived town obstacles; old geometry versions clear queued routes, relocate blocked units and pause safely.
+
+Global and sector roads share the diorama carriageway texture. Highway markings, curbs and connected roadside powerlines stream in near the camera at authored model scale. Depth offsets and camera near-plane adjustment address competing road/shoulder/terrain surfaces. POI roads share the carriageway grain and occupied buildings receive individual developed pads.
+
+This remains a bounded movement/visual proof. The city size budgets, frontage density and road detail distance are provisional. The primary city still grows from the existing street/parcel grammar; the OSM adapter is integrated for the satellite town, not every generated city. The full global view retains its settlement placeholders. Typecheck/build and the 283-test suite passed; all 13 affected road/settlement/movement tests passed again after final cleanup. Browser review confirmed the updated sector. Country terrain is still flattened around site reservations; arbitrary terrain-adaptive urban grading is not implemented. No combat, supply, capture or victory changes.
+
+## Playable country sector — 2026-09-11
+
+`/country-slice.html` now provides a persisted movement proof around a real Meridian river reach: a generated city, satellite town, roadside fuel stop, river bridge and outpost. Two infantry representatives, a tank and an airship accept direct/group/queued orders. Ground routing shares the rendered terrain, bridge and obstacle geometry; infantry can occupy sandbag positions, tanks turn before moving, and aircraft cross directly. SQLite saves routes and resolves elapsed server time across reload/restart. Long snapshot gaps snap to current positions. The pacing page links to the sector.
+
+City architecture and streets are batched; nearby POI detail loads on demand. The city now uses the full civic hall and shared diorama architecture. The earlier 279-test baseline predates the contextual settlement pass. This is a bounded single-player movement slice, not global combat/capture/supply integration. See [playable sector decision](docs/05-decisions/playable-country-sector.md).
+
+Country-road entrance nodes now explicitly clear their own reserved footprint, fixing blocked joins discovered during sector integration. The older 372/420 coverage measurement below predates this fix; current coverage is calculated in the preview.
+
+## Country roads — 2026-09-11
+
+The physical pacing preview now generates a country-wide network of highways and local roads to settlement edges, actual countryside POI entrances and sampled base sites. Shared segments follow terrain, avoid mountain cells and steep slopes, and receive river bridges. Crop parcels clear road footprints; close-up roadside detail follows the network. Physical widths remain six model units for highways and three for local roads.
+
+Meridian with timed objectives connects 372/420 destinations across four land networks, with 44 river crossings. The preview lists the 48 sites lacking a safe coarse-grid approach or onward route. This supersedes the single-corridor-only road display. Roads are visual; live travel and supply remain unchanged. See [country road decision](docs/05-decisions/country-road-network.md).
+
+## Connected country terrain foundation — 2026-09-11
+
+The physical pacing preview now renders one shared terrain surface instead of isolated circular relief props. Native biome contours seed broad mountain belts, adjoining foothills and uplands; seeded warped ridges cross administrative borders. River channels, the review road and reserved city/farm/POI footprints carve local clearances instead of shrinking an entire range. Coasts taper back to the original land boundary. A 512-cell longest-axis lattice is rendered as independently culled 64-cell tiles with shared edge heights/normals. Camera clearance samples the exact mesh triangles; the core exports height and grade queries for later physical routing.
+
+Mountain ranges and a named Terrain selector focus connected landforms; Show locations hides the marker overlay for inspection. The old circular relief generator, fixed east/west trenches and stand-alone tunnel prop have been removed from this preview. Existing local building/unit scale is retained.
+
+This is a connected terrain foundation, not authoritative enlarged campaign navigation. Regional morphology, peak heights, valley widths and snow treatment are provisional. Existing rivers are flattened corridors, not simulated drainage. Sub-grid reservations are conservatively widened to keep current flat scenery clear; terrain-first city placement, graded roads, actual mountain crossings and slope-based ground routing remain next work. The bounded coarse surface is resident and frustum-culled; it is not adaptive ground-detail streaming. Live movement, air exemptions, saves and travel-time rules are unchanged. See [connected terrain decision](docs/05-decisions/connected-country-terrain.md).
+
 ## Camera-relative battle audio — 2026-09-11
 
 The full-city tactical view has an opt-in Sound control, volume slider and Test SFX button. Sixteen original synthesized one-shot variants cover rifle cracks, cannon reports, impacts and footsteps; two loops provide tank engines and tracks. WAV assets and a stereo near/far demonstration are reproducible with scripts/generate-battle-sfx.ts. Runtime buffers are synthesized once and shared, with no network or external sound-library requirement. This is a replaceable sound-design prototype, not recorded foley.
@@ -9,7 +111,6 @@ Sources pan with camera orientation, attenuate and lose high frequencies with di
 Server hearing events are separate from visible combat events. Living friendly observers must be within 160 scene units of rifles or 360 of cannon/impacts. Returned cues contain only event ID, class, time and 32-unit-cell centers; no enemy identity, target, damage or exact hidden position. Hearing never creates a visual contact or authorizes attack commands. Visible shot events can supply exact sound positions already authorized by vision. Hearing history is capped at 128 cues and two simulation seconds.
 
 Scope: currently the staged city battle. Cross-map simultaneous campaigns need a shared audio-event feed; this does not invent ambient battles. Distance filtering is not building occlusion, terrain acoustics or a full reverberation simulation. Generated samples are originals without third-party recording attribution requirements. Verify auditory quality by listening; automated PCM tests do not establish realism.
-
 
 ## Corridor detail and relief studies — 2026-09-11
 
@@ -24,7 +125,6 @@ The country gallery also offers offline OpenStreetMap samples of Castle Combe, B
 The three estate samples at seed 732 retain 19/32/39, 43/70/93 and 120/212/268 buildings at sparse/mixed/dense settings respectively. One local generation audit measured approximately 4–43 ms per sample; this is generation time, not a rendering or combat benchmark. Architecture remains instanced. Nine focused country tests validate determinism, curved-road clearance, bounded geometry, source validation, clipping and density variation.
 
 Limits: real-data adapters are gallery studies, not authoritative campaign battle imports. Terrain is flat; way-only samples omit multipolygon buildings, real vegetation/field boundaries and routing restrictions. Existing world views consume the new procedural compact plans but do not yet place the real-data samples. A full country still needs road stitching, terrain-aware placement and broader source archetypes.
-
 
 ## Pacing camera floor limit — 2026-09-11
 
@@ -322,10 +422,10 @@ The default jeep is simplified to 692 triangles and two merged meshes (previousl
 
 A Victorian steampunk jeep preview is available at `/jeep-preview.html`, with six passenger seats, a separate driver station, rear boarding step and hinged tailgate. Static reference figures use the existing infantry model dimensions. Orbit/zoom, overhead view, passenger visibility and empty-vehicle GLB export are available. Boarding/disembarking and live campaign rendering are future work; current forces and transport rules are unchanged. See [decision 027](docs/05-decisions/027-steam-jeep-transport.md).
 
-
 ## Infantry rendering prototype
 
 A standalone 3D infantry preview and repeatable crowd benchmark are available at `/prototypes/infantry-benchmark.html`. It uses 348-triangle soldiers, instanced parts and shared cached animation over a captured map. Local overlay-only measurements reached approximately 165 FPS at 2,000 soldiers and 91 FPS at 4,000. These exclude the live map and simulation; squad movement and cover-like repositioning are staged. The infantry model is now integrated into the live campaign as a lazily loaded, viewport-culled Three.js overlay. The prototype measurements remain separate from whole-game performance. See [benchmark methodology and history](docs/prototypes/infantry-benchmark.md).
+
 ## Harbor shoreline attachment
 
 Compact harbor art now meets the smoothed coastline, with water-facing piers and a road back to the saved settlement position. Diagonal atlas directions were corrected and all eight views visually checked. Existing campaigns update on refresh; settlement tests, typecheck and build pass.
@@ -796,6 +896,7 @@ Destination ghosts now fit around obstacles: blocked slots slide along nearby bu
 Friendly tank/full and jeep/partial cover now follow live vehicle hulls in the local city trial. Directional attack queries remove protection for exposed approaches; preview facing is only an assumed threat direction.
 
 Future combat direction recorded in decision 050: resolve cover separately for each actual attacker, with flanking and moving vehicle hulls; preview indicators are advisory. Server integration, battle-scale profiling and height-aware exposure remain future work.
+
 ## Countryside visual pass — 2026-09-10
 
 Seeded woodland pockets, river-adjacent marsh pools/reeds, and small decorative farmsteads now fill suitable countryside at detail zoom. They respect land and infrastructure clearance and use existing chunk culling. No functional region types or saved-game rules change. Existing maps receive these details on reload. See docs/session-notes/2026-09-10-countryside-visuals.md for validation and the concurrent settlement-clearance test limitation.
@@ -803,10 +904,12 @@ Seeded woodland pockets, river-adjacent marsh pools/reeds, and small decorative 
 Validation: all 119 tests pass; TypeScript checking and the production build pass. Verified the live preview at http://127.0.0.1:5173/ with Boreal and Map-e05fa536 at 244% zoom; the footer reports 28,800 × 19,200. Existing campaigns retain their saved maps.
 
 ### Cover-order responsiveness (2026-09-10)
+
 Shipped: cover-aware move orders activate within 3 scene units of a cover surface (previously 1.1). Physical protection distance remains unchanged. Formation preview solves are capped at one per 80 ms, with local obstacle filtering, reused vehicle geometry, cached cover queries, and single-pass candidate ranking. Final orders still solve fresh. Tuning remains provisional.
 Validation: 202 tests passed; typecheck/build passed. Full-city seed 732 benchmark: six infantry, 887 obstacles, 200 solves, mean 1.29 ms / p95 2.92 ms. This measures solver CPU time, not whole-game FPS. Browser courtyard order accepted for all six infantry.
 
 ## Shared city-skirmish vision — 2026-09-10
+
 Shipped a server-filtered player view: living friendlies share 360-degree sight (40 scene units infantry, 45 vehicles; provisional). Buildings block sight through the existing spatial LOS index; low cover does not. Unseen enemies are omitted from API snapshots, model rendering, markers, picking and visible-enemy counts. Hidden attack IDs are rejected. Enemy routes are stripped; shot events require visibility at emission and snapshot time. No last-known contacts, terrain fog, hearing, or campaign visibility integration yet.
 
 City vision validation: 205 regression tests, typecheck and build pass. Browser connection and visible count verified; the staged initial enemy squad is within shared LOS.
@@ -818,27 +921,30 @@ Implemented an elevated orthographic planning view with Overview / Reset, Neighb
 Ten focused camera tests, TypeScript checking and production build pass. Browser checked Neighborhood and Overhead presets and updated control hints. See docs/05-decisions/city-planning-camera.md.
 
 ### City cannon damage correction
+
 City shells use a fixed 120 base payload, scaled by target armor and distance from impact. An exposed infantryman at impact center takes 162 damage. Accuracy failures scatter 3.5–5 units instead of visually landing a harmless shell on the target. Five-second reload and building-blocked splash remain. This is provisional city-only tuning; campaign fire values are unchanged.
 
 Close-range tank follow-up: stationary tank/target pairs within 12 scene units use direct impacts after turret alignment and LOS checks. Regression test verifies the first shell kills exposed infantry after flight.
 
 ## City battlefield awareness — 2026-09-10
+
 Last-observed enemy positions are held on the server and shown as non-targetable dashed question marks after LOS is lost. They fade over 30 simulated battle seconds and clear on reacquisition, observed death, or revisiting an empty location. No hidden live position/health/route data is added to contacts. Selected friendly units show approximate 64-ray sight outlines clipped against buildings, refreshed at most four times a second. Physical visibility remains server-controlled. Contact lifetime is provisional.
 
 Awareness validation: 216 passing tests, typecheck/build passed, browser checked the connected battle and selected-unit overlay.
 
 ## First construction UI — 2026-09-10
+
 Shipped local placement prototype in the full city: Build opens a five-item menu (sandbags, barbed wire, artillery, warehouse, trenches). Selecting an item closes the menu and enables a colored ground preview; R rotates 45 degrees; click places; right-click/Escape cancels; Undo last removes the most recent emplacement. Footprint tests reject terrain/obstacle collisions, excessive slope, units and overlapping placements. Maximum 48 local placements. These are visual prototypes: no resource economy, construction timers, firing, terrain excavation, navigation/cover changes or persistence. Reload clears placements.
 
 Physical sandbag/group pacing validation: 227 tests passed, typecheck/build passed, and browser placement accepted by the server.
 
 ## Country set-piece library — 2026-09-11
+
 Added /country-poi.html with 24 seeded Victorian/steampunk templates using the existing city art kit, cover/collision records, crop parcels, road entrances, clearance inspection and JSON export. Includes small settlements, industrial sites, ruins, roadside services, military sites, orchards/hop gardens and six-parcel farms. The global Three.js study has conservative road-linked placement and site navigation; final Meridian audit accepts three river-clear sites. Detail cache holds at most six nearby POIs. Full tactical battles, resource output and campaign persistence are not integrated. See docs/02-systems/country-set-pieces.md.
 
 ## Ocean port districts — 2026-09-11
 
 The full-city planner now gates cargo quays, bonded warehouses and a lower-rise harbor quarter on an adjacent typed ocean frontage. Inland and river-only cities retain their existing zoning. The coastal fixture includes an open ocean plane, quay walls, timber piers, cranes, cargo and coastal steam lighters using existing city materials. Preview: /city-diorama.html?case=ocean-port&seed=732, then Harbor. The battle API accepts the same ocean profile. Focused regression checks pass across three seeds; browser reviewed the waterfront. Detailed world-city placement and naval/port economy rules are outside this pass. See docs/05-decisions/ocean-port-districts.md.
-
 
 Port validation completed: 234/234 full-suite tests plus the split-frontage regression pass; final typecheck/build pass. Browser shows the ocean port and ready skirmish.
 
@@ -850,16 +956,13 @@ Quays follow short shoreline sections. Each berth rotates its pier, crane, cargo
 
 The local coastline must advance along X and remain within 48 units inland of its seaward reference; invalid reversals are rejected. This supports curved open coast segments, not closed harbors with overhangs or a complete world-to-city coastline placement pipeline. Piers and vessels remain scenery. Focused geometric, navigation and mesh-batching tests pass; browser shows the curved waterfront.
 
-
 Curved-port validation completed: full npm test suite passed 246/246. The final exact-inverse projection passed the three focused coast/navigation regressions; the ocean mesh-batching regression also passed. Final typecheck and production build pass. Browser review confirmed curved quays, coast-following roads, rotated dock assemblies and a ready skirmish.
-
 
 ### Audio timbre, city reflections and range retune — 2026-09-11
 
 Footsteps use a softer low-frequency heel/toe envelope with greatly reduced bright friction. Rifle reports have a shorter pressure crack, stronger 88–100 Hz body and darker mechanical/echo tails; cannon blast noise is also darker. One shared 0.72-second convolution impulse adds a restrained city reflection tail to one-shot effects; vehicle loops remain dry. Muting/pausing clears the shared reverb history, and the 32-source budget remains unchanged.
 
 Rifle/cannon presentation cutoff distances increase to 2,800/5,600 model units with a gentler low-volume falloff, progressively dark filtering and a capped 2.5-second travel delay. Quiet-source culling can end audibility before these outer bounds. Authoritative hearing expands to 1,200/3,200 units; reported positions become 128-unit cells beyond 160 units and 256-unit cells beyond 640 units. Hearing remains observer-authorized and never enables targeting. These ranges and timbres are provisional listening adjustments, not calibrated real-world acoustic distances.
-
 
 ## Varied rifle reports and simultaneous city firefights — 2026-09-11
 
@@ -872,3 +975,9 @@ Stage multiple firefights opens the optional battles=multiple city configuration
 Focused validation: 10 audio and multi-battle tests pass, including real shots and casualties from both extra sites. Browser verified 13 friendlies/12 visible enemies at start, Sound enable, run/pause, and West/East focus. Full regression/build checks recorded below when complete.
 
 Rifle distance-muffling follow-up (2026-09-11): rifle low-pass now falls more steeply (about 1.5 kHz at minimum stand-off, 385 Hz at 180 horizontal units, settling at 140 Hz far away). Existing rifle loudness/range/delay, cannon/impact mix, and voice budget are retained. Provisional listening tuning.
+
+Follow-up: road proximity no longer changes navigation cost; all traversable ground has equal cost. Every visible living soldier supplies a selection hit target mapped to its parent squad, with duplicate marquee hits collapsed to one squad selection.
+
+## Dense forests and continuous woodland LOD
+
+Accepted: broad, dense low-poly forests at the existing tree scale, with roads and rivers cutting through them. Generation now uses broad irregular woodland fields and spaced, jittered trunks rather than isolated eight-tree clusters. Infrastructure footprints remain clear; forests continue on both sides. Nearby trees use instancing and spatial culling. Beyond the detailed area, occupied patches use low-poly canopy geometry, selected per tile rather than a global zoom switch, so woods remain visible at shallow angles. Forest ground shading follows the same density field. Density and LOD distances remain provisional visual tuning. No new trunk collision rules were introduced.

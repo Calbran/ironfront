@@ -1,3 +1,6 @@
+import {stepCityInfantry,CITY_RUN_SPEED,CITY_RUN_STRIDE} from "./cityInfantryMotion";
+import {previewTacticalOrder} from "./tacticalPlacement";
+import { variedMovementRoute } from "./variedMovementRoute";
 import {COVER_ORDER_REACH,coverSlots,sameCoverSide} from "./cityCoverOrders";
 import type { CityPoint } from "./organicCity";
 import {
@@ -5,8 +8,7 @@ import {
   type CityObstacle,
   type createCityTactics,
 } from "./cityTactics";
-export const CITY_RUN_SPEED = 1.43;
-export const CITY_RUN_STRIDE = 1.144;
+export {CITY_RUN_SPEED,CITY_RUN_STRIDE} from "./cityInfantryMotion";
 export const CITY_TANK_TURN_RATE = 0.55;
 export type TrialUnit = CityPoint & {
   visible?: boolean;
@@ -126,170 +128,11 @@ export function createCityUnitTrial(
     id: number,
     kind: "infantry" | "vehicle",
   ) {
-    // Remove grid stair-steps first, then use small checked deviations in clear space.
-    const smooth = [route[0]];
-    for (let i = 0; i < route.length - 1;) {
-      let next = route.length - 1;
-      while (next > i + 1 && !tactics.segmentClear(route[i], route[next], kind))
-        next--;
-      smooth.push(route[next]);
-      i = next;
-    }
-    const result = [smooth[0]];
-    for (let i = 1; i < smooth.length; i++) {
-      const a = smooth[i - 1],
-        b = smooth[i],
-        dx = b.x - a.x,
-        dz = b.z - a.z,
-        d = Math.hypot(dx, dz),
-        n = Math.max(1, Math.ceil(d / 1.2));
-      for (let j = 1; j <= n; j++) {
-        const t = j / n,
-          offset =
-            (kind === "vehicle" ? 0 : 0.18) *
-            Math.sin(t * Math.PI) *
-            Math.sin((t * d) / 3 + id * 1.7);
-        const base = { x: a.x + dx * t, z: a.z + dz * t };
-        const q = {
-          x: base.x - (dz / (d || 1)) * offset,
-          z: base.z + (dx / (d || 1)) * offset,
-        };
-        // Reserve a safe continuation as well as the current step.
-        result.push(
-          tactics.segmentClear(result.at(-1)!, q, kind) &&
-            tactics.segmentClear(q, b, kind)
-            ? q
-            : base,
-        );
-      }
-    }
-    // Never introduce a shortcut through a wall if a perturbed segment cannot reconnect.
-    return result.every(
-      (p, i) => !i || tactics.segmentClear(result[i - 1], p, kind),
-    )
-      ? result
-      : smooth;
+    return variedMovementRoute(route, id, kind === "infantry", (a,b) => tactics.segmentClear(a,b,kind)).path;
   }
-  function previewOrder(p: CityPoint, facing?: number) {
-    const selected = units.filter((u) => selectedIds.includes(u.id));
-    const vehicles = vehicleCover();
-    const nearby = [...tactics.obstacles, ...vehicles].filter(o => o.kind !== "garden" && obstacleDistance(p, o) <= 7);
-    const coveredOrder = nearby.some(o => obstacleDistance(p, o) <= COVER_ORDER_REACH);
-    const protectedSlots = coveredOrder ? coverSlots(p, nearby) : [];
-    const previewCoverAt = (q: CityPoint, threat?: CityPoint) => tactics.coverAt(q, threat, vehicles);
-    const coverLevels = new Map<CityPoint, ReturnType<typeof previewCoverAt>>();
-    const cachedCover = (q: CityPoint) => { let result = coverLevels.get(q); if (!result) { result = previewCoverAt(q); coverLevels.set(q, result); } return result; };
-    const chosen: {
-      id: number;
-      kind: TrialUnit["kind"];
-      x: number;
-      z: number;
-      angle: number;
-      cover: TrialUnit["cover"];
-      valid: boolean;
-    }[] = [];
-    for (let i = 0; i < selected.length; i++) {
-      const unit = selected[i],
-        spacing = selected.some((u) => u.kind === "vehicle") ? 2.5 : 1.5,
-        offset = (i - (selected.length - 1) / 2) * spacing;
-      const desired = {
-        x: p.x + Math.cos(facing ?? 0) * offset,
-        z: p.z - Math.sin(facing ?? 0) * offset,
-      };
-      const candidates: CityPoint[] = [desired,...(unit.kind==="infantry"?protectedSlots:[])];
-      const clear = (q: CityPoint) =>
-        tactics.walkable(q, unit.kind) &&
-        !vehicles.some(
-          (o) =>
-            o.id !== `vehicle:${unit.id}` &&
-            obstacleDistance(q, o) <= (unit.kind === "infantry" ? 0.25 : 0.9),
-        ) &&
-        !units.some(
-          (u) =>
-            u.health>0 && !selectedIds.includes(u.id) &&
-            Math.hypot(u.x - q.x, u.z - q.z) <
-              (u.kind === "vehicle" || unit.kind === "vehicle" ? 1.5 : 0.9),
-        ) &&
-        !chosen.some((v) => Math.hypot(v.x - q.x, v.z - q.z) < 0.9);
-      if (!clear(desired)) {
-        const reach = 4.5,
-          margin = unit.kind === "vehicle" ? 1 : 0.32;
-        // Project onto real oriented faces, then slide along those faces to fit neighbors.
-        for (const o of [
-          ...tactics.obstacles,
-          ...vehicles.filter((o) => o.id !== `vehicle:${unit.id}`),
-        ]) {
-          if (o.kind === "garden" && unit.kind === "infantry") continue;
-          if (
-            Math.hypot(o.x - desired.x, o.z - desired.z) >
-            Math.hypot(o.width, o.depth) / 2 + reach
-          )
-            continue;
-          const c = Math.cos(o.angle),
-            s = Math.sin(o.angle),
-            dx = desired.x - o.x,
-            dz = desired.z - o.z;
-          const lx = dx * c - dz * s,
-            lz = dx * s + dz * c;
-          const put = (x: number, z: number) =>
-            candidates.push({ x: o.x + x * c + z * s, z: o.z - x * s + z * c });
-          for (const sign of [-1, 1])
-            for (const shift of [0, -0.95, 0.95, -1.9, 1.9, -2.85, 2.85]) {
-              put(
-                sign * (o.width / 2 + margin),
-                Math.max(-o.depth / 2, Math.min(o.depth / 2, lz + shift)),
-              );
-              put(
-                Math.max(-o.width / 2, Math.min(o.width / 2, lx + shift)),
-                sign * (o.depth / 2 + margin),
-              );
-            }
-        }
-        // Also resolve occupied open-ground slots without requiring a nearby wall.
-        for (const r of [0.5, 1, 1.5, 2, 3, 4])
-          for (let j = 0; j < 16; j++)
-            candidates.push({
-              x: desired.x + Math.cos((j * Math.PI) / 8) * r,
-              z: desired.z + Math.sin((j * Math.PI) / 8) * r,
-            });
-      }
-      const distance = (q: CityPoint) =>
-        Math.hypot(q.x - desired.x, q.z - desired.z);
-      const protectedScore=(q:CityPoint)=>unit.kind==="infantry"&&coveredOrder&&sameCoverSide(p,q,nearby)&&cachedCover(q).level!=="none" ? 0 : 1;
-      let goal = desired, bestScore = Infinity, bestDistance = Infinity;
-      for (const q of candidates) {
-        const d = distance(q);
-        if (d > 4.5 || !clear(q) || (coveredOrder && unit.kind === "infantry" && !sameCoverSide(p,q,nearby))) continue;
-        const score = protectedScore(q);
-        if (score < bestScore || (score === bestScore && (d < bestDistance || (d === bestDistance && (q.x < goal.x || (q.x === goal.x && q.z < goal.z)))))) {
-          goal = q; bestScore = score; bestDistance = d;
-        }
-      }
-      const valid = clear(goal) && (!coveredOrder||unit.kind!=="infantry"||sameCoverSide(p,goal,nearby)),
-        near = cachedCover(goal);
-      const angle =
-        facing ??
-        (near.level !== "none" && unit.kind === "infantry"
-          ? Math.atan2(-near.normal.x, -near.normal.z)
-          : Math.atan2(goal.x - unit.x, goal.z - unit.z));
-      const cover =
-        unit.kind === "infantry"
-          ? previewCoverAt(goal, {
-              x: goal.x + Math.sin(angle) * 60,
-              z: goal.z + Math.cos(angle) * 60,
-            }).level
-          : "none";
-      chosen.push({
-        id: unit.id,
-        kind: unit.kind,
-        x: goal.x,
-        z: goal.z,
-        angle,
-        cover,
-        valid,
-      });
-    }
-    return chosen;
+
+  function previewOrder(p:CityPoint,facing?:number){
+    return previewTacticalOrder(p,facing,units,selectedIds,tactics,vehicleCover());
   }
   let nextMoveGroup=0;
   function order(p: CityPoint, facing?: number) {
@@ -418,43 +261,7 @@ export function createCityUnitTrial(
         }
         continue;
       }
-      const targetSpeed = unit.moving
-        ? Math.min(groupCap,CITY_RUN_SPEED * (unit.firing ? .65 : 1) *
-          (unit.moveGroup ? 1 : 1 + 0.035 * Math.sin(unit.id * 2)) *
-          (unit.moveGroup ? 1 : 1 + 0.06 * Math.sin((unit.distance / CITY_RUN_STRIDE) * Math.PI * 4)))
-        : 0;
-      unit.speed = unit.moveGroup ? targetSpeed : unit.speed + (targetSpeed - unit.speed) * Math.min(1, elapsed * 5);
-      unit.speed=Math.min(unit.speed,groupCap);
-      let remaining = elapsed * unit.speed;
-      while (remaining > 0 && unit.path.length) {
-        const p = unit.path[0],
-          dx = p.x - unit.x,
-          dz = p.z - unit.z,
-          d = Math.hypot(dx, dz),
-          step = Math.min(d, remaining);
-        if (d > 1e-8) {
-          const desired = Math.atan2(dx, dz),
-            turn = Math.atan2(
-              Math.sin(desired - unit.angle),
-              Math.cos(desired - unit.angle),
-            );
-          unit.angle += turn * Math.min(1, elapsed * 8);
-          const next={x:unit.x+(dx/d)*step,z:unit.z+(dz/d)*step};
-          if(!tactics.segmentClear(unit,next,"infantry")){unit.path=[];unit.speed=0;break;}
-          unit.x += (dx / d) * step;
-          unit.z += (dz / d) * step;
-          unit.distance += step;
-        }
-        remaining -= step;
-        if (d <= step + 1e-8) unit.path.shift();
-      }
-      if (!unit.path.length && unit.facing !== undefined) {
-        const turn = Math.atan2(
-          Math.sin(unit.facing - unit.angle),
-          Math.cos(unit.facing - unit.angle),
-        );
-        unit.angle += turn * Math.min(1, elapsed * 8);
-      }
+      stepCityInfantry(unit,elapsed,groupCap,(a,b)=>tactics.segmentClear(a,b,"infantry"));
       if (unit.moving && !unit.path.length) {
         unit.moving = false;
         if (selectedIds.includes(unit.id))

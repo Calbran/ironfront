@@ -23,12 +23,13 @@ import {
   type CityLot,
 } from "./organicCity";
 export type TerrainProfile =
-  "normal" | "tight-bend" | "steep" | "worldgen" | "ocean";
+  "inland" | "normal" | "tight-bend" | "steep" | "worldgen" | "ocean";
 export function riverBend(
   x: number,
   seed = 731,
   profile: TerrainProfile = "normal",
 ) {
+  if (profile === "inland") return 0;
   if (profile === "worldgen") return worldRiverBend(x, seed);
   return (
     (3 + ((seed >>> 0) % 3)) *
@@ -93,6 +94,7 @@ export function combinedHeight(
   profile: TerrainProfile = "normal",
   fullTile = false,
 ) {
+  if (profile === "inland") return fullTile ? 2 : neighborhoodHeight(z);
   const away = Math.max(0, Math.abs(z + 94) - 8);
   const civic = Math.max(0, Math.min(1, (-z - 41) / 18));
   return (
@@ -142,7 +144,7 @@ export function planCombinedDistrict(
     combinedLot(p, s, profileArg, waterfront);
   const source = planAngledDistrict(
     seed,
-    true,
+    profile !== "inland",
     undefined,
     fullTile,
     waterfront ? { ...waterfront, shoreline: undefined } : undefined,
@@ -259,7 +261,9 @@ export function planCombinedDistrict(
                 }))))) ||
           base - low > 1.2 ||
           corners.some(
-            (p) => Math.abs(p.z + 94 - riverBend(p.x, seed, profile)) < 7,
+            (p) =>
+              profile !== "inland" &&
+              Math.abs(p.z + 94 - riverBend(p.x, seed, profile)) < 7,
           ) ||
           streets.some((s) => lotIntersectsStreet(placed, s)) ||
           world.some(
@@ -373,7 +377,9 @@ export function planCombinedDistrict(
             if (
               base - low > 1.2 ||
               corners.some(
-                (p) => Math.abs(p.z + 94 - riverBend(p.x, seed, profile)) < 7,
+                (p) =>
+                  profile !== "inland" &&
+                  Math.abs(p.z + 94 - riverBend(p.x, seed, profile)) < 7,
               ) ||
               streets.some((s) => lotIntersectsStreet(placed, s)) ||
               world.some((l) => lotsOverlap(l, placed))
@@ -481,7 +487,9 @@ export function planCombinedDistrict(
         if (
           Math.max(...heights) - Math.min(...heights) > 0.3 ||
           corners.some(
-            (p) => Math.abs(p.z + 94 - riverBend(p.x, seed, profile)) < 8,
+            (p) =>
+              profile !== "inland" &&
+              Math.abs(p.z + 94 - riverBend(p.x, seed, profile)) < 8,
           )
         )
           continue;
@@ -522,6 +530,7 @@ export function planCombinedDistrict(
   }
   return {
     ...source,
+    rivers: profile === "inland" ? [] : source.rivers,
     waterfront: source.waterfront ? waterfront : undefined,
     portInfrastructure: portInfrastructure(waterfront, source.parcels, true),
     lots,
