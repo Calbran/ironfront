@@ -3,6 +3,7 @@ export type TacticalScreenUnit = {
   x: number;
   y: number;
   visible?: boolean;
+  radius?: number;
 };
 
 /** Canonical left-click and marquee selection shared by tactical previews. */
@@ -99,7 +100,9 @@ export function tacticalSelection(
         ...unit,
         distance: Math.hypot(unit.x - event.clientX, unit.y - event.clientY),
       }))
-      .filter((unit) => unit.distance < (options.radius ?? 18))
+      .filter(
+        (unit) => unit.distance < (unit.radius ?? options.radius ?? 18),
+      )
       .sort((a, b) => a.distance - b.distance)[0];
     options.click(hit?.id, start.shifted);
   };

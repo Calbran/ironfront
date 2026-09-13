@@ -1,5 +1,9 @@
 import { parseOSMSample } from "../packages/game-core/src/countryOSM";
 import { segmentDistance } from "../packages/game-core/src/organicCity";
+import {
+  countryBridgeDeckHeight,
+  countryRoadSurfaceHeight,
+} from "../packages/game-core/src/countryRoadNetwork";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, readFileSync } from "node:fs";
@@ -74,12 +78,25 @@ test("ground units use bridge and collision-tested paths; air can cross water di
     );
   }
   const bridge = p.roads.bridges[0],
+    deck = countryBridgeDeckHeight(p.surface, bridge, p.roads.scale),
     segment = p.rivers
       .flatMap((r) => r.slice(1).map((b, i) => ({ a: r[i], b })))
       .find(
         ({ a, b }) => segmentDistance({ x: bridge.x, z: bridge.y }, a, b) < 1,
       )!;
   assert.ok(segment);
+  assert.ok(
+    Math.abs(n.height({ x: bridge.x, z: bridge.y }) - (deck + 0.15)) < 1e-9,
+    "unit feet use the same raised deck as the rendered bridge",
+  );
+  assert.ok(
+    Math.abs(
+      countryRoadSurfaceHeight(p.roads, p.surface, {
+        x: bridge.x,
+        y: bridge.y,
+      }) - deck,
+    ) < 1e-9,
+  );
   const length = Math.hypot(
       segment.b.x - segment.a.x,
       segment.b.z - segment.a.z,
@@ -182,6 +199,36 @@ test("slice API requires its own bearer session and validates commands", async (
     });
     assert.equal(ok.statusCode, 200);
     assert.ok(!ok.body.includes("test-session"));
+    saves.mutate("test-session", Date.now(), (state) =>
+      state.units.push({
+        id: 99,
+        name: "secret distant enemy",
+        kind: "tank",
+        enemy: true,
+        health: 100,
+        x: 2990,
+        z: 1790,
+        angle: 0,
+        distance: 0,
+        path: [{ x: 2500, z: 1500 }],
+        cover: false,
+      }),
+    );
+    const concealed = await app.inject({
+      method: "GET",
+      url: "/api/country-slice/state",
+      headers: { authorization: "Bearer test-session" },
+    });
+    assert.equal(concealed.statusCode, 200);
+    assert.ok(!concealed.body.includes("secret distant enemy"));
+    const night = await app.inject({
+      method: "POST",
+      url: "/api/country-slice/command",
+      headers: { authorization: "Bearer test-session" },
+      payload: { action: "lighting", lighting: "night" },
+    });
+    assert.equal(night.statusCode, 200);
+    assert.equal(night.json().lighting, "night");
     const invalid = await app.inject({
       method: "POST",
       url: "/api/country-slice/command",

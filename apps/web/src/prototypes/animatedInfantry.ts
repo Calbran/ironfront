@@ -1,3 +1,7 @@
+import {
+  tacticalRunCycle,
+  tacticalRunSample,
+} from "../experiments/tacticalInfantryClips";
 import * as T from "three";
 import { bakeInfantry } from "../infantryModel";
 import type { soldierReview } from "./animationTimeline";
@@ -8,6 +12,7 @@ export function createReviewInfantryKit() {
   const rig = bakeInfantry(0),
     owned: T.BufferGeometry[] = [],
     materials: T.Material[] = [];
+  const run = tacticalRunCycle(rig);
   const material = new T.MeshStandardMaterial({
     vertexColors: true,
     roughness: 0.85,
@@ -135,6 +140,7 @@ export function createReviewInfantryKit() {
       box(torso, iron, 0.25, 0.045, 0.1, -0.21, 0.55, -0.42);
     }
     const muzzle = new T.Object3D();
+    muzzle.name = "tactical_muzzle";
     muzzle.position.set(
       role === "antitank" ? 1.04 : role === "lmg" ? 1.1 : 0.65,
       role === "antitank" ? 0.14 : 0.07,
@@ -149,16 +155,20 @@ export function createReviewInfantryKit() {
       update(p: ReturnType<typeof soldierReview>) {
         const reloadLift =
           (role === "lmg" || role === "antitank") && p.reload >= 0
-            ? (role === "antitank" ? .5 : .24) * Math.sin(Math.PI * p.reload) ** 2
+            ? (role === "antitank" ? 0.5 : 0.24) *
+              Math.sin(Math.PI * p.reload) ** 2
             : 0;
-        const pose = rig.pose(
-          p.mode,
-          p.phase,
-          p.recoil,
-          Math.max(0, p.crouch - reloadLift),
-          p.lean,
-          role === "engineer" ? -1 : p.reload,
-        );
+        const pose =
+          p.mode === "run"
+            ? tacticalRunSample(run, p.phase)
+            : rig.pose(
+                p.mode,
+                p.phase,
+                p.recoil,
+                Math.max(0, p.crouch - reloadLift),
+                p.lean,
+                role === "engineer" ? -1 : p.reload,
+              );
         if (magazine) {
           const lift = p.reload >= 0 ? Math.sin(Math.PI * p.reload) ** 2 : 0;
           magazine.position.set(0.17, 0.14 + lift * 0.2, -lift * 0.24);

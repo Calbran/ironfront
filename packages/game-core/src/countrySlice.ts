@@ -1,5 +1,10 @@
-import {previewSlicePlacement} from "./slicePlacement";
-import {stepCityInfantry} from "./cityInfantryMotion";
+import {
+  countryLongSegmentClear,
+  createCountryTravelGraph,
+} from "./countryTravelGraph";
+import { countryTankTerrainSpeedFactor } from "./forestVehicleMovement";
+import { previewSlicePlacement } from "./slicePlacement";
+import { CITY_RUN_SPEED, stepCityInfantry } from "./cityInfantryMotion";
 import { smoothVehiclePath } from "./vehiclePath";
 import { variedMovementRoute } from "./variedMovementRoute";
 import { coverSlots, COVER_ORDER_REACH } from "./cityCoverOrders";
@@ -14,6 +19,8 @@ import {
 } from "./connectedTerrain";
 import {
   buildCountryRoadNetwork,
+  countryBridgeContains,
+  countryRoadSurfaceHeight,
   type CountryRoadNetwork,
 } from "./countryRoadNetwork";
 import { generateCountryPOI, type CountryPOI } from "./countryPOI";
@@ -36,6 +43,12 @@ import type { World } from "./index";
 export type SlicePoint = { x: number; z: number };
 export type SlicePlan = {
   version: 9;
+  campaignMap?: {
+    version: 2 | 3;
+    seed: string;
+    modelPerWorld: number;
+    fields: import("./pacingCountryside").RuralField[];
+  };
   source: { seed: string; x: number; y: number; scale: number };
   width: number;
   depth: number;
@@ -51,6 +64,8 @@ export type SlicePlan = {
     z: number;
     extent: number;
     poi?: CountryPOI;
+    rank?: import("./countrySettlement").SettlementRank | "site";
+    scenic?: boolean;
   }[];
   obstacles: CityObstacle[];
   cover: SlicePoint[];
@@ -256,14 +271,25 @@ export function createCountrySlice(sample?: OSMSample): SlicePlan {
           ),
         );
         const bank = smooth((riverDistance - 12) / 320);
-        const rolling = 20 * (0.5 + 0.5 * countryTerrainNoise(p.x * 0.003, p.z * 0.003));
-        const ridge = Math.pow(1 - Math.abs(countryTerrainNoise(p.x * 0.0018 + 29, p.z * 0.0028 - 17)), 3);
+        const rolling =
+          20 * (0.5 + 0.5 * countryTerrainNoise(p.x * 0.003, p.z * 0.003));
+        const ridge = Math.pow(
+          1 -
+            Math.abs(countryTerrainNoise(p.x * 0.0018 + 29, p.z * 0.0028 - 17)),
+          3,
+        );
         const relief = rolling + 18 * ridge;
         // Raised floodplain edges slope into the channel; settlements stay on
         // their authored ground and roads/navigation consume the same lattice.
-        const channel = 2 * smooth((riverDistance - 12) / 32) * (1 - smooth((riverDistance - 44) / 80));
+        const channel =
+          2 *
+          smooth((riverDistance - 12) / 32) *
+          (1 - smooth((riverDistance - 44) / 80));
         const bed = -2 * (1 - smooth((riverDistance - 6) / 12));
-        surface.heights[i] = (surface.heights[i] + relief * reserve) * bank + channel * reserve + bed;
+        surface.heights[i] =
+          (surface.heights[i] + relief * reserve) * bank +
+          channel * reserve +
+          bed;
       }
     const dest = sites.map((s) => ({
       id: s.id,
@@ -343,19 +369,30 @@ export function createCountrySlice(sample?: OSMSample): SlicePlan {
   throw Error("No suitable dry river sector found in Meridian");
 }
 export type SliceUnit = SlicePoint & {
+  weaponRole?: "rifle" | "lmg";
   members?: SliceUnit[];
+  support?: import("./tacticalSupport").SupportMemory;
+  supportMove?: boolean;
+  supportTarget?: number;
   stance?: "move" | "hold";
-  reaction?: {anchor:SlicePoint;next:number;health:number;target?:number};
+  reaction?: {
+    anchor: SlicePoint;
+    next: number;
+    health: number;
+    target?: number;
+  };
   enemy?: boolean;
   health?: number;
   suppression?: number;
   antiTank?: boolean;
   fireMemory?: import("./squadFire").FireMemory;
   turretAngle?: number;
+  aimAngle?: number;
   nextShell?: number;
   speed?: number;
   firing?: boolean;
   motionRemainder?: number;
+  moveGroup?: number;
   id: number;
   name: string;
   kind: "infantry" | "tank" | "airship";
@@ -364,14 +401,20 @@ export type SliceUnit = SlicePoint & {
   path: SlicePoint[];
   guide?: SlicePoint[];
   cover: boolean;
+  coverLevel?: "none" | "partial" | "full";
   facing?: number;
 };
 export type SliceState = {
+  battlefield?: import("./countryEncounter").CountryCombat;
+  sounds?: import("./cityHearing").CitySoundCue[];
+  sandbags?: { id: number; x: number; z: number; angle: number }[];
   encounter?: import("./countryEncounter").SliceEncounter;
   version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
   time: number;
   running: boolean;
   pace: number;
+  lighting?: "cycle" | "day" | "night";
+  movementSequence?: number;
   revision: number;
   units: SliceUnit[];
 };
@@ -381,6 +424,7 @@ export function createSliceState(now: number): SliceState {
     time: now,
     running: false,
     pace: 1,
+    lighting: "cycle",
     revision: 0,
     units: [
       { id: 1, name: "1st Rifles", kind: "infantry", x: 500, z: 919 },
@@ -399,42 +443,251 @@ export function createSliceState(now: number): SliceState {
 }
 const angleDelta = (a: number, b: number) =>
   Math.atan2(Math.sin(b - a), Math.cos(b - a));
-export function ensureSliceSquads(state:SliceState) {
-  for(const u of state.units)if(u.kind==="infantry"&&!u.members){
-    const survivors=Math.ceil((u.health??100)*6/100);
-    u.members=Array.from({length:6},(_,i)=>({...u,members:undefined,id:u.id*100+i,
-      x:u.x+(i%3-1)*.7,z:u.z+(Math.floor(i/3)-.5)*.7,
-      health:Math.max(0,Math.min(100,(u.health??100)*6-i*100)),path:u.path.map(p=>({...p})),guide:u.guide?.map(p=>({...p})),
-      antiTank:u.antiTank&&i===0}));
+
+function nextCountryUnitSpeed(unit: SliceUnit, plan?: SlicePlan) {
+  if (!unit.path.length || unit.health === 0) return Infinity;
+  if (unit.kind === "infantry")
+    return CITY_RUN_SPEED * (unit.firing ? 0.65 : 1);
+  if (unit.kind === "airship") return 6;
+  let target = unit.path[0];
+  while (target && Math.hypot(target.x - unit.x, target.z - unit.z) < 1e-7)
+    target = unit.path[unit.path.indexOf(target) + 1];
+  if (!target) return Infinity;
+  const heading = Math.atan2(target.x - unit.x, target.z - unit.z);
+  if (Math.abs(angleDelta(unit.angle, heading)) > 0.25) return 0;
+  return 2.3 * (plan ? countryTankTerrainSpeedFactor(plan, unit) : 1);
+}
+
+function advanceGroupedUnit(
+  unit: SliceUnit,
+  seconds: number,
+  speedCap: number,
+  plan?: SlicePlan,
+) {
+  if (unit.kind === "infantry") {
+    const motion = {
+      ...unit,
+      speed: unit.speed ?? 0,
+      moving: !!unit.path.length,
+    };
+    stepCityInfantry(motion, seconds, speedCap, () => true);
+    Object.assign(unit, {
+      x: motion.x,
+      z: motion.z,
+      angle: motion.angle,
+      distance: motion.distance,
+      speed: motion.speed,
+      path: motion.path,
+    });
+    if (!unit.path.length) unit.guide = [];
+    else
+      unit.guide = unit.guide?.filter((p) =>
+        unit.path.some((q) => q.x === p.x && q.z === p.z),
+      );
+    return;
+  }
+  let remaining = seconds;
+  while (remaining > 1e-9 && unit.path.length) {
+    const point = unit.path[0],
+      dx = point.x - unit.x,
+      dz = point.z - unit.z,
+      length = Math.hypot(dx, dz);
+    if (length < 1e-7) {
+      unit.path.shift();
+      continue;
+    }
+    const heading = Math.atan2(dx, dz),
+      turn = angleDelta(unit.angle, heading);
+    if (unit.kind === "tank" && Math.abs(turn) > 0.25) {
+      const dt = Math.min(remaining, (Math.abs(turn) - 0.25) / 0.8);
+      unit.angle += Math.sign(turn) * dt * 0.8;
+      remaining -= dt;
+      if (remaining <= 1e-9) break;
+    } else if (unit.kind !== "tank") unit.angle = heading;
+    const naturalSpeed =
+        unit.kind === "tank"
+          ? 2.3 * (plan ? countryTankTerrainSpeedFactor(plan, unit) : 1)
+          : 6,
+      speed = Math.min(naturalSpeed, speedCap);
+    if (speed <= 1e-9) break;
+    const travel = Math.min(length, remaining * speed);
+    if (unit.kind === "tank") {
+      const steering = angleDelta(unit.angle, heading);
+      unit.angle +=
+        Math.sign(steering) *
+        Math.min(Math.abs(steering), (travel / speed) * 0.8);
+    }
+    unit.x += (dx / length) * travel;
+    unit.z += (dz / length) * travel;
+    unit.distance += travel;
+    remaining -= travel / speed;
+    if (travel >= length - 1e-7) {
+      unit.path.shift();
+      while (
+        unit.guide?.length &&
+        Math.hypot(unit.guide[0].x - unit.x, unit.guide[0].z - unit.z) < 1e-6
+      )
+        unit.guide.shift();
+    }
+  }
+  if (!unit.path.length) unit.guide = [];
+  if (!unit.path.length && unit.facing !== undefined) {
+    const turn = angleDelta(unit.angle, unit.facing);
+    unit.angle +=
+      unit.kind === "tank"
+        ? Math.sign(turn) * Math.min(Math.abs(turn), remaining * 0.8)
+        : turn;
   }
 }
-export function syncSliceSquads(state:SliceState){
-  for(const u of state.units)if(u.members){
-    const living=u.members.filter(m=>m.health!==0),lead=living.find(m=>m.path.length)||living[0];
-    u.health=u.members.reduce((sum,m)=>sum+(m.health??100),0)/u.members.length;
-    if(lead){u.x=lead.x;u.z=lead.z;u.angle=lead.angle;u.path=lead.path;u.guide=lead.guide;u.cover=living.every(m=>m.cover);u.suppression=Math.max(...living.map(m=>m.suppression??0));}
-    else{u.path=[];u.guide=[];}
+
+/** Project sub-step movement on a disposable render snapshot. */
+export function projectSliceRemainders(state: SliceState, plan?: SlicePlan) {
+  const individuals = state.units.flatMap((u) => u.members ?? [u]),
+    grouped = new Set<SliceUnit>();
+  for (const groupId of new Set(
+    individuals
+      .filter((u) => u.moveGroup && u.health !== 0)
+      .map((u) => u.moveGroup!),
+  )) {
+    const group = individuals.filter(
+        (u) => u.moveGroup === groupId && u.health !== 0,
+      ),
+      remainder = Math.min(...group.map((u) => u.motionRemainder ?? 0));
+    if (group.length < 2) continue;
+    const cap = group.reduce(
+      (speed, unit) => Math.min(speed, nextCountryUnitSpeed(unit, plan)),
+      Infinity,
+    );
+    for (const unit of group) {
+      grouped.add(unit);
+      if (remainder > 0) advanceGroupedUnit(unit, remainder, cap, plan);
+    }
   }
+  for (const unit of individuals) {
+    if (
+      grouped.has(unit) ||
+      unit.kind !== "infantry" ||
+      unit.health === 0 ||
+      !unit.motionRemainder
+    )
+      continue;
+    const motion = {
+      ...unit,
+      speed: unit.speed ?? 0,
+      moving: unit.path.length > 0,
+    };
+    stepCityInfantry(motion, unit.motionRemainder, Infinity, () => true);
+    Object.assign(unit, {
+      x: motion.x,
+      z: motion.z,
+      angle: motion.angle,
+      distance: motion.distance,
+      speed: motion.speed,
+    });
+  }
+  syncSliceSquads(state);
 }
-export function advanceSlice(state: SliceState, now: number) {
+export function ensureSliceSquads(state: SliceState) {
+  for (const u of state.units)
+    if (u.kind === "infantry" && !u.members) {
+      const survivors = Math.ceil(((u.health ?? 100) * 6) / 100);
+      u.members = Array.from({ length: 6 }, (_, i) => ({
+        ...u,
+        members: undefined,
+        id: u.id * 100 + i,
+        x: u.x + ((i % 3) - 1) * 0.7,
+        z: u.z + (Math.floor(i / 3) - 0.5) * 0.7,
+        health: Math.max(0, Math.min(100, (u.health ?? 100) * 6 - i * 100)),
+        path: u.path.map((p) => ({ ...p })),
+        guide: u.guide?.map((p) => ({ ...p })),
+        antiTank: u.antiTank && i === 0,
+      }));
+    }
+}
+export function syncSliceSquads(state: SliceState) {
+  for (const u of state.units)
+    if (u.members) {
+      const living = u.members.filter((m) => m.health !== 0),
+        lead = living.find((m) => m.path.length) || living[0];
+      u.health =
+        u.members.reduce((sum, m) => sum + (m.health ?? 100), 0) /
+        u.members.length;
+      if (lead) {
+        u.x = lead.x;
+        u.z = lead.z;
+        u.angle = lead.angle;
+        u.path = lead.path;
+        u.guide = lead.guide;
+        u.cover = living.every((m) => m.cover);
+        u.suppression = Math.max(...living.map((m) => m.suppression ?? 0));
+      } else {
+        u.path = [];
+        u.guide = [];
+      }
+    }
+}
+export function advanceSlice(state: SliceState, now: number, plan?: SlicePlan) {
   ensureSliceSquads(state);
   let seconds = (Math.max(0, now - state.time) / 1000) * state.pace;
   state.time = Math.max(state.time, now);
   if (!state.running) return;
-  for (const u of state.units.flatMap(u=>u.members??[u])) {
+  const individuals = state.units.flatMap((u) => u.members ?? [u]),
+    grouped = new Set<SliceUnit>();
+  for (const groupId of new Set(
+    individuals
+      .filter((u) => u.moveGroup && u.health !== 0)
+      .map((u) => u.moveGroup!),
+  )) {
+    const group = individuals.filter(
+      (u) => u.moveGroup === groupId && u.health !== 0,
+    );
+    if (group.length < 2) continue;
+    const elapsed =
+        seconds + Math.min(...group.map((u) => u.motionRemainder ?? 0)),
+      steps = Math.floor((elapsed + 1e-9) / 0.05),
+      remainder = Math.max(0, elapsed - steps * 0.05);
+    for (const unit of group) {
+      unit.motionRemainder = remainder;
+      grouped.add(unit);
+    }
+    for (let step = 0; step < steps; step++) {
+      let groupCap = Infinity;
+      for (const unit of group)
+        groupCap = Math.min(groupCap, nextCountryUnitSpeed(unit, plan));
+      for (const unit of group) advanceGroupedUnit(unit, 0.05, groupCap, plan);
+    }
+  }
+  for (const u of individuals) {
     if (u.health === 0) continue;
-    if(u.kind==="infantry"){
-      const elapsed=seconds+(u.motionRemainder??0),steps=Math.floor((elapsed+1e-9)/.05);
-      u.motionRemainder=Math.max(0,elapsed-steps*.05);
-      const motion={...u,speed:u.speed??0,moving:!!u.path.length};
-      for(let i=0;i<steps;i++){
-        if(!motion.path.length&&(motion.facing===undefined||Math.abs(angleDelta(motion.angle,motion.facing))<1e-6)){motion.speed=0;break;}
-        motion.moving=!!motion.path.length;
-        stepCityInfantry(motion,.05,Infinity,()=>true);
+    if (grouped.has(u)) continue;
+    if (u.kind === "infantry") {
+      const elapsed = seconds + (u.motionRemainder ?? 0),
+        steps = Math.floor((elapsed + 1e-9) / 0.05);
+      u.motionRemainder = Math.max(0, elapsed - steps * 0.05);
+      const motion = { ...u, speed: u.speed ?? 0, moving: !!u.path.length };
+      for (let i = 0; i < steps; i++) {
+        if (
+          !motion.path.length &&
+          (motion.facing === undefined ||
+            Math.abs(angleDelta(motion.angle, motion.facing)) < 1e-6)
+        ) {
+          motion.speed = 0;
+          break;
+        }
+        motion.moving = !!motion.path.length;
+        stepCityInfantry(motion, 0.05, Infinity, () => true);
       }
-      u.x=motion.x;u.z=motion.z;u.angle=motion.angle;u.distance=motion.distance;u.speed=motion.speed;u.path=motion.path;
-      if(!u.path.length)u.guide=[];
-      else u.guide=u.guide?.filter(p=>u.path.some(q=>q.x===p.x&&q.z===p.z));
+      u.x = motion.x;
+      u.z = motion.z;
+      u.angle = motion.angle;
+      u.distance = motion.distance;
+      u.speed = motion.speed;
+      u.path = motion.path;
+      if (!u.path.length) u.guide = [];
+      else
+        u.guide = u.guide?.filter((p) =>
+          u.path.some((q) => q.x === p.x && q.z === p.z),
+        );
       continue;
     }
     let remaining = seconds;
@@ -455,8 +708,17 @@ export function advanceSlice(state: SliceState, now: number) {
         remaining -= dt;
         if (remaining <= 0) break;
       } else if (u.kind !== "tank") u.angle = heading;
-      const speed = u.kind === "tank" ? 2.3 : 6,
-        travel = Math.min(length, remaining * speed);
+      const speed =
+          u.kind === "tank"
+            ? 2.3 * (plan ? countryTankTerrainSpeedFactor(plan, u) : 1)
+            : 6,
+        // Short integration spans keep a long offline update from crossing an
+        // entire woodland at the speed sampled before its edge.
+        travel = Math.min(
+          length,
+          remaining * speed,
+          u.kind === "tank" ? 2 : Infinity,
+        );
       if (u.kind === "tank") {
         const steering = angleDelta(u.angle, heading);
         u.angle +=
@@ -489,12 +751,29 @@ export function advanceSlice(state: SliceState, now: number) {
 }
 /** Fine local lattice uses the same building envelopes, terrain and bridge decks as the view. */
 export function createSliceNavigation(plan: SlicePlan) {
+  const cityAnchor = plan.sites.find((s) => s.id === "city") ?? {
+    x: 500,
+    z: 900,
+  };
   const cityNav = createCityTactics(
     plan.city,
     plan.cityContext.seed,
     settlementProfile(plan.cityContext),
   );
-  const local = (p: SlicePoint) => ({ x: p.x - 500, z: p.z - 900 });
+  cityNav.setSandbags(
+    plan.obstacles
+      .filter((o) => o.id.startsWith("campaign-bag-"))
+      .map((o) => ({
+        ...o,
+        id: Number(o.id.slice(13)),
+        x: o.x - cityAnchor.x,
+        z: o.z - cityAnchor.z,
+      })),
+  );
+  const local = (p: SlicePoint) => ({
+    x: p.x - cityAnchor.x,
+    z: p.z - cityAnchor.z,
+  });
   const inCity = (p: SlicePoint) => {
     const q = local(p);
     return (
@@ -531,16 +810,9 @@ export function createSliceNavigation(plan: SlicePlan) {
       }
   }
   const onBridge = (p: SlicePoint, radius: number) =>
-    plan.roads.bridges.some((b) => {
-      const dx = p.x - b.x,
-        dz = p.z - b.y,
-        c = Math.cos(b.angle),
-        s = Math.sin(b.angle);
-      return (
-        Math.abs(dx * c + dz * s) <= b.length / 2 &&
-        Math.abs(-dx * s + dz * c) < b.width / 2 - radius
-      );
-    });
+    plan.roads.bridges.some((b) =>
+      countryBridgeContains(b, plan.roads.scale, { x: p.x, y: p.z }, radius),
+    );
   function walkable(p: SlicePoint, kind: SliceUnit["kind"]) {
     if (p.x < 3 || p.z < 3 || p.x > plan.width - 3 || p.z > plan.depth - 3)
       return false;
@@ -558,7 +830,11 @@ export function createSliceNavigation(plan: SlicePlan) {
       (
         obstacleCells.get(`${Math.floor(p.x / 24)}:${Math.floor(p.z / 24)}`) ??
         []
-      ).some((o) => obstacleDistance(p, o) < (kind === "tank" ? 1.8 : radius))
+      ).some(
+        (o) =>
+          !(kind === "tank" && o.id.startsWith("campaign-bag-")) &&
+          obstacleDistance(p, o) < (kind === "tank" ? 1.8 : radius),
+      )
     )
       return false;
     if (
@@ -571,33 +847,40 @@ export function createSliceNavigation(plan: SlicePlan) {
     return true;
   }
   function clear(a: SlicePoint, b: SlicePoint, kind: SliceUnit["kind"]) {
-    if (inCity(a) && inCity(b) && kind !== "airship")
+    if (kind === "airship") return walkable(a, kind) && walkable(b, kind);
+    if (inCity(a) && inCity(b))
       return cityNav.segmentClear(
         local(a),
         local(b),
         kind === "tank" ? "vehicle" : "infantry",
       );
-    const d = Math.hypot(b.x - a.x, b.z - a.z),
-      n = Math.max(1, Math.ceil(d));
-    let h = terrainHeight(plan.surface, a.x, a.z);
+    const d = Math.hypot(b.x - a.x, b.z - a.z);
+    if (plan.campaignMap && d > 100)
+      return countryLongSegmentClear(plan, a, b, kind);
+    const n = Math.max(1, Math.ceil(d));
+    let h = countryRoadSurfaceHeight(plan.roads, plan.surface, {
+      x: a.x,
+      y: a.z,
+    });
     for (let i = 0; i <= n; i++) {
       const p = {
         x: a.x + ((b.x - a.x) * i) / n,
         z: a.z + ((b.z - a.z) * i) / n,
       };
       if (!walkable(p, kind)) return false;
-      const next = terrainHeight(plan.surface, p.x, p.z);
-      if (
-        kind !== "airship" &&
-        !inCity(p) &&
-        i &&
-        Math.abs(next - h) / (d / n || 1) > 0.18
-      )
+      const next = countryRoadSurfaceHeight(plan.roads, plan.surface, {
+        x: p.x,
+        y: p.z,
+      });
+      if (!inCity(p) && i && Math.abs(next - h) / (d / n || 1) > 0.18)
         return false;
       h = next;
     }
     return true;
   }
+  const travel = plan.campaignMap
+    ? createCountryTravelGraph(plan, clear)
+    : undefined;
   function rawRoute(
     start: SlicePoint,
     end: SlicePoint,
@@ -606,13 +889,27 @@ export function createSliceNavigation(plan: SlicePlan) {
     if (!walkable(end, kind))
       throw Error("Destination blocked by terrain, water or cover");
     if (kind === "airship") return [{ ...end }];
+    if (travel && Math.hypot(end.x - start.x, end.z - start.z) > 1200) {
+      const gate = plan.roads.roads
+        .find((r) => r.id === "city-approach")
+        ?.path.at(-1);
+      const exit = gate ? { x: gate.x, z: gate.y } : undefined;
+      const first = inCity(start) && exit ? rawRoute(start, exit, kind) : [],
+        last = inCity(end) && exit ? rawRoute(exit, end, kind) : [];
+      const a = first.at(-1) ?? start,
+        b = last.length ? exit! : end;
+      const middle = clear(a, b, kind) ? [{ ...b }] : travel(a, b, kind);
+      return [...first, ...middle, ...last];
+    }
     // Open ground can cross the settlement boundary anywhere, not only at its road portal.
     if (clear(start, end, kind)) return [{ ...end }];
     const cityKind = kind === "tank" ? "vehicle" : "infantry";
     if (inCity(start) && inCity(end)) {
       const path = cityNav.route(local(start), local(end), cityKind);
       if (!path.length) throw Error("No safe city street route");
-      return path.slice(1).map((p) => ({ x: p.x + 500, z: p.z + 900 }));
+      return path
+        .slice(1)
+        .map((p) => ({ x: p.x + cityAnchor.x, z: p.z + cityAnchor.z }));
     }
     const point = (i: number) => ({
         x: (i % cols) * step,
@@ -746,7 +1043,10 @@ export function createSliceNavigation(plan: SlicePlan) {
     height: (p: SlicePoint) =>
       inCity(p)
         ? cityNav.surfaceHeight(local(p))
-        : terrainHeight(plan.surface, p.x, p.z) + 0.15,
+        : countryRoadSurfaceHeight(plan.roads, plan.surface, {
+            x: p.x,
+            y: p.z,
+          }) + 0.15,
   };
 }
 export function commandSlice(
@@ -759,31 +1059,78 @@ export function commandSlice(
   append = false,
   facing?: number,
 ) {
-  if(ids.some(id=>state.units.find(u=>u.id===id)?.members)){
-    const individual={...state,units:state.units.flatMap(u=>u.members??[u])};
-    const members=state.units.filter(u=>ids.includes(u.id)).flatMap(u=>(u.members??[u]).filter(m=>m.health!==0));
-    if(ids.some(id=>!state.units.some(u=>u.id===id))||new Set(ids).size!==ids.length)throw Error("Select valid squads");
-    commandSlice(plan,nav,individual,members.map(m=>m.id),action,target,append,facing);
-    syncSliceSquads(state);state.revision++;return;
+  if (ids.some((id) => state.units.find((u) => u.id === id)?.members)) {
+    const individual = {
+      ...state,
+      units: state.units.flatMap((u) => u.members ?? [u]),
+    };
+    const members = state.units
+      .filter((u) => ids.includes(u.id))
+      .flatMap((u) => (u.members ?? [u]).filter((m) => m.health !== 0));
+    if (
+      ids.some((id) => !state.units.some((u) => u.id === id)) ||
+      new Set(ids).size !== ids.length
+    )
+      throw Error("Select valid squads");
+    commandSlice(
+      plan,
+      nav,
+      individual,
+      members.map((m) => m.id),
+      action,
+      target,
+      append,
+      facing,
+    );
+    state.movementSequence = individual.movementSequence;
+    for (const group of state.units.filter((u) => ids.includes(u.id)))
+      group.support = undefined;
+    syncSliceSquads(state);
+    state.revision++;
+    return;
   }
   const units = ids.map((id) => state.units.find((u) => u.id === id));
-  if (units.some((u) => u?.enemy || u?.health === 0)) throw Error("Select surviving friendly squads");
+  if (units.some((u) => u?.enemy || u?.health === 0))
+    throw Error("Select surviving friendly squads");
   if (!ids.length || new Set(ids).size !== ids.length || units.some((u) => !u))
     throw Error("Select valid squads");
-  let orderTarget=target;
-  if(action==="cover"&&target&&!plan.obstacles.some(o=>o.kind!=="garden"&&obstacleDistance(target,o)<=COVER_ORDER_REACH)){
-    orderTarget=[...plan.cover].sort((a,b)=>Math.hypot(a.x-target.x,a.z-target.z)-Math.hypot(b.x-target.x,b.z-target.z))[0];
-    if(!orderTarget||Math.hypot(orderTarget.x-target.x,orderTarget.z-target.z)>120)throw Error("No nearby free cover");
+  let orderTarget = target;
+  if (
+    action === "cover" &&
+    target &&
+    !plan.obstacles.some(
+      (o) =>
+        o.kind !== "garden" && obstacleDistance(target, o) <= COVER_ORDER_REACH,
+    )
+  ) {
+    orderTarget = [...plan.cover].sort(
+      (a, b) =>
+        Math.hypot(a.x - target.x, a.z - target.z) -
+        Math.hypot(b.x - target.x, b.z - target.z),
+    )[0];
+    if (
+      !orderTarget ||
+      Math.hypot(orderTarget.x - target.x, orderTarget.z - target.z) > 120
+    )
+      throw Error("No nearby free cover");
   }
-  const placements=orderTarget?previewSlicePlacement(plan,nav,state,ids,orderTarget,facing):[];
-  const paths=units.map(u=>{
-    if(action==="hold")return [];
-    if(!orderTarget)throw Error("Choose a destination");
-    if(action==="cover"&&u!.kind!=="infantry")throw Error("Only infantry can take low cover");
-    const placement=placements.find(p=>p.id===u!.id);
-    if(u!.kind!=="airship"&&!placement?.valid)throw Error("No safe formation position");
-    const end=placement??orderTarget;
-    return nav.route(append&&u!.path.length?u!.path.at(-1)!:u!,end,u!.kind);
+  const placements = orderTarget
+    ? previewSlicePlacement(plan, nav, state, ids, orderTarget, facing)
+    : [];
+  const paths = units.map((u) => {
+    if (action === "hold") return [];
+    if (!orderTarget) throw Error("Choose a destination");
+    if (action === "cover" && u!.kind !== "infantry")
+      throw Error("Only infantry can take low cover");
+    const placement = placements.find((p) => p.id === u!.id);
+    if (u!.kind !== "airship" && !placement?.valid)
+      throw Error("No safe formation position");
+    const end = placement ?? orderTarget;
+    return nav.route(
+      append && u!.path.length ? u!.path.at(-1)! : u!,
+      end,
+      u!.kind,
+    );
   });
   if (
     units.some(
@@ -808,7 +1155,13 @@ export function commandSlice(
     )
   )
     throw Error("Waypoint queue is full");
+  const moveGroup =
+    action !== "hold" && units.length > 1
+      ? (state.movementSequence = (state.movementSequence ?? 0) + 1)
+      : undefined;
   units.forEach((u, i) => {
+    u!.moveGroup = moveGroup;
+    u!.motionRemainder = 0;
     u!.path =
       append && action === "move"
         ? [...u!.path, ...varied[i].path.slice(1)]
@@ -817,10 +1170,22 @@ export function commandSlice(
       append && action === "move"
         ? [...(u!.guide ?? []), ...varied[i].guide.slice(1)]
         : varied[i].guide.slice(1);
-    u!.cover = action!=="hold" && (placements.find(p=>p.id===u!.id)?.cover??"none")!=="none";
-    u!.stance=action==="hold"?"hold":"move";
-    u!.reaction=undefined;
-    u!.facing = action!=="hold" ? placements.find(p=>p.id===u!.id)?.angle??facing : undefined;
+    u!.coverLevel =
+      action === "hold"
+        ? "none"
+        : (placements.find((p) => p.id === u!.id)?.cover ?? "none");
+    u!.cover =
+      action !== "hold" &&
+      (placements.find((p) => p.id === u!.id)?.cover ?? "none") !== "none";
+    u!.stance = action === "hold" ? "hold" : "move";
+    u!.reaction = undefined;
+    u!.support = undefined;
+    u!.supportMove = false;
+    u!.supportTarget = undefined;
+    u!.facing =
+      action !== "hold"
+        ? (placements.find((p) => p.id === u!.id)?.angle ?? facing)
+        : undefined;
   });
   state.revision++;
 }
@@ -832,12 +1197,16 @@ export function upgradeSliceCity(
 ) {
   if (state.version === 9) return;
   const defaults = createSliceState(state.time);
-  for (const u of state.units.flatMap(u=>u.members??[u])) {
+  for (const u of state.units.flatMap((u) => u.members ?? [u])) {
     u.path = [];
     u.guide = [];
     u.cover = false;
+    u.coverLevel = "none";
     if (!nav.walkable(u, u.kind)) {
-      const origin = defaults.units.find((d) => d.id === (u.id>=100?Math.floor(u.id/100):u.id)) ?? u;
+      const origin =
+        defaults.units.find(
+          (d) => d.id === (u.id >= 100 ? Math.floor(u.id / 100) : u.id),
+        ) ?? u;
       let found: SlicePoint | undefined;
       for (let r = 0; r < 40 && !found; r += 2)
         for (let a = 0; a < 16 && !found; a++) {

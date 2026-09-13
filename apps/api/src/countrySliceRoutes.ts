@@ -3,7 +3,14 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import { Store, hash } from "./store";
-import { advanceEncounter, encounterSight, startEncounter } from "../../../packages/game-core/src/countryEncounter";
+import {
+  advanceEncounter,
+  countryPlayerState,
+  countryVisibility,
+  encounterSight,
+  startEncounter,
+  encounterFinished,
+} from "../../../packages/game-core/src/countryEncounter";
 import {
   upgradeSliceCity,
   advanceSlice,
@@ -14,13 +21,18 @@ import {
   type SliceState,
 } from "../../../packages/game-core/src/countrySlice";
 export class CountrySliceStore {
-  constructor(private store: Store, private advance: (s:SliceState,now:number)=>void = advanceSlice) {
+  constructor(
+    private store: Store,
+    private advance: (s: SliceState, now: number) => void = advanceSlice,
+  ) {
     store.db.exec(
       "CREATE TABLE IF NOT EXISTS country_slices(token TEXT PRIMARY KEY,state TEXT NOT NULL)",
     );
   }
   create(key: string, now: number) {
-    const state = createSliceState(now);
+    return this.createState(key, createSliceState(now));
+  }
+  createState(key: string, state: SliceState) {
     this.store.db
       .prepare("INSERT INTO country_slices VALUES(?,?)")
       .run(hash(key), JSON.stringify(state));
@@ -51,10 +63,12 @@ export class CountrySliceStore {
 }
 export function countrySliceRoutes(app: FastifyInstance, store: Store) {
   let sight: ReturnType<typeof encounterSight> | undefined;
-  let activePlan:SlicePlan|undefined;
-  const saves = new CountrySliceStore(store, (s,now)=> {
-    if(s.encounter && sight) advanceEncounter(s,now,sight,activePlan,nav);
-    else if(!s.encounter) advanceSlice(s,now);
+  let visibility: ReturnType<typeof countryVisibility> | undefined;
+  let activePlan: SlicePlan | undefined;
+  const saves = new CountrySliceStore(store, (s, now) => {
+    if (s.encounter && sight)
+      advanceEncounter(s, now, sight, activePlan, nav, visibility);
+    else if (!s.encounter) advanceSlice(s, now, activePlan);
   });
   let pending: Promise<SlicePlan> | undefined,
     worker: Worker | undefined,
@@ -65,12 +79,13 @@ export function countrySliceRoutes(app: FastifyInstance, store: Store) {
       const timer = setTimeout(() => {
         void worker?.terminate();
         reject(Error("Sector generation timed out"));
-      }, 60000);
+      }, 120000);
       worker.once("message", (p) => {
         clearTimeout(timer);
         nav = createSliceNavigation(p);
-        activePlan=p;
+        activePlan = p;
         sight = encounterSight(p);
+        visibility = countryVisibility(p, sight);
         resolve(p);
       });
       worker.once("error", (e) => {
@@ -100,7 +115,10 @@ export function countrySliceRoutes(app: FastifyInstance, store: Store) {
       .get() as { n: number };
     if (count.n >= 64) throw Error("Review session capacity reached");
     const key = randomBytes(24).toString("hex");
-    return { key, state: saves.create(key, Date.now()) };
+    return {
+      key,
+      state: countryPlayerState(saves.create(key, Date.now()), visibility!),
+    };
   });
   app.get("/api/country-slice/plan", async (req) => {
     saves.mutate(auth(req.headers.authorization), Date.now());
@@ -120,19 +138,32 @@ export function countrySliceRoutes(app: FastifyInstance, store: Store) {
     const key = auth(req.headers.authorization);
     await plan();
     const state = saves.mutate(key, Date.now());
-    if (state.version === 9) return state;
+    if (state.version === 9) return countryPlayerState(state, visibility!);
     await plan();
-    return saves.mutate(key, Date.now(), (s) => upgradeSliceCity(s, nav!));
+    return countryPlayerState(
+      saves.mutate(key, Date.now(), (s) => upgradeSliceCity(s, nav!)),
+      visibility!,
+    );
   });
   const input = z
     .object({
-      action: z.enum(["move", "hold", "cover", "run", "pace", "encounter"]),
+      action: z.enum([
+        "move",
+        "hold",
+        "cover",
+        "run",
+        "pace",
+        "encounter",
+        "restage",
+        "lighting",
+      ]),
       ids: z.array(z.number().int()).max(4).default([]),
       x: z.number().finite().min(0).max(3000).optional(),
       z: z.number().finite().min(0).max(1800).optional(),
       append: z.boolean().default(false),
       facing: z.number().finite().min(-Math.PI).max(Math.PI).optional(),
       pace: z.union([z.literal(1), z.literal(20)]).optional(),
+      lighting: z.enum(["cycle", "day", "night"]).optional(),
       running: z.boolean().optional(),
     })
     .strict();
@@ -161,7 +192,11 @@ export function countrySliceRoutes(app: FastifyInstance, store: Store) {
         valid: true,
         units: state.units
           .filter((u) => data.ids.includes(u.id))
-          .map((u) => ({ id: u.id, path: u.path, members:u.members?.map(m=>({id:m.id,path:m.path})) })),
+          .map((u) => ({
+            id: u.id,
+            path: u.path,
+            members: u.members?.map((m) => ({ id: m.id, path: m.path })),
+          })),
       };
     } catch (error) {
       return {
@@ -176,11 +211,23 @@ export function countrySliceRoutes(app: FastifyInstance, store: Store) {
       key = auth(req.headers.authorization);
     saves.mutate(key, Date.now());
     const p = await plan();
-    return saves.mutate(key, Date.now(), (s) => {
+    const state = saves.mutate(key, Date.now(), (s) => {
       upgradeSliceCity(s, nav!);
-      if (data.action === "encounter") {
-        if(s.encounter) throw Error("Encounter already deployed");
-        startEncounter(s,p,nav!);
+      if (data.action === "restage") {
+        s.encounter = undefined;
+        startEncounter(s, p, nav!);
+      } else if (data.action === "encounter") {
+        if (s.encounter && !encounterFinished(s))
+          throw Error("Encounter already deployed");
+        startEncounter(s, p, nav!);
+      } else if (
+        encounterFinished(s) &&
+        data.action !== "pace" &&
+        data.action !== "lighting"
+      ) {
+        throw Error(
+          "Encounter finished. Restart encounter to command a new force.",
+        );
       } else if (data.action === "run") {
         if (data.running === undefined) throw Error("Running state required");
         s.running = data.running;
@@ -188,6 +235,10 @@ export function countrySliceRoutes(app: FastifyInstance, store: Store) {
       } else if (data.action === "pace") {
         if (!data.pace) throw Error("Pace required");
         s.pace = data.pace;
+        s.revision++;
+      } else if (data.action === "lighting") {
+        if (!data.lighting) throw Error("Lighting mode required");
+        s.lighting = data.lighting;
         s.revision++;
       } else
         commandSlice(
@@ -203,5 +254,6 @@ export function countrySliceRoutes(app: FastifyInstance, store: Store) {
           data.facing,
         );
     });
+    return countryPlayerState(state, visibility!);
   });
 }

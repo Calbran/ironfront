@@ -37,6 +37,85 @@ export type CountryBridge = {
   length: number;
   width: number;
 };
+export const COUNTRY_BRIDGE_RAMP_LENGTH = 12;
+export const COUNTRY_BRIDGE_MIN_DECK_TOP = 1.2;
+
+export function countryBridgeCoordinates(
+  bridge: CountryBridge,
+  scale: number,
+  p: RoadPoint,
+) {
+  const dx = (p.x - bridge.x) * scale,
+    dy = (p.y - bridge.y) * scale,
+    c = Math.cos(bridge.angle),
+    s = Math.sin(bridge.angle);
+  return {
+    along: dx * c + dy * s,
+    across: -dx * s + dy * c,
+  };
+}
+
+export function countryBridgeContains(
+  bridge: CountryBridge,
+  scale: number,
+  p: RoadPoint,
+  radius = 0,
+) {
+  const q = countryBridgeCoordinates(bridge, scale, p);
+  return (
+    Math.abs(q.along) <= bridge.length / 2 &&
+    Math.abs(q.across) <= bridge.width / 2 - radius
+  );
+}
+
+/** The physical deck clears water and meets the sampled banks through bounded ramps. */
+export function countryBridgeDeckHeight(
+  surface: TerrainSurface,
+  bridge: CountryBridge,
+  scale: number,
+) {
+  const c = Math.cos(bridge.angle),
+    s = Math.sin(bridge.angle),
+    reach = (bridge.length / 2 + COUNTRY_BRIDGE_RAMP_LENGTH) / scale;
+  return Math.max(
+    COUNTRY_BRIDGE_MIN_DECK_TOP,
+    ...[-1, 1].map(
+      (sign) =>
+        terrainHeight(
+          surface,
+          bridge.x + c * reach * sign,
+          bridge.y + s * reach * sign,
+        ) + 0.2,
+    ),
+  );
+}
+
+/** Shared travel surface for road ribbons, units, path guides and grade checks. */
+export function countryRoadSurfaceHeight(
+  network: Pick<CountryRoadNetwork, "bridges" | "scale">,
+  surface: TerrainSurface,
+  p: RoadPoint,
+  lateralMargin = 0,
+) {
+  let height = terrainHeight(surface, p.x, p.y);
+  for (const bridge of network.bridges) {
+    const q = countryBridgeCoordinates(bridge, network.scale, p),
+      ramp = Math.max(
+        0,
+        Math.min(
+          1,
+          (bridge.length / 2 + COUNTRY_BRIDGE_RAMP_LENGTH -
+            Math.abs(q.along)) /
+            COUNTRY_BRIDGE_RAMP_LENGTH,
+        ),
+      );
+    if (!ramp || Math.abs(q.across) > bridge.width / 2 + lateralMargin)
+      continue;
+    const deck = countryBridgeDeckHeight(surface, bridge, network.scale);
+    height = Math.max(height, height + (deck - height) * ramp);
+  }
+  return height;
+}
 export type CountryRoadNetwork = {
   roads: CountryRoad[];
   bridges: CountryBridge[];
@@ -103,6 +182,36 @@ const MAX_ROAD_GRADE = 0.18;
 const key = (a: number, b: number) => (a < b ? `${a}:${b}` : `${b}:${a}`);
 const distance = (a: RoadPoint, b: RoadPoint) =>
   Math.hypot(a.x - b.x, a.y - b.y);
+
+/**
+ * Remove short grid-search corrections without changing road endpoints.
+ * Every replacement chord must pass the same terrain, grade and site-clearance
+ * checks as the original route, and the bounded span preserves broad bends.
+ */
+export function simplifyCountryRoadPath(
+  path: readonly RoadPoint[],
+  segmentClear: (a: RoadPoint, b: RoadPoint) => boolean,
+  maxChord: number,
+  maxLookahead = 8,
+) {
+  if (path.length < 3) return [...path];
+  const simplified = [path[0]];
+  let anchor = 0;
+  while (anchor < path.length - 1) {
+    let next = anchor + 1;
+    for (
+      let candidate = anchor + 2;
+      candidate < path.length && candidate <= anchor + maxLookahead;
+      candidate++
+    ) {
+      if (distance(path[anchor], path[candidate]) > maxChord) continue;
+      if (segmentClear(path[anchor], path[candidate])) next = candidate;
+    }
+    simplified.push(path[next]);
+    anchor = next;
+  }
+  return simplified;
+}
 
 class Heap {
   items: { node: number; cost: number }[] = [];
@@ -485,19 +594,26 @@ export function buildCountryRoadNetwork(
   const used = new Set<number>();
   function addRoad(path: RoadPoint[], highway: boolean) {
     if (path.length < 2) return;
+    // The flood runs on an eight-direction lattice and can alternate between
+    // equivalent cells. Collapse those tiny reversals before rounding bends.
+    const centerline = simplifyCountryRoadPath(
+      path,
+      (a, b) => clear(a, b),
+      step * (highway ? 8 : 6),
+    );
     // Cut grid corners only when the rounded segments still pass clearance/grade checks.
-    const curve = [path[0]];
-    for (let i = 1; i < path.length - 1; i++) {
-      const a = path[i - 1],
-        b = path[i],
-        c = path[i + 1],
+    const curve = [centerline[0]];
+    for (let i = 1; i < centerline.length - 1; i++) {
+      const a = centerline[i - 1],
+        b = centerline[i],
+        c = centerline[i + 1],
         p = { x: b.x + (a.x - b.x) * 0.22, y: b.y + (a.y - b.y) * 0.22 },
         q = { x: b.x + (c.x - b.x) * 0.22, y: b.y + (c.y - b.y) * 0.22 };
       if (clear(curve[curve.length - 1], p) && clear(p, q) && clear(q, c))
         curve.push(p, q);
       else curve.push(b);
     }
-    curve.push(path[path.length - 1]);
+    curve.push(centerline[centerline.length - 1]);
     result.roads.push({
       id: `country-road-${result.roads.length}`,
       highway,

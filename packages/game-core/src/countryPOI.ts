@@ -81,6 +81,10 @@ export type CountryPOI = {
   buildings: POIBuilding[];
   props: POIProp[];
   fields: POIField[];
+  developed?: {
+    polygon: { x: number; z: number }[];
+    kind: "urban" | "yard" | "garden";
+  }[];
   trees: { x: number; z: number; variant: string }[];
   roads: POIRoad[];
   paths?: POIRoad[];
@@ -290,7 +294,11 @@ function generateCompactCountryPOI(kind: POIKind, seed: number): CountryPOI {
 export function generateCountryPOI(
   kind: POIKind,
   seed: number,
-  options?: { size: CountryPOISize; density?: number },
+  options?: {
+    size: CountryPOISize;
+    density?: number;
+    industrialComplex?: boolean;
+  },
 ): CountryPOI {
   const base = generateCompactCountryPOI(kind, seed);
   if (!base.fields.length) {
@@ -299,6 +307,7 @@ export function generateCountryPOI(
       seed,
       options?.size ?? "site",
       options?.density,
+      options?.industrialComplex,
     );
     plan.name = base.name;
     return plan;

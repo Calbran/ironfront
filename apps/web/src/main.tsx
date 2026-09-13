@@ -1,11 +1,16 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "./App";
 import "@fontsource/barlow-condensed/latin-500.css";
-import "@fontsource/barlow-condensed/latin-600.css";
-import "./style.css";
+const Archived = lazy(() => import("./ArchivedCampaignEntry"));
+const Campaign = lazy(() => import("./BattlefieldApp"));
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <Suspense fallback={<p>Loading Ironfront…</p>}>
+      {document.documentElement.dataset.renderer === "pixi" ? (
+        <Archived />
+      ) : (
+        <Campaign />
+      )}
+    </Suspense>
   </React.StrictMode>,
 );

@@ -1,4 +1,8 @@
-import { countryRoadWidthAt } from "../../../../packages/game-core/src/countryRoadNetwork";
+import {
+  countryBridgeDeckHeight,
+  countryRoadSurfaceHeight,
+  countryRoadWidthAt,
+} from "../../../../packages/game-core/src/countryRoadNetwork";
 import { createStreetTexture } from "./streetTexture";
 import { createRoadsideDetail } from "./roadsideDetail";
 import * as T from "three";
@@ -106,32 +110,13 @@ export function createCountryRoadScene(
             v = point(
               x,
               y,
-              terrainHeight(surface, x, y) + (shoulder ? 0.065 : 0.17),
+              countryRoadSurfaceHeight(
+                network,
+                surface,
+                { x, y },
+                shoulder ? 1 : 0,
+              ) + (shoulder ? 0.065 : 0.17),
             );
-          for (const bridge of network.bridges) {
-            const dx = (x - bridge.x) * network.scale,
-              dy = (y - bridge.y) * network.scale,
-              c = Math.cos(bridge.angle),
-              s = Math.sin(bridge.angle),
-              along = Math.abs(dx * c + dy * s),
-              across = Math.abs(-dx * s + dy * c),
-              ramp = Math.max(
-                0,
-                Math.min(1, (bridge.length / 2 + 8 - along) / 8),
-              );
-            if (ramp && across <= bridge.width / 2 + 1) {
-              const deckTop =
-                point(
-                  bridge.x,
-                  bridge.y,
-                  Math.max(0, terrainHeight(surface, bridge.x, bridge.y)),
-                ).y + 0.395;
-              v.y = Math.max(
-                v.y,
-                v.y + (deckTop + (shoulder ? 0.005 : 0.02) - v.y) * ramp,
-              );
-            }
-          }
           positions.push(v.x, v.y, v.z);
         }
         if (i) {
@@ -212,17 +197,42 @@ export function createCountryRoadScene(
   materials.push(mapMat);
   const mapLines = new T.LineSegments(mapGeo, mapMat);
   root.add(mapLines);
+  const localPositions: number[] = [];
+  for (const road of network.roads.filter((r) => !r.highway)) {
+    const path = drapedRoadPoints(road.path, surface.step);
+    for (let i = 1; i < path.length; i++)
+      for (const p of [path[i - 1], path[i]]) {
+        const v = point(p.x, p.y, terrainHeight(surface, p.x, p.y) + 0.2);
+        localPositions.push(v.x, v.y, v.z);
+      }
+  }
+  const localMapGeo = new T.BufferGeometry();
+  localMapGeo.setAttribute(
+    "position",
+    new T.Float32BufferAttribute(localPositions, 3),
+  );
+  geometries.push(localMapGeo);
+  const localMapMat = new T.LineBasicMaterial({
+    color: 0xbcb18c,
+    transparent: true,
+    opacity: 0.42,
+  });
+  materials.push(localMapMat);
+  const localMapLines = new T.LineSegments(localMapGeo, localMapMat);
+  root.add(localMapLines);
   const box = new T.BoxGeometry(1, 1, 1);
   geometries.push(box);
   const deck = new T.InstancedMesh(box, bridgeMat, network.bridges.length),
     rails = new T.InstancedMesh(box, railMat, network.bridges.length * 2),
     pose = new T.Object3D();
   network.bridges.forEach((b, i) => {
-    const p = point(b.x, b.y, Math.max(0, terrainHeight(surface, b.x, b.y)));
+    const deckTop = countryBridgeDeckHeight(surface, b, network.scale),
+      deckThickness = 0.6,
+      p = point(b.x, b.y, deckTop);
     pose.position.copy(p);
-    pose.position.y += 0.22;
+    pose.position.y -= deckThickness / 2;
     pose.rotation.set(0, -b.angle, 0);
-    pose.scale.set(b.length, 0.35, b.width);
+    pose.scale.set(b.length, deckThickness, b.width);
     pose.updateMatrix();
     deck.setMatrixAt(i, pose.matrix);
     for (const [j, sign] of [-1, 1].entries()) {
@@ -231,7 +241,7 @@ export function createCountryRoadScene(
         .add(
           new T.Vector3(
             ((-Math.sin(b.angle) * b.width) / 2) * sign,
-            0.65,
+            0.325,
             ((Math.cos(b.angle) * b.width) / 2) * sign,
           ),
         );
@@ -247,6 +257,8 @@ export function createCountryRoadScene(
       roadside.update(camera, target);
       const strategic = camera.position.distanceTo(target) > 1500;
       mapLines.visible = strategic;
+      localMapLines.visible =
+        strategic && camera.position.distanceTo(target) < 24000;
       ribbons.forEach((mesh) => (mesh.visible = !strategic));
       deck.visible = rails.visible = !strategic;
       return strategic ? "strategic" : "detailed";

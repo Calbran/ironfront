@@ -1,4 +1,10 @@
 import type { Squad } from "./tactics.ts";
+import {
+  tacticalRangeAccuracy,
+  tacticalRangeDamage,
+  tacticalWeaponProfile,
+  type TacticalWeaponRole,
+} from "./cityCombatRules.ts";
 export type FirePoint = { x: number; y: number };
 export type FireObstacle = {
   id: string;
@@ -6,7 +12,12 @@ export type FireObstacle = {
   exposure: number;
 };
 export const FIRE_STEP = 1 / 40; // Campaign hours; independent of wall-clock polling.
-export type FireMemory = { seed: number; rounds: number; reload: number };
+export type FireMemory = {
+  seed: number;
+  rounds: number;
+  reload: number;
+  cadence?: number;
+};
 const profiles = {
   infantry: { armor: 0.005, soft: 1, magazine: 8, reload: 3 },
   garrison: { armor: 0.005, soft: 1, magazine: 8, reload: 3 },
@@ -40,6 +51,7 @@ export function fireVolley(
   range: number,
   exposure: number,
   multiplier: number,
+  weaponRole?: TacticalWeaponRole,
 ) {
   const m = (s.fireMemory ??= { seed: hash(s.id), rounds: 0, reload: 0 });
   if (m.reload > 0) {
@@ -48,8 +60,22 @@ export function fireVolley(
   }
   if (s.strength <= 0 || d.strength <= 0 || distance > range || exposure <= 0)
     return { damage: 0, rawDamage: 0, suppression: 0, fired: false };
-  const p = profiles[s.kind],
-    shooters = Math.max(
+  const tactical = weaponRole ? tacticalWeaponProfile(weaponRole) : undefined,
+    p = tactical ?? profiles[s.kind];
+  if (weaponRole === "rifle") {
+    // An aimed semi-auto rhythm: begin out of phase, pause between every shot,
+    // and take a longer breath after each short three-round string.
+    m.cadence ??= m.seed % 8;
+    if (m.cadence > 0) {
+      m.cadence--;
+      return { damage: 0, rawDamage: 0, suppression: 0, fired: false };
+    }
+  } else if (weaponRole === "lmg") {
+    m.cadence = ((m.cadence ?? m.seed % 10) + 1) % 10;
+    if (m.cadence === 0)
+      return { damage: 0, rawDamage: 0, suppression: 0, fired: false };
+  }
+  const shooters = Math.max(
       1,
       Math.ceil(
         (s.unitCount ?? 6) * Math.min(1, s.strength / Math.max(1, s.capacity)),
@@ -60,9 +86,11 @@ export function fireVolley(
     0.02,
     Math.min(
       0.95,
-      0.8 *
-        (1 - 0.55 * Math.min(1, distance / range)) *
-        (moving ? 0.55 : 1) *
+      (tactical?.baseAccuracy ?? 0.8) *
+        (weaponRole
+          ? tacticalRangeAccuracy(weaponRole, distance)
+          : 1 - 0.55 * Math.min(1, distance / range)) *
+        (moving ? (tactical?.movingAccuracy ?? 0.55) : 1) *
         (1 - 0.7 * s.suppression) *
         exposure,
     ),
@@ -70,21 +98,33 @@ export function fireVolley(
   let hits = 0;
   for (let i = 0; i < shooters; i++) if (roll(m) < chance) hits++;
   m.rounds++;
+  if (weaponRole === "rifle") {
+    const breath = m.rounds > 0 && m.rounds % 3 === 0
+      ? 4 + ((m.seed >>> 5) % 5)
+      : 0;
+    m.cadence = 5 + (m.seed % 4) + breath;
+  }
   if (m.rounds >= p.magazine) {
     m.rounds = 0;
     m.reload = p.reload;
+    if (weaponRole === "rifle") m.cadence = 0;
   }
-  const effectiveness = d.kind === "armor" ? p.armor : p.soft;
+  const effectiveness = d.kind === "armor" ? p.armor : p.soft,
+    distanceDamage = weaponRole
+      ? tacticalRangeDamage(weaponRole, distance)
+      : 1;
   // Compensation keeps the existing campaign-scale firepower near its former baseline.
   const perHit =
     ((s.strength * 0.42 * FIRE_STEP) / (shooters * 0.6)) *
-    (1 + p.reload / p.magazine);
+    (weaponRole === "rifle" ? 1 : 1 + p.reload / p.magazine);
   return {
-    rawDamage: hits * perHit * multiplier,
-    damage: hits * perHit * effectiveness * multiplier,
+    rawDamage: hits * perHit * multiplier * distanceDamage,
+    damage: hits * perHit * effectiveness * multiplier * distanceDamage,
     suppression:
       ((shooters * perHit * 0.6) / 65) *
-      (d.kind === "armor" && p.armor < 0.1 ? 0.05 : 1),
+      (d.kind === "armor" && p.armor < 0.1 ? 0.05 : 1) *
+      (tactical?.suppression ?? 1) *
+      (weaponRole ? Math.max(0.35, tacticalRangeAccuracy(weaponRole, distance)) : 1),
     fired: true,
   };
 }
@@ -220,21 +260,48 @@ export class FireVisibility {
       return old.value;
     let value = 1;
     const seen = new Set<FireObstacle>();
-    for (
-      let x = Math.floor(Math.min(a.x, b.x) / this.size);
-      x <= Math.floor(Math.max(a.x, b.x) / this.size);
-      x++
-    )
-      for (
-        let y = Math.floor(Math.min(a.y, b.y) / this.size);
-        y <= Math.floor(Math.max(a.y, b.y) / this.size);
-        y++
-      )
-        for (const o of this.cells.get(`${x},${y}`) ?? []) {
-          if (seen.has(o)) continue;
-          seen.add(o);
-          if (intersects(a, b, o.polygon)) value = Math.min(value, o.exposure);
-        }
+    const inspect = (x: number, y: number) => {
+      for (const o of this.cells.get(`${x},${y}`) ?? []) {
+        if (seen.has(o)) continue;
+        seen.add(o);
+        if (intersects(a, b, o.polygon)) value = Math.min(value, o.exposure);
+      }
+    };
+    let x = Math.floor(a.x / this.size),
+      y = Math.floor(a.y / this.size);
+    const endX = Math.floor(b.x / this.size),
+      endY = Math.floor(b.y / this.size),
+      dx = b.x - a.x,
+      dy = b.y - a.y,
+      stepX = Math.sign(dx),
+      stepY = Math.sign(dy),
+      deltaX = dx ? this.size / Math.abs(dx) : Infinity,
+      deltaY = dy ? this.size / Math.abs(dy) : Infinity;
+    let nextX = dx
+        ? ((stepX > 0 ? (x + 1) * this.size : x * this.size) - a.x) / dx
+        : Infinity,
+      nextY = dy
+        ? ((stepY > 0 ? (y + 1) * this.size : y * this.size) - a.y) / dy
+        : Infinity;
+    while (true) {
+      inspect(x, y);
+      if (x === endX && y === endY) break;
+      if (nextX < nextY) {
+        x += stepX;
+        nextX += deltaX;
+      } else if (nextY < nextX) {
+        y += stepY;
+        nextY += deltaY;
+      } else {
+        // At a grid corner the segment touches both neighboring cells.
+        inspect(x + stepX, y);
+        inspect(x, y + stepY);
+        x += stepX;
+        y += stepY;
+        nextX += deltaX;
+        nextY += deltaY;
+      }
+    }
     if (this.cache.size > 4096) this.cache.clear();
     this.cache.set(key, { ax: a.x, ay: a.y, bx: b.x, by: b.y, value });
     return value;

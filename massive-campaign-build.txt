@@ -1,0 +1,101 @@
+
+> build
+> vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 956 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/index.html                                                        0.73 kB │ gzip:   0.36 kB
+../../dist/reference-preview.html                                            0.92 kB │ gzip:   0.43 kB
+../../dist/country-poi.html                                                  0.96 kB │ gzip:   0.42 kB
+../../dist/three-preview.html                                                1.38 kB │ gzip:   0.52 kB
+../../dist/pacing-preview.html                                               1.53 kB │ gzip:   0.54 kB
+../../dist/legacy.html                                                       1.59 kB │ gzip:   0.87 kB
+../../dist/jeep-preview.html                                                 1.68 kB │ gzip:   0.75 kB
+../../dist/city-seeds.html                                                   1.77 kB │ gzip:   0.57 kB
+../../dist/city-diorama.html                                                 1.87 kB │ gzip:   0.60 kB
+../../dist/country-slice.html                                                2.06 kB │ gzip:   0.63 kB
+../../dist/military-preview.html                                             2.29 kB │ gzip:   0.93 kB
+../../dist/animation-review.html                                             3.55 kB │ gzip:   1.18 kB
+../../dist/assets/barlow-condensed-vietnamese-600-normal-CNlPk46_.woff       6.08 kB
+../../dist/assets/barlow-condensed-vietnamese-600-normal-A5AYRdjN.woff2      7.70 kB
+../../dist/assets/barlow-condensed-latin-ext-600-normal-Clv9cIcR.woff       11.97 kB
+../../dist/assets/barlow-condensed-latin-ext-600-normal-18ESti3H.woff2      14.52 kB
+../../dist/assets/barlow-condensed-latin-500-normal-HIEiP5Ov.woff           18.60 kB
+../../dist/assets/barlow-condensed-latin-600-normal-BFJEwTuo.woff           18.89 kB
+../../dist/assets/barlow-condensed-latin-500-normal-BgYH2mbd.woff2          21.42 kB
+../../dist/assets/barlow-condensed-latin-600-normal-DepVgxBB.woff2          22.31 kB
+../../dist/assets/mapDetails.worker-CyTRP2MD.js                             34.09 kB
+../../dist/assets/mapPreview.worker-C5iTRH4x.js                            993.66 kB
+../../dist/assets/miniature.worker-DqmFwC8V.js                           1,021.98 kB
+../../dist/assets/main-C2UdAb47.css                                          0.25 kB │ gzip:   0.17 kB
+../../dist/assets/city-E2FSeX0U.css                                          0.64 kB │ gzip:   0.37 kB
+../../dist/assets/tacticalInfantryClips-C7BoDHoS.css                         0.66 kB │ gzip:   0.36 kB
+../../dist/assets/military-D2POdglb.css                                      0.94 kB │ gzip:   0.49 kB
+../../dist/assets/seeds-Jw7gTnSP.css                                         0.98 kB │ gzip:   0.56 kB
+../../dist/assets/animations-4G0xKLK2.css                                    1.10 kB │ gzip:   0.54 kB
+../../dist/assets/cityDiorama-BrEtoMPH.css                                   1.49 kB │ gzip:   0.67 kB
+../../dist/assets/country-5DcIQqA-.css                                       1.70 kB │ gzip:   0.82 kB
+../../dist/assets/referencePreview-MWoiHPOg.css                              2.21 kB │ gzip:   0.95 kB
+../../dist/assets/pacing-Bltfg7LY.css                                        2.26 kB │ gzip:   0.95 kB
+../../dist/assets/countrySlicePreview-CJOzyeya.css                           2.27 kB │ gzip:   0.91 kB
+../../dist/assets/jeep-DMwbau8i.css                                          2.69 kB │ gzip:   1.11 kB
+../../dist/assets/three-a0HTD1gs.css                                         3.89 kB │ gzip:   1.42 kB
+../../dist/assets/BattlefieldApp-C7HRkJHk.css                                4.70 kB │ gzip:   1.54 kB
+../../dist/assets/ArchivedCampaignEntry-C5Qf75xp.css                        38.09 kB │ gzip:   8.52 kB
+../../dist/assets/miniatureData-CGy1L9ZB.js                                  0.23 kB │ gzip:   0.18 kB
+../../dist/assets/modulepreload-polyfill-B5Qt9EMX.js                         0.71 kB │ gzip:   0.40 kB
+../../dist/assets/cityInfantryMotion-CQ7SDBvi.js                             0.82 kB │ gzip:   0.44 kB
+../../dist/assets/Filter-1hwMaYsO.js                                         0.91 kB │ gzip:   0.48 kB
+../../dist/assets/preload-helper-BXl3LOEh.js                                 1.11 kB │ gzip:   0.65 kB
+../../dist/assets/refinedSurface-DO88MMN4.js                                 1.67 kB │ gzip:   0.89 kB
+../../dist/assets/main-Lpahmu1W.js                                           1.72 kB │ gzip:   0.85 kB
+../../dist/assets/citySeedAudit-BGNm1oxn.js                                  2.59 kB │ gzip:   1.32 kB
+../../dist/assets/jeep-Cr2C79m3.js                                           2.69 kB │ gzip:   1.41 kB
+../../dist/assets/portDistrict-nwry-etP.js                                   2.88 kB │ gzip:   1.42 kB
+../../dist/assets/military-CvI9zNul.js                                       3.40 kB │ gzip:   1.75 kB
+../../dist/assets/animatedInfantry-DlJiwhq3.js                               3.60 kB │ gzip:   1.63 kB
+../../dist/assets/jeepModel-DcHq5Z7q.js                                      3.70 kB │ gzip:   1.85 kB
+../../dist/assets/seeds-Po4GYCEG.js                                          3.98 kB │ gzip:   1.84 kB
+../../dist/assets/infantryLayer-C14yrU5M.js                                  4.09 kB │ gzip:   2.08 kB
+../../dist/assets/index-DPWxJZ3U.js                                          4.69 kB │ gzip:   2.30 kB
+../../dist/assets/infantryModel-DzYbmSRj.js                                  5.11 kB │ gzip:   2.44 kB
+../../dist/assets/slice-DIEgcYw-.js                                          6.74 kB │ gzip:   2.97 kB
+../../dist/assets/animations-BpwVposG.js                                     9.31 kB │ gzip:   4.23 kB
+../../dist/assets/three-DLv6ZKWh.js                                         10.34 kB │ gzip:   3.92 kB
+../../dist/assets/city-DkGGnPch.js                                          10.76 kB │ gzip:   4.18 kB
+../../dist/assets/militaryModels-BnoZbLdQ.js                                10.83 kB │ gzip:   4.38 kB
+../../dist/assets/BufferResource-CyHO3smz.js                                11.14 kB │ gzip:   2.86 kB
+../../dist/assets/country-r0nvA_Fl.js                                       11.95 kB │ gzip:   5.26 kB
+../../dist/assets/BattlefieldApp-CGfdUYPf.js                                12.80 kB │ gzip:   4.91 kB
+../../dist/assets/BitmapFont-DM9qnBYx.js                                    13.20 kB │ gzip:   4.89 kB
+../../dist/assets/webworkerAll-BYeXOQ29.js                                  15.85 kB │ gzip:   5.09 kB
+../../dist/assets/reference-HxoOi1gO.js                                     16.25 kB │ gzip:   7.24 kB
+../../dist/assets/countryPOI-CM7WGQI7.js                                    17.73 kB │ gzip:   7.18 kB
+../../dist/assets/CanvasRenderer-DsOaE4Mj.js                                18.22 kB │ gzip:   6.19 kB
+../../dist/assets/tacticalInfantryClips-BxNamrRm.js                         18.46 kB │ gzip:   8.13 kB
+../../dist/assets/referenceAssets-CkYw_sRc.js                               21.21 kB │ gzip:   8.82 kB
+../../dist/assets/cityTactics-2q6uNIe7.js                                   24.59 kB │ gzip:  10.45 kB
+../../dist/assets/countryRoadScene-CzeP1zdz.js                              26.16 kB │ gzip:  11.37 kB
+../../dist/assets/ArchivedCampaignEntry-BFKLne-I.js                         29.62 kB │ gzip:  10.10 kB
+../../dist/assets/GLTFExporter-BYkJRbZf.js                                  35.25 kB │ gzip:  10.51 kB
+../../dist/assets/pacing-BlA71fyD.js                                        40.96 kB │ gzip:  16.19 kB
+../../dist/assets/miniatureScene-DxHDDiMB.js                                42.85 kB │ gzip:  17.23 kB
+../../dist/assets/browserAll-CMhfrNRN.js                                    43.51 kB │ gzip:  11.52 kB
+../../dist/assets/WebGPURenderer-C4IeAUga.js                                46.44 kB │ gzip:  13.44 kB
+../../dist/assets/RenderTargetSystem-DnS4N7Tw.js                            52.15 kB │ gzip:  14.39 kB
+../../dist/assets/countrySlicePreview-Cfm57GdS.js                           52.68 kB │ gzip:  21.08 kB
+../../dist/assets/WebGLRenderer-BS_-wZly.js                                 72.52 kB │ gzip:  19.85 kB
+../../dist/assets/cityDiorama-O_8Pd8-3.js                                   98.18 kB │ gzip:  39.41 kB
+../../dist/assets/client-C54xO61s.js                                       192.48 kB │ gzip:  60.34 kB
+../../dist/assets/ContinentalMap-Cetmo1gG.js                               363.68 kB │ gzip: 117.68 kB
+../../dist/assets/BufferGeometryUtils-Zu8P3HZt.js                          560.76 kB │ gzip: 142.97 kB
+../../dist/assets/streetTexture-hZH0z1Xo.js                                990.86 kB │ gzip: 284.37 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.12s

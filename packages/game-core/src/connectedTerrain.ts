@@ -102,6 +102,7 @@ export function buildConnectedTerrain(
   scale: number,
   reserves: readonly RuralReserve[] = [],
   corridors: readonly Point[][] = [],
+  options: { resolution?: number; lowlandRelief?: boolean } = {},
 ): TerrainSurface {
   if (!(Number.isFinite(scale) && scale > 0))
     throw Error("Invalid terrain scale");
@@ -110,7 +111,10 @@ export function buildConnectedTerrain(
     world.geography?.width ?? Math.max(...points.map((p) => p[0])) + 1;
   const height =
     world.geography?.height ?? Math.max(...points.map((p) => p[1])) + 1;
-  const step = Math.max(width, height) / 512,
+  const resolution = options.resolution ?? 512;
+  if (!Number.isInteger(resolution) || resolution < 128 || resolution > 1024)
+    throw Error("Invalid terrain resolution");
+  const step = Math.max(width, height) / resolution,
     cols = Math.ceil(width / step) + 1,
     rows = Math.ceil(height / step) + 1;
   const count = cols * rows,
@@ -197,12 +201,16 @@ export function buildConnectedTerrain(
     for (let col = 0; col < cols; col++) {
       const i = row * cols + col;
       if (!land[i]) continue;
-      const x = col / 512,
-        y = row / 512;
+      const x = col / resolution,
+        y = row / resolution;
       const wx = x * 13 + (noise(x * 9, y * 9, seed) - 0.5) * 2.4;
       const wy = y * 13 + (noise(x * 9 + 31, y * 9, seed + 1) - 0.5) * 2.4;
-      const m = smooth((inMountain[i] - fromMountain[i] + 16) / 28),
-        h = smooth((inUpland[i] - fromUpland[i] + 12) / 24);
+      const m = smooth(
+          (((inMountain[i] - fromMountain[i]) * 512) / resolution + 16) / 28,
+        ),
+        h = smooth(
+          (((inUpland[i] - fromUpland[i]) * 512) / resolution + 12) / 24,
+        );
       const ridge =
         (1 - Math.abs(noise(wx * 2, wy * 2, seed + 2) * 2 - 1)) ** 2;
       const secondary =
@@ -214,8 +222,9 @@ export function buildConnectedTerrain(
       heights[i] =
         amplitude *
         (m * (0.25 + 0.47 * ridge + 0.21 * secondary + 0.07 * detail) +
-          (1 - m) * h * 0.17 * rolling) *
-        smooth((coast[i] - 1.5) / 6) *
+          (1 - m) * h * 0.17 * rolling +
+          (options.lowlandRelief ? (1 - m) * (1 - h) * 0.002 * rolling : 0)) *
+        smooth(((coast[i] * 512) / resolution - 1.5) / 6) *
         clearance[i];
     }
   const surface: TerrainSurface = {

@@ -6,13 +6,13 @@
 
 A nation starts with three mixed armies, each with 100 aggregate strength. Players command armies rather than individual battalions. Composition is a fixed preset, with proportional abstract losses/replenishment; recruitment, changing composition, and separate equipment inventories are not implemented.
 
-| Preset | Infantry | Motorized infantry | Artillery | Armor |
-|---|---:|---:|---:|---:|
-| Line | 70 | 0 | 25 | 5 |
-| Assault | 35 | 10 | 25 | 30 |
-| Mobile | 10 | 55 | 10 | 25 |
+| Preset  | Infantry | Motorized infantry | Artillery | Armor |
+| ------- | -------: | -----------------: | --------: | ----: |
+| Line    |       70 |                  0 |        25 |     5 |
+| Assault |       35 |                 10 |        25 |    30 |
+| Mobile  |       10 |                 55 |        10 |    25 |
 
-Infantry and motorized infantry provide defensive staying power and shorten consolidation. Motorized formations with at least 40 motorized composition traverse friendly plains/forest in two hours when fueled. Ordinary legs take four hours; highlands take six. Armor contributes most offense on plains and less in forests/highlands; fuel shortages weaken vehicles. Artillery raises offensive power, reduces fortification and entrenchment advantages, and erodes entrenchment during combat. Ground movement and combat consume vehicle fuel. Air support remains the existing automatic combat toggle; fighters, bombers, airfields, and standing air missions are deferred.
+Infantry and motorized infantry provide defensive staying power and shorten consolidation. Fueled motorized formations with at least 40 motorized composition traverse friendly plains in two hours. Forest traversal takes four hours for all ground formations; highlands take six. Armor contributes most offense on plains and less in forests/highlands; fuel shortages weaken vehicles. Artillery raises offensive power, reduces fortification and entrenchment advantages, and erodes entrenchment during combat. Ground movement and combat consume vehicle fuel. Air support remains the existing automatic combat toggle; fighters, bombers, airfields, and standing air missions are deferred.
 
 ## Sectors and standing defense
 

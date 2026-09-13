@@ -1,18 +1,30 @@
-import {stepCityInfantry,CITY_RUN_SPEED,CITY_RUN_STRIDE} from "./cityInfantryMotion";
-import {previewTacticalOrder} from "./tacticalPlacement";
+import {
+  stepCityInfantry,
+  CITY_RUN_SPEED,
+  CITY_RUN_STRIDE,
+} from "./cityInfantryMotion";
+import { previewTacticalOrder } from "./tacticalPlacement";
 import { variedMovementRoute } from "./variedMovementRoute";
-import {COVER_ORDER_REACH,coverSlots,sameCoverSide} from "./cityCoverOrders";
+import {
+  COVER_ORDER_REACH,
+  coverSlots,
+  sameCoverSide,
+} from "./cityCoverOrders";
 import type { CityPoint } from "./organicCity";
+import type { TacticalWeaponRole } from "./cityCombatRules";
 import {
   obstacleDistance,
   type CityObstacle,
   type createCityTactics,
 } from "./cityTactics";
-export {CITY_RUN_SPEED,CITY_RUN_STRIDE} from "./cityInfantryMotion";
+export { CITY_RUN_SPEED, CITY_RUN_STRIDE } from "./cityInfantryMotion";
 export const CITY_TANK_TURN_RATE = 0.55;
 export type TrialUnit = CityPoint & {
+  weaponRole?: Exclude<TacticalWeaponRole, "tank">;
   visible?: boolean;
   moveGroup?: number;
+  supportMove?: boolean;
+  supportTarget?: number;
   id: number;
   kind: "infantry" | "vehicle";
   vehicleType?: "tank" | "jeep";
@@ -21,7 +33,8 @@ export type TrialUnit = CityPoint & {
   aimAngle?: number;
   turretAngle?: number;
   firing?: boolean;
-  stance?: "move"|"attack"|"hold";
+  reload?: number;
+  stance?: "move" | "attack" | "hold";
   health: number;
   cover: "none" | "partial" | "full";
   angle: number;
@@ -128,13 +141,22 @@ export function createCityUnitTrial(
     id: number,
     kind: "infantry" | "vehicle",
   ) {
-    return variedMovementRoute(route, id, kind === "infantry", (a,b) => tactics.segmentClear(a,b,kind)).path;
+    return variedMovementRoute(route, id, kind === "infantry", (a, b) =>
+      tactics.segmentClear(a, b, kind),
+    ).path;
   }
 
-  function previewOrder(p:CityPoint,facing?:number){
-    return previewTacticalOrder(p,facing,units,selectedIds,tactics,vehicleCover());
+  function previewOrder(p: CityPoint, facing?: number) {
+    return previewTacticalOrder(
+      p,
+      facing,
+      units,
+      selectedIds,
+      tactics,
+      vehicleCover(),
+    );
   }
-  let nextMoveGroup=0;
+  let nextMoveGroup = 0;
   function order(p: CityPoint, facing?: number) {
     const preview = previewOrder(p, facing);
     if (!preview.length) return false;
@@ -161,9 +183,9 @@ export function createCityUnitTrial(
         angle: goal.angle,
       });
     }
-    const group=planned.length>1?++nextMoveGroup:undefined;
+    const group = planned.length > 1 ? ++nextMoveGroup : undefined;
     for (const { unit, path, guide, angle } of planned) {
-      unit.moveGroup=group;
+      unit.moveGroup = group;
       unit.facing = angle;
       unit.path = path;
       unit.guide = guide;
@@ -174,15 +196,35 @@ export function createCityUnitTrial(
   }
   function tick(dt: number) {
     if (!Number.isFinite(dt) || dt <= 0) return;
-    const groupCaps=new Map<number,number>();
-    for(const u of units){if(!u.moveGroup||u.health<=0||!u.path.length)continue;
-      let speed=u.kind==='vehicle'?1.05:CITY_RUN_SPEED*(u.firing?.65:1);
-      if(u.kind==='vehicle'){const p=u.path[0],desired=Math.atan2(p.x-u.x,p.z-u.z),error=Math.abs(Math.atan2(Math.sin(desired-u.angle),Math.cos(desired-u.angle)));speed=error>CITY_TANK_TURN_RATE*Math.min(dt,.1)+.001?0:Math.min(speed,u.speed+Math.min(dt,.1)*.7);}
-      groupCaps.set(u.moveGroup,Math.min(groupCaps.get(u.moveGroup)??Infinity,speed));
+    const groupCaps = new Map<number, number>();
+    for (const u of units) {
+      if (!u.moveGroup || u.health <= 0 || !u.path.length) continue;
+      let speed =
+        u.kind === "vehicle" ? 1.05 : CITY_RUN_SPEED * (u.firing ? 0.65 : 1);
+      if (u.kind === "vehicle") {
+        const p = u.path[0],
+          desired = Math.atan2(p.x - u.x, p.z - u.z),
+          error = Math.abs(
+            Math.atan2(
+              Math.sin(desired - u.angle),
+              Math.cos(desired - u.angle),
+            ),
+          );
+        speed =
+          error > CITY_TANK_TURN_RATE * Math.min(dt, 0.1) + 0.001
+            ? 0
+            : Math.min(speed, u.speed + Math.min(dt, 0.1) * 0.7);
+      }
+      groupCaps.set(
+        u.moveGroup,
+        Math.min(groupCaps.get(u.moveGroup) ?? Infinity, speed),
+      );
     }
     for (const unit of units) {
-      if(unit.health<=0)continue;
-      const groupCap=unit.moveGroup?groupCaps.get(unit.moveGroup)??Infinity:Infinity;
+      if (unit.health <= 0) continue;
+      const groupCap = unit.moveGroup
+        ? (groupCaps.get(unit.moveGroup) ?? Infinity)
+        : Infinity;
       unit.cover =
         unit.kind === "infantry"
           ? coverAt(
@@ -214,7 +256,9 @@ export function createCityUnitTrial(
           unit.angle += turn;
           // Track pivot first: never translate sideways while the hull catches up.
           const aligned = Math.abs(error - turn) < 0.001;
-          unit.speed = aligned ? Math.min(1.05, groupCap, unit.speed + elapsed * 0.7) : 0;
+          unit.speed = aligned
+            ? Math.min(1.05, groupCap, unit.speed + elapsed * 0.7)
+            : 0;
           const travel = aligned ? Math.min(d, unit.speed * elapsed) : 0;
           if (d > 1e-8) {
             unit.x += (dx / d) * travel;
@@ -261,7 +305,9 @@ export function createCityUnitTrial(
         }
         continue;
       }
-      stepCityInfantry(unit,elapsed,groupCap,(a,b)=>tactics.segmentClear(a,b,"infantry"));
+      stepCityInfantry(unit, elapsed, groupCap, (a, b) =>
+        tactics.segmentClear(a, b, "infantry"),
+      );
       if (unit.moving && !unit.path.length) {
         unit.moving = false;
         if (selectedIds.includes(unit.id))

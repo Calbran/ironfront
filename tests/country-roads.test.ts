@@ -5,7 +5,11 @@ import type { TerrainSurface } from "../packages/game-core/src/connectedTerrain"
 import {
   buildCountryRoadNetwork,
   alignBridgeApproaches,
+  countryBridgeContains,
+  countryBridgeDeckHeight,
+  countryRoadSurfaceHeight,
   countryRoadFieldFilter,
+  simplifyCountryRoadPath,
   type RoadDestination,
 } from "../packages/game-core/src/countryRoadNetwork";
 import {
@@ -13,6 +17,59 @@ import {
   createCountryRoadScene,
 } from "../apps/web/src/experiments/countryRoadScene";
 import * as T from "three";
+
+test("bridge deck, ramps and clearance share one physical surface", () => {
+  const cols = 9,
+    rows = 9,
+    surface: TerrainSurface = {
+      version: 1,
+      seed: "bridge-surface",
+      scale: 1,
+      step: 10,
+      cols,
+      rows,
+      heights: new Float32Array(cols * rows),
+      land: new Uint8Array(cols * rows).fill(1),
+      biomes: new Uint8Array(cols * rows).fill(1),
+      mountainWeight: new Float32Array(cols * rows),
+      ranges: [],
+      peak: 0,
+    },
+    bridge = { x: 40, y: 40, angle: 0, length: 24, width: 7 },
+    network = { bridges: [bridge], scale: 1 };
+  const deck = countryBridgeDeckHeight(surface, bridge, network.scale);
+  assert.equal(deck, 1.2);
+  assert.equal(
+    countryRoadSurfaceHeight(network, surface, { x: 40, y: 40 }),
+    deck,
+  );
+  assert.equal(
+    countryRoadSurfaceHeight(network, surface, { x: 58, y: 40 }),
+    deck / 2,
+  );
+  assert.equal(
+    countryRoadSurfaceHeight(network, surface, { x: 64, y: 40 }),
+    0,
+  );
+  assert.equal(countryBridgeContains(bridge, 1, { x: 40, y: 42 }, 1), true);
+  assert.equal(countryBridgeContains(bridge, 1, { x: 40, y: 43 }, 1), false);
+});
+
+test("road smoothing removes short lattice wobble while preserving endpoints", () => {
+  const path = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 20, y: 10 },
+      { x: 30, y: 10 },
+      { x: 40, y: 20 },
+      { x: 50, y: 20 },
+      { x: 60, y: 30 },
+    ],
+    smooth = simplifyCountryRoadPath(path, () => true, 50);
+  assert.deepEqual(smooth[0], path[0]);
+  assert.deepEqual(smooth.at(-1), path.at(-1));
+  assert.ok(smooth.length <= 3);
+});
 
 test("bridge approaches keep bends off the deck and preserve distant road endpoints", () => {
   const road = {

@@ -1,3 +1,4 @@
+import { campaignTravelHours } from "./forestVehicleMovement";
 import { ensureMountainObstacles } from "./mountainObstacles.ts";
 import { orderAttack } from "./attackOrders.ts";
 import { startingTerritories } from "./startingTerritories.ts";
@@ -1039,12 +1040,11 @@ export function advance(w: World, tacticalHours = 1) {
     }
     const fuelCost = (a.tanks + a.motorized) / 100;
     const fueled = w.nations[a.owner].fuel >= fuelCost;
-    const needed =
-      next.terrain === "highlands"
-        ? 6
-        : next.owner === a.owner && a.motorized >= 40 && fueled
-          ? 2
-          : 4;
+    const needed = campaignTravelHours(
+      next.terrain,
+      next.owner === a.owner ? a.motorized : 0,
+      fueled,
+    );
     if (++a.progress >= needed) {
       a.progress = 0;
       if (fueled) w.nations[a.owner].fuel -= fuelCost;

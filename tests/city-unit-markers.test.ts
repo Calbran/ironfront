@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as T from "three";
 import {
+  AIRSHIP_MARKER_START_PIXELS,
+  AIRSHIP_MODEL_CULL_PIXELS,
+  GROUND_UNIT_MODEL_CULL_PIXELS,
   markerProjection,
   markerPosition,
 } from "../apps/web/src/experiments/cityUnitMarkers";
@@ -32,7 +35,7 @@ test("markers fade with orthographic zoom and perspective distance, not pitch", 
     false,
   );
 });
-test("ground models persist through the badge transition and airships remain visible much farther out", () => {
+test("airship badges arrive at tactical zoom while their models retain tenfold reach", () => {
   const camera = new T.PerspectiveCamera(50, 4 / 3, 0.1, 10000);
   const at = (distance: number, kind = "infantry") => {
     camera.position.z = distance;
@@ -42,10 +45,20 @@ test("ground models persist through the badge transition and airships remain vis
   const transition = at(150);
   assert.ok(transition.opacity > 0 && transition.opacity < 1);
   assert.equal(transition.hideModel, false);
-  assert.equal(at(300).hideModel, true);
-  assert.equal(at(300, "airship").opacity, 0);
+  assert.equal(at(300).opacity, 1);
+  assert.equal(at(300).hideModel, false);
+  assert.equal(at(500).hideModel, false);
+  assert.equal(at(600).hideModel, true);
+  assert.ok(at(300, "airship").opacity > 0.5);
+  assert.equal(at(500, "airship").opacity, 1);
   assert.equal(at(1500, "airship").hideModel, false);
-  assert.equal(at(3000, "airship").hideModel, true);
+  assert.equal(at(3000, "airship").hideModel, false);
+  assert.equal(at(6000, "airship").hideModel, true);
+  assert.equal(
+    GROUND_UNIT_MODEL_CULL_PIXELS / AIRSHIP_MODEL_CULL_PIXELS,
+    10,
+  );
+  assert.equal(AIRSHIP_MARKER_START_PIXELS, 3);
 });
 test("overlapping city units receive separate on-screen badge slots", () => {
   const placed: { x: number; y: number }[] = [];

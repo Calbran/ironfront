@@ -1,6 +1,7 @@
 import { cityBuildingFootprint } from "../../../../packages/game-core/src/cityBuildingKit";
 import { createStreetTexture } from "./streetTexture";
 import { countryFieldGeometry } from "./countryFieldGeometry";
+import { countryDevelopedGeometry } from "./countryDevelopedGeometry";
 import * as T from "three";
 import type { MiniatureKit } from "./referenceAssets";
 import type { CountryPOI } from "../../../../packages/game-core/src/countryPOI";
@@ -9,7 +10,29 @@ export function countryPOIAssets(
   plan: CountryPOI,
   kit: MiniatureKit,
   ground = true,
+  bounds?: { x: number; z: number; radius: number },
+  drawDevelopment = true,
 ) {
+  if (bounds) {
+    const near = (p: { x: number; z: number }, padding = 0) =>
+      Math.hypot(p.x - bounds.x, p.z - bounds.z) < bounds.radius + padding;
+    plan = {
+      ...plan,
+      buildings: plan.buildings.filter((p) => near(p, 24)),
+      props: plan.props.filter((p) => near(p, Math.max(p.width, p.depth))),
+      trees: plan.trees.filter((p) => near(p, 10)),
+      roads: plan.roads.filter((p) => near(p, p.width / 2)),
+      paths: plan.paths?.filter((p) => near(p, p.width / 2)),
+      waterways: plan.waterways?.filter((p) => near(p, p.width / 2)),
+      fields: plan.fields.filter((p) =>
+        near(p, Math.hypot(p.width, p.depth) / 2),
+      ),
+      details: plan.details?.filter((p) => near(p)),
+      developed: plan.developed?.filter((b) =>
+        b.polygon.some((p) => near(p, 80)),
+      ),
+    };
+  }
   const group = new T.Group(),
     ownedGeometry = new Set<T.BufferGeometry>(),
     ownedMaterial = new Set<T.Material>();
@@ -57,19 +80,37 @@ export function countryPOIAssets(
     box(0, -0.13, 0, plan.extent * 2, 0.2, plan.extent * 2, mat(0x777956));
   const streetTexture = createStreetTexture();
   const developed = mat(0x979180);
-  for (const building of plan.buildings) {
-    const bounds = cityBuildingFootprint(building.variant);
-    box(
-      building.x,
-      0.035,
-      building.z,
-      bounds.width + 1.6,
-      0.05,
-      bounds.depth + 2.2,
-      developed,
-      building.angle,
-    );
+  if (drawDevelopment && plan.developed?.length) {
+    const geometry = countryDevelopedGeometry([{ x: 0, z: 0, poi: plan }]);
+    ownedGeometry.add(geometry);
+    const material = new T.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 1,
+      side: T.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+    ownedMaterial.add(material);
+    group.add(new T.Mesh(geometry, material));
   }
+  const developedPlots = new T.InstancedMesh(
+      boxGeometry,
+      developed,
+      plan.buildings.length,
+    ),
+    plotPose = new T.Object3D();
+  for (const [index, building] of plan.buildings.entries()) {
+    const bounds = cityBuildingFootprint(building.variant);
+    plotPose.position.set(building.x, 0.035, building.z);
+    plotPose.scale.set(bounds.width + 1.6, 0.05, bounds.depth + 2.2);
+    plotPose.rotation.set(0, building.angle, 0);
+    plotPose.updateMatrix();
+    developedPlots.setMatrixAt(index, plotPose.matrix);
+  }
+  developedPlots.computeBoundingSphere();
+  developedPlots.receiveShadow = true;
+  group.add(developedPlots);
   const roadLayer = (
     roads: NonNullable<CountryPOI["paths"]>,
     color: number,

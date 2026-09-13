@@ -1,12 +1,12 @@
 # Live Three.js campaign integration and soak test
 
-Experimental branch only. Add `?renderer=three` to the regular game URL, or select **Three.js live · experimental** in a campaign. Pixi remains the default and can be selected again. Lobby previews retain Pixi.
+Historical integration record. Three.js was promoted to the production campaign renderer on 2026-09-12. The campaign and lobby map now use it at `/`; Pixi is available only through the archived `/legacy.html` entry.
 
 ## Integration
 
 The existing App owns authentication, polling, command queues and campaign panels. The new map consumes its player-filtered World and dispatches existing selection, local movement and attack callbacks. It never resolves movement, combat or capture. A worker builds static scenery once per campaign; server polls update the live unit layer without resetting the camera or rebuilding terrain. Owner-colored instanced infantry follow interpolated authoritative positions; vehicle forces currently use simple model proxies. Firing traces use server action/target/fire state and a reused vertex buffer. Destroyed or no-longer-visible squads are removed from the overlay on the next snapshot. Squad markers support selection and enemy attack, box selection addresses friendly army groups, and fog uses the server's visible-region list.
 
-This is an initial campaign adapter, not complete Pixi feature parity. Settlement-specific context menus and some visual overlays are not yet ported; keep Pixi for those interactions. The regular Command panel remains available. Model submission is capped at 2,048 infantry per nation and 2,048 vehicle proxies; squad markers remain as a fallback above that visual capacity. No new command or server rule was added.
+This began as an initial campaign adapter. Settlement-specific context menus and some visual overlays may still need Three.js-native treatment; missing behavior is production backlog and must not be implemented in Pixi. The regular Command panel remains available. Model submission is capped at 2,048 infantry per nation and 2,048 vehicle proxies; squad markers remain as a fallback above that visual capacity. No new command or server rule was added by the original experiment.
 
 ## Test method
 

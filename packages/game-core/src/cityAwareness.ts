@@ -1,7 +1,10 @@
+import {CITY_TANK_FIRE_RANGE} from './cityCombatRules';
 import type {CityPoint} from './organicCity';
 import type {CityObstacle} from './cityTactics';
 export const CITY_CONTACT_SECONDS=30;
-export const citySightRange=(kind:string)=>kind==='vehicle'?45:40;
+export const CITY_INFANTRY_SIGHT_RANGE=180;
+/** Vehicles can acquire direct-fire targets out to cannon range; geometry still blocks sight. */
+export const citySightRange=(kind:string)=>kind==='vehicle'?CITY_TANK_FIRE_RANGE:CITY_INFANTRY_SIGHT_RANGE;
 export type CityContact={id:number;x:number;z:number;seenAt:number};
 /** Frozen observations, never references to live enemy state. */
 export function createContactMemory(){

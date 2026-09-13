@@ -1,3 +1,4 @@
+import {campaignBattlefieldRoutes} from "./campaignBattlefieldRoutes";
 import {countrySliceRoutes} from './countrySliceRoutes';
 import { cityBattleRoutes } from "./cityBattleRoutes.ts";
 import Fastify from "fastify";
@@ -62,6 +63,7 @@ export async function makeServer(store: Store) {
   await app.register(rateLimit, { max: 180, timeWindow: "1 minute" });
   cityBattleRoutes(app);
   countrySliceRoutes(app,store);
+  campaignBattlefieldRoutes(app,store);
   app.setErrorHandler((error, req, reply) => {
     const e = error as Error & { statusCode?: number };
     reply.code(e.statusCode || 400).send({

@@ -253,6 +253,9 @@ export function tacticalViewportGestures(
   window.addEventListener("blur", cancel);
   return {
     cancel,
+    zoom(event: WheelEvent) {
+      wheel(event);
+    },
     rotate(yaw: number) {
       rotateCityOrbit(
         getCamera(),

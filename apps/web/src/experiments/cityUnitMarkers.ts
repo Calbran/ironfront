@@ -1,5 +1,9 @@
 import * as T from "three";
 
+export const GROUND_UNIT_MODEL_CULL_PIXELS = 1.25;
+export const AIRSHIP_MODEL_CULL_PIXELS = GROUND_UNIT_MODEL_CULL_PIXELS / 10;
+export const AIRSHIP_MARKER_START_PIXELS = 3;
+
 export function markerProjection(
   world: T.Vector3,
   camera: T.Camera,
@@ -13,8 +17,13 @@ export function markerProjection(
     (Math.abs(camera.projectionMatrix.elements[5]) * height) /
     2 /
     (camera instanceof T.PerspectiveCamera ? Math.max(0.001, -view.z) : 1);
-  // Airships retain their much larger silhouette at ten times the ground-unit range.
-  const iconStart = kind === "airship" ? 0.6 : 6;
+  // Show the airship badge at an ordinary tactical zoom even though its much
+  // larger model remains readable, then retain that model to strategic range.
+  const iconStart = kind === "airship" ? AIRSHIP_MARKER_START_PIXELS : 6;
+  const modelCullPixels =
+    kind === "airship"
+      ? AIRSHIP_MODEL_CULL_PIXELS
+      : GROUND_UNIT_MODEL_CULL_PIXELS;
   const opacity = T.MathUtils.smoothstep(
     iconStart - pixelsPerUnit,
     0,
@@ -24,7 +33,10 @@ export function markerProjection(
     x: ((ndc.x + 1) * width) / 2,
     y: ((1 - ndc.y) * height) / 2,
     opacity,
-    hideModel: opacity >= 1,
+    // Keep geometry under the fully visible badge until its silhouette is
+    // genuinely subpixel. City and country have small tactical rosters.
+    hideModel: pixelsPerUnit <= modelCullPixels,
+    strategic: pixelsPerUnit < 0.025,
     visible:
       view.z < 0 &&
       ndc.z >= -1 &&
@@ -76,6 +88,10 @@ export function cityUnitMarkers(
   select: (id: number, add: boolean) => void,
   focus: (unit: Unit) => void,
   overlayRoot: HTMLElement = canvas.parentElement!,
+  options: {
+    cluster?: boolean;
+    selectGroup?: (ids: number[], add: boolean) => void;
+  } = {},
 ) {
   const overlay = document.createElement("div");
   Object.assign(overlay.style, {
@@ -89,6 +105,18 @@ export function cityUnitMarkers(
   const entries = units.map((unit) => {
     const button = document.createElement("button"),
       stem = document.createElement("div");
+    const count = document.createElement("span");
+    Object.assign(count.style, {
+      position: "absolute",
+      right: "-7px",
+      top: "-7px",
+      background: "#183335",
+      border: "1px solid currentColor",
+      borderRadius: "9px",
+      fontSize: "10px",
+      padding: "1px 4px",
+    });
+    let group = [unit.id];
     const kind =
       unit.kind === "infantry"
         ? "Infantry"
@@ -103,9 +131,10 @@ export function cityUnitMarkers(
         : kind === "Tank"
           ? '<rect x="3" y="7" width="18" height="11" rx="5"/><path d="M9 12h6m-3 0V3"/>'
           : kind === "Airship"
-            ? '<path d="M4 12c2-5 14-5 16 0-2 5-14 5-16 0zm8-5v10m-3-1h6"/>'
+            ? '<path d="M2.5 11.5C4.4 6.8 14.6 5.8 19.4 9.2L22 7.4v8.2l-2.6-1.8c-4.8 3.4-15 2.4-16.9-2.3Z"/><path d="M6.8 15.2v1.5h8.4v-1.5M8.2 16.7v1.7h5.6v-1.7M6 11.5h13.7"/>'
             : '<path d="M4 15V8h12l4 7H4zM8 8V4h7v4"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>';
     button.innerHTML = `<svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">${symbol}</svg>`;
+    button.append(count);
     button.setAttribute("aria-label", `${kind} ${unit.id} map marker`);
     button.title = `${kind} ${unit.id} — click to select; double-click to focus`;
     Object.assign(button.style, {
@@ -127,14 +156,24 @@ export function cityUnitMarkers(
     });
     button.addEventListener("click", (e) => {
       e.stopPropagation();
-      select(unit.id, e.shiftKey);
+      if (group.length > 1 && options.selectGroup)
+        options.selectGroup(group, e.shiftKey);
+      else select(unit.id, e.shiftKey);
     });
     button.addEventListener("dblclick", (e) => {
       e.stopPropagation();
       focus(unit);
     });
     overlay.append(stem, button);
-    return { unit, button, stem };
+    return {
+      unit,
+      button,
+      stem,
+      count,
+      setGroup: (ids: number[]) => {
+        group = ids;
+      },
+    };
   });
   return {
     update(
@@ -149,7 +188,8 @@ export function cityUnitMarkers(
         height = canvas.clientHeight,
         placed: { x: number; y: number }[] = [],
         iconIds = new Set<number>();
-      for (const { unit, button, stem } of entries) {
+      const clustered = new Set<number>();
+      for (const { unit, button, stem, count, setGroup } of entries) {
         const world = root.localToWorld(
           new T.Vector3(unit.x, heightAt(unit) + 0.7, unit.z),
         );
@@ -158,10 +198,49 @@ export function cityUnitMarkers(
           unit.visible !== false &&
           p.visible &&
           p.opacity > 0.05 &&
-          (unit.health ?? 100) > 0;
+          (unit.health ?? 100) > 0 &&
+          !clustered.has(unit.id);
         button.hidden = !show;
         stem.hidden = !show;
         if (!show) continue;
+        clustered.add(unit.id);
+        const group = [unit.id];
+        if (options.cluster && p.strategic && !selected.includes(unit.id)) {
+          for (const candidate of entries) {
+            const other = candidate.unit;
+            if (
+              other.id === unit.id ||
+              clustered.has(other.id) ||
+              selected.includes(other.id) ||
+              other.friendly !== unit.friendly ||
+              other.visible === false ||
+              (other.health ?? 100) <= 0
+            )
+              continue;
+            const q = markerProjection(
+              root.localToWorld(
+                new T.Vector3(other.x, heightAt(other) + 0.7, other.z),
+              ),
+              camera,
+              width,
+              height,
+              other.kind,
+            );
+            if (q.visible && Math.hypot(q.x - p.x, q.y - p.y) < 32) {
+              group.push(other.id);
+              clustered.add(other.id);
+              candidate.button.hidden = candidate.stem.hidden = true;
+              iconIds.add(other.id);
+            }
+          }
+        }
+        setGroup(group);
+        count.hidden = group.length === 1;
+        count.textContent = String(group.length);
+        button.title =
+          group.length > 1
+            ? `${unit.friendly === false ? "Visible enemy" : "Allied"} formations: ${group.length} — double-click to focus`
+            : `${unit.kind} ${unit.id} — click to select; double-click to focus`;
         if (p.hideModel) iconIds.add(unit.id);
         const pos = markerPosition(p.x, p.y, placed, width, height);
         placed.push(pos);

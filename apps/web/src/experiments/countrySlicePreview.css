@@ -143,8 +143,13 @@ header select {
 .slice-site-label {
   position: absolute;
   transform: translate(-50%, -100%);
-  background: #1d302ede;
-  color: #f4dfaa;
+  background: transparent;
+  color: #f2eddc;
+  border: 0 !important;
+  text-shadow:
+    0 1px 3px #152827,
+    1px 0 3px #152827,
+    -1px 0 3px #152827;
   font-size: 12px;
   white-space: nowrap;
   padding: 4px 8px;
@@ -163,5 +168,56 @@ footer a {
   background: #182b2e;
   color: #eee4c8;
   border: 1px solid #998c68;
+  z-index: 4;
+}
+.slice-site-label::before {
+  content: "◇";
+  color: var(--site-color, #ddd5b9);
+  margin-right: 5px;
+}
+.slice-site-label[data-rank="city"],
+.slice-site-label[data-rank="metropolis"] {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: 14px;
+}
+.slice-site-label[data-rank="metropolis"]::before {
+  content: "◉";
+}
+.slice-site-label[data-rank="city"]::before {
+  content: "▣";
+}
+.slice-site-label[data-rank="landmark"] {
+  font-style: italic;
+  color: #d5d4bb;
+  letter-spacing: 0.12em;
+}
+.slice-site-label[data-rank="landmark"]::before {
+  content: "⌁";
+}
+.slice-site-label:hover,
+.slice-site-label:focus-visible {
+  background: #1d302eee;
+}
+.slice-infrastructure-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: #183335;
+  color: #a9ddd0;
+  border: 1px solid #80b8ac;
+  border-radius: 3px;
+  padding: 2px 5px;
+  z-index: 3;
+}
+.slice-range-legend {
+  position: absolute;
+  pointer-events: none;
+  top: 12px;
+  right: 84px;
+  padding: 6px 9px;
+  border: 1px solid #67d9e4;
+  background: #182b2edb;
+  color: #eee4c8;
+  font-size: 12px;
   z-index: 4;
 }

@@ -1,0 +1,2170 @@
+
+> test
+> node --import tsx --test tests/*.test.ts
+
+TAP version 13
+# Subtest: angled parcels fit full envelopes with clear street-facing access
+ok 1 - angled parcels fit full envelopes with clear street-facing access
+  ---
+  duration_ms: 2469.7812
+  type: 'test'
+  ...
+# Subtest: consecutive seeds change street composition and combine district roles
+ok 2 - consecutive seeds change street composition and combine district roles
+  ---
+  duration_ms: 867.2964
+  type: 'test'
+  ...
+# Subtest: LMG visual bursts contain eight rapid shots and stop when disabled
+ok 3 - LMG visual bursts contain eight rapid shots and stop when disabled
+  ---
+  duration_ms: 3.305
+  type: 'test'
+  ...
+# Subtest: running uses longer strides and distinct airborne intervals
+ok 4 - running uses longer strides and distinct airborne intervals
+  ---
+  duration_ms: 43.6145
+  type: 'test'
+  ...
+# Subtest: low cover keeps infantry in place and rifle/LMG muzzles above the sandbags
+ok 5 - low cover keeps infantry in place and rifle/LMG muzzles above the sandbags
+  ---
+  duration_ms: 56.2846
+  type: 'test'
+  ...
+# Subtest: all infantry clips keep finite, grounded poses; crouch lowers the silhouette
+ok 6 - all infantry clips keep finite, grounded poses; crouch lowers the silhouette
+  ---
+  duration_ms: 317.2568
+  type: 'test'
+  ...
+# Subtest: cover firing occurs only when exposed; reload and reverse remain deterministic
+ok 7 - cover firing occurs only when exposed; reload and reverse remain deterministic
+  ---
+  duration_ms: 2.7237
+  type: 'test'
+  ...
+# Subtest: tank shots kick quickly and settle, with smoke lingering after the last shot
+ok 8 - tank shots kick quickly and settle, with smoke lingering after the last shot
+  ---
+  duration_ms: 2.5734
+  type: 'test'
+  ...
+# Subtest: distance attenuates and muffles fire while footsteps cull locally
+ok 9 - distance attenuates and muffles fire while footsteps cull locally
+  ---
+  duration_ms: 1.3296
+  type: 'test'
+  ...
+# Subtest: camera right direction controls stereo panning without changing volume
+ok 10 - camera right direction controls stereo panning without changing volume
+  ---
+  duration_ms: 0.196
+  type: 'test'
+  ...
+# Subtest: event cursor prevents snapshot replay, handles unordered batches and bounds burst work
+ok 11 - event cursor prevents snapshot replay, handles unordered batches and bounds burst work
+  ---
+  duration_ms: 1.0088
+  type: 'test'
+  ...
+# Subtest: synthesized variants have bounded finite PCM, nonzero energy and clean edges
+ok 12 - synthesized variants have bounded finite PCM, nonzero energy and clean edges
+  ---
+  duration_ms: 201.7773
+  type: 'test'
+  ...
+# Subtest: hearing emits only coarse positions with no combat identity or targeting details
+ok 13 - hearing emits only coarse positions with no combat identity or targeting details
+  ---
+  duration_ms: 0.5217
+  type: 'test'
+  ...
+# Subtest: hearing history is bounded and expires independently of visibility
+ok 14 - hearing history is bounded and expires independently of visibility
+  ---
+  duration_ms: 1.4148
+  type: 'test'
+  ...
+# Subtest: long-range fire remains quiet and dark beyond the old cutoff
+ok 15 - long-range fire remains quiet and dark beyond the old cutoff
+  ---
+  duration_ms: 0.3653
+  type: 'test'
+  ...
+# Subtest: city impulse has a predelay, bounded reflections and a decaying tail
+ok 16 - city impulse has a predelay, bounded reflections and a decaying tail
+  ---
+  duration_ms: 13.8501
+  type: 'test'
+  ...
+# Subtest: rifle reports vary independently and retain an elevated listening distance
+ok 17 - rifle reports vary independently and retain an elevated listening distance
+  ---
+  duration_ms: 12.9013
+  type: 'test'
+  ...
+# Subtest: turn interpolation takes the short arc across the angle seam
+ok 18 - turn interpolation takes the short arc across the angle seam
+  ---
+  duration_ms: 0.9074
+  type: 'test'
+  ...
+# Subtest: tracers travel forward, remain short, and expire instead of becoming beams
+ok 19 - tracers travel forward, remain short, and expire instead of becoming beams
+  ---
+  duration_ms: 0.3122
+  type: 'test'
+  ...
+# Subtest: squad reports use small stable per-soldier phases
+ok 20 - squad reports use small stable per-soldier phases
+  ---
+  duration_ms: 0.1845
+  type: 'test'
+  ...
+# Subtest: snapshot batches preserve authoritative volley order within a bounded replay window
+ok 21 - snapshot batches preserve authoritative volley order within a bounded replay window
+  ---
+  duration_ms: 0.941
+  type: 'test'
+  ...
+# Subtest: biome scenery is deterministic cosmetic state, stays on land, and clears settlements
+ok 22 - biome scenery is deterministic cosmetic state, stays on land, and clears settlements
+  ---
+  duration_ms: 7578.9647
+  type: 'test'
+  ...
+# Subtest: plain ground receives no forest or mountain sprites; a biome patch can cross territory lines
+ok 23 - plain ground receives no forest or mountain sprites; a biome patch can cross territory lines
+  ---
+  duration_ms: 8612.7448
+  type: 'test'
+  ...
+# (node:17964) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: campaign expands the shared geography without inflating buildings or detaching the city
+ok 24 - campaign expands the shared geography without inflating buildings or detaching the city
+  ---
+  duration_ms: 20.1286
+  type: 'test'
+  ...
+# Subtest: campaign combat has no ten-minute scenario deadline and retains bounded offline backlog
+ok 25 - campaign combat has no ten-minute scenario deadline and retains bounded offline backlog
+  ---
+  duration_ms: 1.9455
+  type: 'test'
+  ...
+# Subtest: occupation, movement and supplies are independent of snapshot frequency and serialized restart
+ok 26 - occupation, movement and supplies are independent of snapshot frequency and serialized restart
+  ---
+  duration_ms: 84.88
+  type: 'test'
+  ...
+# Subtest: unseen campaign enemies and ballistics stay private while coarse hearing survives
+ok 27 - unseen campaign enemies and ballistics stay private while coarse hearing survives
+  ---
+  duration_ms: 10.9457
+  type: 'test'
+  ...
+# Subtest: built sandbags block infantry, provide cover and can be crossed and crushed by a tank
+ok 28 - built sandbags block infantry, provide cover and can be crossed and crushed by a tank
+  ---
+  duration_ms: 31.5945
+  type: 'test'
+  ...
+# Subtest: campaign storage is atomic, survives SQLite reopen and leaves older worlds untouched
+ok 29 - campaign storage is atomic, survives SQLite reopen and leaves older worlds untouched
+  ---
+  duration_ms: 57.4008
+  type: 'test'
+  ...
+# Subtest: the server simulates without polling, rejects enemy orders and resumes the same campaign
+ok 30 - the server simulates without polling, rejects enemy orders and resumes the same campaign
+  ---
+  duration_ms: 7498.6751
+  type: 'test'
+  ...
+# Subtest: route timing follows distance and each region speed rather than straight-line separation
+ok 31 - route timing follows distance and each region speed rather than straight-line separation
+  ---
+  duration_ms: 1.1707
+  type: 'test'
+  ...
+# Subtest: start candidates belong to their reserved zone and route audits do not establish ownership
+ok 32 - start candidates belong to their reserved zone and route audits do not establish ownership
+  ---
+  duration_ms: 3916.9835
+  type: 'test'
+  ...
+# Subtest: unseen contacts freeze, expire, and never include live combat data
+ok 33 - unseen contacts freeze, expire, and never include live combat data
+  ---
+  duration_ms: 2.0505
+  type: 'test'
+  ...
+# Subtest: reacquisition, observed death, and scouting an empty last-known location clear ghosts
+ok 34 - reacquisition, observed death, and scouting an empty last-known location clear ghosts
+  ---
+  duration_ms: 0.4671
+  type: 'test'
+  ...
+# Subtest: sight outline clips buildings while low cover preserves sight
+ok 35 - sight outline clips buildings while low cover preserves sight
+  ---
+  duration_ms: 1.1272
+  type: 'test'
+  ...
+# Subtest: city battle stages two squads and a tank, pauses and rejects enemy commands
+ok 36 - city battle stages two squads and a tank, pauses and rejects enemy commands
+  ---
+  duration_ms: 87404.3008
+  type: 'test'
+  ...
+# Subtest: city battle fires real shots and applies casualties deterministically
+ok 37 - city battle fires real shots and applies casualties deterministically
+  ---
+  duration_ms: 69561.6611
+  type: 'test'
+  ...
+# Subtest: turret aiming does not steer the hull toward its target
+ok 38 - turret aiming does not steer the hull toward its target
+  ---
+  duration_ms: 24004.0477
+  type: 'test'
+  ...
+# Subtest: city tank shots respect a five-second reload under sustained fire
+ok 39 - city tank shots respect a five-second reload under sustained fire
+  ---
+  duration_ms: 21398.107
+  type: 'test'
+  ...
+# Subtest: build footprints reject obstacles, steep terrain and occupied positions
+ok 40 - build footprints reject obstacles, steep terrain and occupied positions
+  ---
+  duration_ms: 1.5846
+  type: 'test'
+  ...
+# Subtest: rotated placement footprints reject overlap and allow separated structures
+ok 41 - rotated placement footprints reject overlap and allow separated structures
+  ---
+  duration_ms: 0.7542
+  type: 'test'
+  ...
+# Subtest: placement caps and nonfinite coordinates are rejected
+ok 42 - placement caps and nonfinite coordinates are rejected
+  ---
+  duration_ms: 0.2028
+  type: 'test'
+  ...
+# Subtest: planning wheel zoom keeps the pointed-at ground position fixed, including zoom limits
+ok 43 - planning wheel zoom keeps the pointed-at ground position fixed, including zoom limits
+  ---
+  duration_ms: 11.6277
+  type: 'test'
+  ...
+# Subtest: perspective wheel zoom remains responsive and keeps its ground anchor fixed
+ok 44 - perspective wheel zoom remains responsive and keeps its ground anchor fixed
+  ---
+  duration_ms: 1.2296
+  type: 'test'
+  ...
+# Subtest: Alt middle drag pans horizontally without rotation, height drift, or orders
+ok 45 - Alt middle drag pans horizontally without rotation, height drift, or orders
+  ---
+  duration_ms: 0.8899
+  type: 'test'
+  ...
+# Subtest: middle drag orbits the floor with bounded 40–75 degree elevation
+ok 46 - middle drag orbits the floor with bounded 40–75 degree elevation
+  ---
+  duration_ms: 0.7979
+  type: 'test'
+  ...
+# Subtest: off-center orbit ignores a roof and keeps the floor anchor fixed on screen
+ok 47 - off-center orbit ignores a roof and keeps the floor anchor fixed on screen
+  ---
+  duration_ms: 0.6134
+  type: 'test'
+  ...
+# Subtest: right-click orders remain separate from camera navigation and handlers dispose
+ok 48 - right-click orders remain separate from camera navigation and handlers dispose
+  ---
+  duration_ms: 0.5062
+  type: 'test'
+  ...
+# Subtest: click and drag previews fit all six infantry behind an L-shaped wall
+ok 49 - click and drag previews fit all six infantry behind an L-shaped wall
+  ---
+  duration_ms: 11.3267
+  type: 'test'
+  ...
+# Subtest: open-ground orders use a loose formation with depth
+ok 50 - open-ground orders use a loose formation with depth
+  ---
+  duration_ms: 0.5575
+  type: 'test'
+  ...
+# Subtest: nearby cover reactions are bounded and Hold position prevents relocation
+ok 51 - nearby cover reactions are bounded and Hold position prevents relocation
+  ---
+  duration_ms: 16.3233
+  type: 'test'
+  ...
+# Subtest: cover orders activate with breathing room, without extending physical cover
+ok 52 - cover orders activate with breathing room, without extending physical cover
+  ---
+  duration_ms: 2.4088
+  type: 'test'
+  ...
+# Subtest: mixed move group matches tank acceleration, turning pauses and speed
+ok 53 - mixed move group matches tank acceleration, turning pauses and speed
+  ---
+  duration_ms: 5.5594
+  type: 'test'
+  ...
+# Subtest: individual orders detach a soldier from a slower group
+ok 54 - individual orders detach a soldier from a slower group
+  ---
+  duration_ms: 2.6175
+  type: 'test'
+  ...
+# Subtest: idle motion stays subtle and soldiers have different timing
+ok 55 - idle motion stays subtle and soldiers have different timing
+  ---
+  duration_ms: 2.1537
+  type: 'test'
+  ...
+# Subtest: movement suppresses idle while aimed and covered stances keep restrained breathing
+ok 56 - movement suppresses idle while aimed and covered stances keep restrained breathing
+  ---
+  duration_ms: 0.3416
+  type: 'test'
+  ...
+# Subtest: city seeds produce stable varied layouts with legal separated building footprints
+ok 57 - city seeds produce stable varied layouts with legal separated building footprints
+  ---
+  duration_ms: 177.6726
+  type: 'test'
+  ...
+# Subtest: ports face real water, river towns follow rivers, and terrain influences archetypes
+ok 58 - ports face real water, river towns follow rivers, and terrain influences archetypes
+  ---
+  duration_ms: 181.2454
+  type: 'test'
+  ...
+# Subtest: a distant coast cannot make a settlement a port without reachable docks
+ok 59 - a distant coast cannot make a settlement a port without reachable docks
+  ---
+  duration_ms: 34.4762
+  type: 'test'
+  ...
+# Subtest: port art selects all eight directions with at most a half-step correction
+ok 60 - port art selects all eight directions with at most a half-step correction
+  ---
+  duration_ms: 0.8634
+  type: 'test'
+  ...
+# Subtest: port art follows visible open water instead of a misleading dock
+ok 61 - port art follows visible open water instead of a misleading dock
+  ---
+  duration_ms: 2.3635
+  type: 'test'
+  ...
+# Subtest: nearby settlements constrain footprints, including across territory borders
+ok 62 - nearby settlements constrain footprints, including across territory borders
+  ---
+  duration_ms: 25.9731
+  type: 'test'
+  ...
+# Subtest: new worlds space settlements across administrative boundaries and favor smaller satellites
+ok 63 - new worlds space settlements across administrative boundaries and favor smaller satellites
+  ---
+  duration_ms: 0.7329
+  type: 'test'
+  ...
+# Subtest: template buildings and props preserve the original art orientation
+ok 64 - template buildings and props preserve the original art orientation
+  ---
+  duration_ms: 229.0908
+  type: 'test'
+  ...
+# Subtest: street blocks are filled with contained lots rather than sparse frontage
+ok 65 - street blocks are filled with contained lots rather than sparse frontage
+  ---
+  duration_ms: 80.0015
+  type: 'test'
+  ...
+# Subtest: settlement rank changes building count, never the size of a building
+ok 66 - settlement rank changes building count, never the size of a building
+  ---
+  duration_ms: 152.9539
+  type: 'test'
+  ...
+# Subtest: city artwork and dock scale stay fixed when world dimensions grow
+ok 67 - city artwork and dock scale stay fixed when world dimensions grow
+  ---
+  duration_ms: 128.336
+  type: 'test'
+  ...
+# Subtest: infantry firing on the move travels less distance without stopping
+ok 68 - infantry firing on the move travels less distance without stopping
+  ---
+  duration_ms: 3.7928
+  type: 'test'
+  ...
+# Subtest: focus-centered orbit does not move its target or change distance
+ok 69 - focus-centered orbit does not move its target or change distance
+  ---
+  duration_ms: 6.1399
+  type: 'test'
+  ...
+# Subtest: perspective orbit keeps the grabbed surface stationary on screen
+ok 70 - perspective orbit keeps the grabbed surface stationary on screen
+  ---
+  duration_ms: 1.599
+  type: 'test'
+  ...
+# Subtest: cutaway excludes foreground blockers from orbit picking and resets in planning mode
+ok 71 - cutaway excludes foreground blockers from orbit picking and resets in planning mode
+  ---
+  duration_ms: 6.0274
+  type: 'test'
+  ...
+# Subtest: orbit picks visible roofs, skips hidden LODs and translucent effects, and handles instancing
+ok 72 - orbit picks visible roofs, skips hidden LODs and translucent effects, and handles instancing
+  ---
+  duration_ms: 3.4216
+  type: 'test'
+  ...
+# Subtest: orbit holds a rooftop's screen position and zoom through yaw and steep pitch changes
+ok 73 - orbit holds a rooftop's screen position and zoom through yaw and steep pitch changes
+  ---
+  duration_ms: 0.9525
+  type: 'test'
+  ...
+# Subtest: built sandbags block infantry, provide directional cover, permit tanks and disappear when crushed
+ok 74 - built sandbags block infantry, provide directional cover, permit tanks and disappear when crushed
+  ---
+  duration_ms: 85735.1224
+  type: 'test'
+  ...
+# Subtest: city seating and low walls stay proportionate to the rendered infantry rig
+ok 75 - city seating and low walls stay proportionate to the rendered infantry rig
+  ---
+  duration_ms: 24.3676
+  type: 'test'
+  ...
+# Subtest: nearby-town roads are reproducible, curved and respect ground obstacles
+ok 76 - nearby-town roads are reproducible, curved and respect ground obstacles
+  ---
+  duration_ms: 17367.4425
+  type: 'test'
+  ...
+# Subtest: authored scene choice is seeded and art dimensions are fixed by family
+ok 77 - authored scene choice is seeded and art dimensions are fixed by family
+  ---
+  duration_ms: 8.7439
+  type: 'test'
+  ...
+# Subtest: extra districts are omitted when geography cannot accommodate them
+ok 78 - extra districts are omitted when geography cannot accommodate them
+  ---
+  duration_ms: 0.5223
+  type: 'test'
+  ...
+# Subtest: metropolis art is never constrained to a town-sized footprint
+ok 79 - metropolis art is never constrained to a town-sized footprint
+  ---
+  duration_ms: 0.2349
+  type: 'test'
+  ...
+# Subtest: every family includes non-rounded silhouette variants
+ok 80 - every family includes non-rounded silhouette variants
+  ---
+  duration_ms: 0.1602
+  type: 'test'
+  ...
+# Subtest: seed audit checks all study cases reproducibly including terrain stress
+ok 81 - seed audit checks all study cases reproducibly including terrain stress
+  ---
+  duration_ms: 216920.4133
+  type: 'test'
+  ...
+# Subtest: shell misses land off target deterministically
+ok 82 - shell misses land off target deterministically
+  ---
+  duration_ms: 2.1468
+  type: 'test'
+  ...
+# Subtest: a landed city tank shell kills full-health exposed infantry after flight
+ok 83 - a landed city tank shell kills full-health exposed infantry after flight
+  ---
+  duration_ms: 12.22
+  type: 'test'
+  ...
+# Subtest: a city tank acquires a clear target at the calibrated 400 metre range
+ok 84 - a city tank acquires a clear target at the calibrated 400 metre range
+  ---
+  duration_ms: 4.466
+  type: 'test'
+  ...
+# Subtest: pruning removes disconnected empty roads and preserves served frontage
+ok 85 - pruning removes disconnected empty roads and preserves served frontage
+  ---
+  duration_ms: 3.4919
+  type: 'test'
+  ...
+# Subtest: an empty side spur is removed while the occupied route stays connected
+ok 86 - an empty side spur is removed while the occupied route stays connected
+  ---
+  duration_ms: 0.4075
+  type: 'test'
+  ...
+# Subtest: city tactical geometry blocks buildings and water, preserves gates and bridges, and provides valid routes
+ok 87 - city tactical geometry blocks buildings and water, preserves gates and bridges, and provides valid routes
+  ---
+  duration_ms: 132025.6102
+  type: 'test'
+  ...
+# Subtest: markers fade with orthographic zoom and perspective distance, not pitch
+ok 88 - markers fade with orthographic zoom and perspective distance, not pitch
+  ---
+  duration_ms: 3.1793
+  type: 'test'
+  ...
+# Subtest: airship badges arrive at tactical zoom while their models retain tenfold reach
+ok 89 - airship badges arrive at tactical zoom while their models retain tenfold reach
+  ---
+  duration_ms: 0.9768
+  type: 'test'
+  ...
+# Subtest: overlapping city units receive separate on-screen badge slots
+ok 90 - overlapping city units receive separate on-screen badge slots
+  ---
+  duration_ms: 0.4453
+  type: 'test'
+  ...
+# Subtest: tank pivots on opposing tracks before driving, respects angular speed and stops its belts
+ok 91 - tank pivots on opposing tracks before driving, respects angular speed and stops its belts
+  ---
+  duration_ms: 86058.2303
+  type: 'test'
+  ...
+# Subtest: preview soldiers follow valid routes, reject blocked orders, stop and replace orders
+ok 92 - preview soldiers follow valid routes, reject blocked orders, stop and replace orders
+  ---
+  duration_ms: 44119.8966
+  type: 'test'
+  ...
+# Subtest: vision is range-limited, shared, and removed when the last observer loses sight
+ok 93 - vision is range-limited, shared, and removed when the last observer loses sight
+  ---
+  duration_ms: 3.4675
+  type: 'test'
+  ...
+# Subtest: buildings block vision; low walls permit sight
+ok 94 - buildings block vision; low walls permit sight
+  ---
+  duration_ms: 2.1426
+  type: 'test'
+  ...
+# Subtest: hidden attack IDs are rejected and enemy routes are never disclosed
+ok 95 - hidden attack IDs are rejected and enemy routes are never disclosed
+  ---
+  duration_ms: 2.5981
+  type: 'test'
+  ...
+# Subtest: player snapshots retain only the last observed location after contact is lost
+ok 96 - player snapshots retain only the last observed location after contact is lost
+  ---
+  duration_ms: 0.8922
+  type: 'test'
+  ...
+# Subtest: full city occupies every tile quadrant with a protected civic core and mixed districts
+ok 97 - full city occupies every tile quadrant with a protected civic core and mixed districts
+  ---
+  duration_ms: 87287.9837
+  type: 'test'
+  ...
+# Subtest: combined bend and hill preserve rigid buildings and clear entrances across seeds
+ok 98 - combined bend and hill preserve rigid buildings and clear entrances across seeds
+  ---
+  duration_ms: 22473.7245
+  type: 'test'
+  ...
+# Subtest: river deformation leaves inland block edges fixed and remains invertible
+ok 99 - river deformation leaves inland block edges fixed and remains invertible
+  ---
+  duration_ms: 6821.8996
+  type: 'test'
+  ...
+# Subtest: commercial and industrial infill recovers sites without obstructing yard access
+ok 100 - commercial and industrial infill recovers sites without obstructing yard access
+  ---
+  duration_ms: 5657.2702
+  type: 'test'
+  ...
+# Subtest: final frontage bearings point directly from the doorway to the road
+ok 101 - final frontage bearings point directly from the doorway to the road
+  ---
+  duration_ms: 7379.4316
+  type: 'test'
+  ...
+# Subtest: mountains fill their geography and remain continuous across administrative splits
+ok 102 - mountains fill their geography and remain continuous across administrative splits
+  ---
+  duration_ms: 4125.2622
+  type: 'test'
+  ...
+# Subtest: rivers and sites carve local clearances without shrinking the rest of a range
+ok 103 - rivers and sites carve local clearances without shrinking the rest of a range
+  ---
+  duration_ms: 4197.7084
+  type: 'test'
+  ...
+# Subtest: water stays flat and terrain sampling agrees with the mesh diagonal
+ok 104 - water stays flat and terrain sampling agrees with the mesh diagonal
+  ---
+  duration_ms: 2077.9404
+  type: 'test'
+  ...
+# Subtest: chunk seams share positions/normals and chunk resources are released
+ok 105 - chunk seams share positions/normals and chunk resources are released
+  ---
+  duration_ms: 3357.1673
+  type: 'test'
+  ...
+# Subtest: real country terrain is deterministic, bounded and preserves source geography
+ok 106 - real country terrain is deterministic, bounded and preserves source geography
+  ---
+  duration_ms: 8935.0576
+  type: 'test'
+  ...
+# (node:23268) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: country combat is invariant to polling and serialized restart, including magazines and casualties
+ok 107 - country combat is invariant to polling and serialized restart, including magazines and casualties
+  ---
+  duration_ms: 112.3266
+  type: 'test'
+  ...
+# Subtest: squads retain a last survivor; blocked sight prevents damage and suppression
+ok 108 - squads retain a last survivor; blocked sight prevents damage and suppression
+  ---
+  duration_ms: 1.8045
+  type: 'test'
+  ...
+# Subtest: capture requires living infantry, completes in order, and offline work is bounded
+ok 109 - capture requires living infantry, completes in order, and offline work is bounded
+  ---
+  duration_ms: 157.7949
+  type: 'test'
+  ...
+# Subtest: a terrain ridge blocks country sight independently of ground colors
+ok 110 - a terrain ridge blocks country sight independently of ground colors
+  ---
+  duration_ms: 1.0087
+  type: 'test'
+  ...
+# Subtest: airships observe over ground-level buildings
+ok 111 - airships observe over ground-level buildings
+  ---
+  duration_ms: 19.6622
+  type: 'test'
+  ...
+# Subtest: forest concealment shortens mutual detection while scout airships see much farther
+ok 112 - forest concealment shortens mutual detection while scout airships see much farther
+  ---
+  duration_ms: 1.6276
+  type: 'test'
+  ...
+# Subtest: airship contacts clear beyond current daylight-adjusted sight
+ok 113 - airship contacts clear beyond current daylight-adjusted sight
+  ---
+  duration_ms: 1.6625
+  type: 'test'
+  ...
+# Subtest: country player state omits unseen enemies, their orders and pending fire
+ok 114 - country player state omits unseen enemies, their orders and pending fire
+  ---
+  duration_ms: 2.8018
+  type: 'test'
+  ...
+# Subtest: SQLite reopen retains independent combat health, clocks and fire memory atomically
+ok 115 - SQLite reopen retains independent combat health, clocks and fire memory atomically
+  ---
+  duration_ms: 145.7205
+  type: 'test'
+  ...
+# Subtest: finished encounters can redeploy fresh troops while active encounters reject replacement
+ok 116 - finished encounters can redeploy fresh troops while active encounters reject replacement
+  ---
+  duration_ms: 3.3197
+  type: 'test'
+  ...
+# Subtest: expanded sites grow land and content without scaling buildings or blocking their spine road
+ok 117 - expanded sites grow land and content without scaling buildings or blocking their spine road
+  ---
+  duration_ms: 1053.5648
+  type: 'test'
+  ...
+# Subtest: farmland parcels are bounded, convex, separated, varied and render with finite clipped rows
+ok 118 - farmland parcels are bounded, convex, separated, varied and render with finite clipped rows
+  ---
+  duration_ms: 496.0629
+  type: 'test'
+  ...
+# Subtest: real samples preserve curved roads, source attribution, deterministic selection and safe model placement
+ok 119 - real samples preserve curved roads, source attribution, deterministic selection and safe model placement
+  ---
+  duration_ms: 3478.2214
+  type: 'test'
+  ...
+# Subtest: input validation rejects invalid data and clipping retains crossing geometry
+ok 120 - input validation rejects invalid data and clipping retains crossing geometry
+  ---
+  duration_ms: 0.8088
+  type: 'test'
+  ...
+# Subtest: procedural settlement seeds change road structure and density instead of repeating blocks
+ok 121 - procedural settlement seeds change road structure and density instead of repeating blocks
+  ---
+  duration_ms: 116.0002
+  type: 'test'
+  ...
+# Subtest: every country template is deterministic, bounded and keeps its road entrances clear
+ok 122 - every country template is deterministic, bounded and keeps its road entrances clear
+  ---
+  duration_ms: 386.9589
+  type: 'test'
+  ...
+# Subtest: farmlands use six separated crop parcels and seed-driven crop variation
+ok 123 - farmlands use six separated crop parcels and seed-driven crop variation
+  ---
+  duration_ms: 2.6956
+  type: 'test'
+  ...
+# Subtest: country placement rejects insufficient ground and separates valid sites
+ok 124 - country placement rejects insufficient ground and separates valid sites
+  ---
+  duration_ms: 47.5877
+  type: 'test'
+  ...
+# Subtest: roadside sites do not straddle mapped rivers
+ok 125 - roadside sites do not straddle mapped rivers
+  ---
+  duration_ms: 1.5269
+  type: 'test'
+  ...
+# Subtest: refined country scenery is deterministic and leaves roads, rivers and settlement reservations clear
+ok 126 - refined country scenery is deterministic and leaves roads, rivers and settlement reservations clear
+  ---
+  duration_ms: 27.7512
+  type: 'test'
+  ...
+# Subtest: bridge deck, ramps and clearance share one physical surface
+ok 127 - bridge deck, ramps and clearance share one physical surface
+  ---
+  duration_ms: 1.7343
+  type: 'test'
+  ...
+# Subtest: road smoothing removes short lattice wobble while preserving endpoints
+ok 128 - road smoothing removes short lattice wobble while preserving endpoints
+  ---
+  duration_ms: 0.7558
+  type: 'test'
+  ...
+# Subtest: bridge approaches keep bends off the deck and preserve distant road endpoints
+ok 129 - bridge approaches keep bends off the deck and preserve distant road endpoints
+  ---
+  duration_ms: 0.9331
+  type: 'test'
+  ...
+# Subtest: country roads connect every entrance with a shared highway and local branches
+ok 130 - country roads connect every entrance with a shared highway and local branches
+  ---
+  duration_ms: 155.6413
+  type: 'test'
+  ...
+# Subtest: mountain walls detour roads and sea gaps stay disconnected
+ok 131 - mountain walls detour roads and sea gaps stay disconnected
+  ---
+  duration_ms: 72.3038
+  type: 'test'
+  ...
+# Subtest: road draping splits grid axes and triangle diagonals
+ok 132 - road draping splits grid axes and triangle diagonals
+  ---
+  duration_ms: 1.0084
+  type: 'test'
+  ...
+# (node:3924) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: geographic sector preserves city scale and joins city, hamlet and bridged outpost
+ok 133 - geographic sector preserves city scale and joins city, hamlet and bridged outpost
+  ---
+  duration_ms: 97607.6085
+  type: 'test'
+  ...
+# Subtest: ground units use bridge and collision-tested paths; air can cross water directly
+ok 134 - ground units use bridge and collision-tested paths; air can cross water directly
+  ---
+  duration_ms: 1096.9737
+  type: 'test'
+  ...
+# Subtest: orders reject atomically, queue routes and occupy distinct available cover slots
+ok 135 - orders reject atomically, queue routes and occupy distinct available cover slots
+  ---
+  duration_ms: 136.7204
+  type: 'test'
+  ...
+# Subtest: tank turns on its treads and elapsed movement is independent of polling frequency
+ok 136 - tank turns on its treads and elapsed movement is independent of polling frequency
+  ---
+  duration_ms: 6.1362
+  type: 'test'
+  ...
+# Subtest: saved routes resume after SQLite reopen and failed updates roll back
+ok 137 - saved routes resume after SQLite reopen and failed updates roll back
+  ---
+  duration_ms: 76.967
+  type: 'test'
+  ...
+# Subtest: slice API requires its own bearer session and validates commands
+ok 138 - slice API requires its own bearer session and validates commands
+  ---
+  duration_ms: 43047.4042
+  type: 'test'
+  ...
+# Subtest: city geometry migration clears obsolete orders and relocates only blocked units
+ok 139 - city geometry migration clears obsolete orders and relocates only blocked units
+  ---
+  duration_ms: 7.0617
+  type: 'test'
+  ...
+# Subtest: drag facing centers a formation and tanks finish turning at a bounded rate
+ok 140 - drag facing centers a formation and tanks finish turning at a bounded rate
+  ---
+  duration_ms: 10.3769
+  type: 'test'
+  ...
+# Subtest: clear routes across city outskirts do not detour through the road portal
+ok 141 - clear routes across city outskirts do not detour through the road portal
+  ---
+  duration_ms: 22.0624
+  type: 'test'
+  ...
+# Subtest: a squad order fans out to independent, non-overlapping protected member slots
+ok 142 - a squad order fans out to independent, non-overlapping protected member slots
+  ---
+  duration_ms: 29.1405
+  type: 'test'
+  ...
+# Subtest: a dead member stays put while surviving members follow their own paths
+ok 143 - a dead member stays put while surviving members follow their own paths
+  ---
+  duration_ms: 2.0719
+  type: 'test'
+  ...
+# Subtest: shared city reaction chooses nearby protection without crossing to the threat side
+ok 144 - shared city reaction chooses nearby protection without crossing to the threat side
+  ---
+  duration_ms: 0.7474
+  type: 'test'
+  ...
+# Subtest: open squad orders form a stable loose group with depth and independent spacing
+ok 145 - open squad orders form a stable loose group with depth and independent spacing
+  ---
+  duration_ms: 6.8596
+  type: 'test'
+  ...
+# Subtest: group orders use the slowest member and a separate order detaches its unit
+ok 146 - group orders use the slowest member and a separate order detaches its unit
+  ---
+  duration_ms: 6.8137
+  type: 'test'
+  ...
+# (node:18756) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: cover orders validate ownership and real cover; soldiers move into cover and new orders cancel it
+ok 147 - cover orders validate ownership and real cover; soldiers move into cover and new orders cancel it
+  ---
+  duration_ms: 2677.4954
+  type: 'test'
+  ...
+# Subtest: cover goal survives travel and persistence; ownership loss removes it
+ok 148 - cover goal survives travel and persistence; ownership loss removes it
+  ---
+  duration_ms: 4157.3448
+  type: 'test'
+  ...
+# Subtest: crafted neighborhood has a fixed budget and level building foundations
+ok 149 - crafted neighborhood has a fixed budget and level building foundations
+  ---
+  duration_ms: 48.6834
+  type: 'test'
+  ...
+# Subtest: street-bounded civic block stays free of other building footprints
+ok 150 - street-bounded civic block stays free of other building footprints
+  ---
+  duration_ms: 5.6471
+  type: 'test'
+  ...
+# Subtest: continuous border movement preserves sibling positions and survives restart
+ok 151 - continuous border movement preserves sibling positions and survives restart
+  ---
+  duration_ms: 4949.0071
+  type: 'test'
+  ...
+# Subtest: hostile entry starts combat and cannot capture or march through living defenders
+ok 152 - hostile entry starts combat and cannot capture or march through living defenders
+  ---
+  duration_ms: 8571.5901
+  type: 'test'
+  ...
+# Subtest: undefended territory captures on physical arrival and waits for consolidation
+ok 153 - undefended territory captures on physical arrival and waits for consolidation
+  ---
+  duration_ms: 8186.5071
+  type: 'test'
+  ...
+# Subtest: disconnected and mountainous routes reject atomically; real generated borders route
+ok 154 - disconnected and mountainous routes reject atomically; real generated borders route
+  ---
+  duration_ms: 24448.0413
+  type: 'test'
+  ...
+# Subtest: curved coast projection is invertible, does not fold streets, and leaves civic and river anchors fixed
+ok 155 - curved coast projection is invertible, does not fold streets, and leaves civic and river anchors fixed
+  ---
+  duration_ms: 31.4766
+  type: 'test'
+  ...
+# Subtest: coastline validation rejects reversals and footprints crossing a narrow inlet
+ok 156 - coastline validation rejects reversals and footprints crossing a narrow inlet
+  ---
+  duration_ms: 1.096
+  type: 'test'
+  ...
+# Subtest: fitted coastal city keeps buildings dry, curves its outer road and points separated berths into water
+ok 157 - fitted coastal city keeps buildings dry, curves its outer road and points separated berths into water
+  ---
+  duration_ms: 98033.781
+  type: 'test'
+  ...
+# Subtest: district growth meets budgets with distinct level zones
+ok 158 - district growth meets budgets with distinct level zones
+  ---
+  duration_ms: 3783.9548
+  type: 'test'
+  ...
+# Subtest: urban kit preserves dense clear frontages across seeds and partial budgets
+ok 159 - urban kit preserves dense clear frontages across seeds and partial budgets
+  ---
+  duration_ms: 7575.6845
+  type: 'test'
+  ...
+# Subtest: mills and skyline towers occupy larger plots at fixed architectural scale
+ok 160 - mills and skyline towers occupy larger plots at fixed architectural scale
+  ---
+  duration_ms: 3505.9246
+  type: 'test'
+  ...
+# Subtest: seeded courtyard and stepped blocks vary geometry while retaining budgets
+ok 161 - seeded courtyard and stepped blocks vary geometry while retaining budgets
+  ---
+  duration_ms: 569.8333
+  type: 'test'
+  ...
+# Subtest: courtyard wings leave a usable rear-window court
+ok 162 - courtyard wings leave a usable rear-window court
+  ---
+  duration_ms: 349.1556
+  type: 'test'
+  ...
+# Subtest: front doors reach their block street without crossing another building
+ok 163 - front doors reach their block street without crossing another building
+  ---
+  duration_ms: 1759.2092
+  type: 'test'
+  ...
+# Subtest: edge fields cover an irregular region while preserving its lake and road corridor
+ok 164 - edge fields cover an irregular region while preserving its lake and road corridor
+  ---
+  duration_ms: 4.9206
+  type: 'test'
+  ...
+# Subtest: display field fragments preserve overdraw for a smoothed region mask
+ok 165 - display field fragments preserve overdraw for a smoothed region mask
+  ---
+  duration_ms: 0.5416
+  type: 'test'
+  ...
+# Subtest: country tank movement uses broad woodland density while roads remain fast
+ok 166 - country tank movement uses broad woodland density while roads remain fast
+  ---
+  duration_ms: 104.437
+  type: 'test'
+  ...
+# Subtest: only tanks slow during authoritative and projected country movement
+ok 167 - only tanks slow during authoritative and projected country movement
+  ---
+  duration_ms: 88.6035
+  type: 'test'
+  ...
+# Subtest: campaign armor slows in forests and mobile armies lose rapid forest transit
+ok 168 - campaign armor slows in forests and mobile armies lose rapid forest transit
+  ---
+  duration_ms: 0.4625
+  type: 'test'
+  ...
+# Subtest: three army presets have distinct composition and stable unique identities
+ok 169 - three army presets have distinct composition and stable unique identities
+  ---
+  duration_ms: 5867.9833
+  type: 'test'
+  ...
+# Subtest: depots relay connected supply but neither isolated depots nor fresh captures bridge a corridor
+ok 170 - depots relay connected supply but neither isolated depots nor fresh captures bridge a corridor
+  ---
+  duration_ms: 7741.3761
+  type: 'test'
+  ...
+# Subtest: redeployment cannot cross hostile land and offensives cannot transit a third nation
+ok 171 - redeployment cannot cross hostile land and offensives cannot transit a third nation
+  ---
+  duration_ms: 7640.2526
+  type: 'test'
+  ...
+# Subtest: offensive corridors persist and halt when a third party takes the next region
+ok 172 - offensive corridors persist and halt when a third party takes the next region
+  ---
+  duration_ms: 7878.7247
+  type: 'test'
+  ...
+# Subtest: capture changes land ownership but requires consolidation before onward travel
+ok 173 - capture changes land ownership but requires consolidation before onward travel
+  ---
+  duration_ms: 7651.6206
+  type: 'test'
+  ...
+# Subtest: a wider sector divides defense and cannot deploy instantly
+ok 174 - a wider sector divides defense and cannot deploy instantly
+  ---
+  duration_ms: 5578.4611
+  type: 'test'
+  ...
+# Subtest: reserves respond automatically but take ordinary travel time
+ok 175 - reserves respond automatically but take ordinary travel time
+  ---
+  duration_ms: 5402.1393
+  type: 'test'
+  ...
+# Subtest: cut-off armies consume finite depot reserves, cannot replenish, and eventually surrender
+ok 176 - cut-off armies consume finite depot reserves, cannot replenish, and eventually surrender
+  ---
+  duration_ms: 3611.2139
+  type: 'test'
+  ...
+# Subtest: dislodged formations cannot teleport to disconnected friendly land
+ok 177 - dislodged formations cannot teleport to disconnected friendly land
+  ---
+  duration_ms: 8307.6689
+  type: 'test'
+  ...
+# Subtest: legacy campaign upgrade preserves land, resources, strength and identity and is idempotent
+ok 178 - legacy campaign upgrade preserves land, resources, strength and identity and is idempotent
+  ---
+  duration_ms: 4620.8512
+  type: 'test'
+  ...
+# Subtest: seeded continents are repeatable, connected, and scale with seats
+ok 179 - seeded continents are repeatable, connected, and scale with seats
+  ---
+  duration_ms: 42619.7082
+  type: 'test'
+  ...
+# Subtest: scoring counts physical area and never buildings
+ok 180 - scoring counts physical area and never buildings
+  ---
+  duration_ms: 5721.9076
+  type: 'test'
+  ...
+# Subtest: construction charges once, completes after its duration, and rejects hostile building
+ok 181 - construction charges once, completes after its duration, and rejects hostile building
+  ---
+  duration_ms: 3557.7353
+  type: 'test'
+  ...
+# Subtest: standing objective eventually captures neutral territory without further commands
+ok 182 - standing objective eventually captures neutral territory without further commands
+  ---
+  duration_ms: 5944.8848
+  type: 'test'
+  ...
+# Subtest: majority must persist; finished campaigns reject commands
+ok 183 - majority must persist; finished campaigns reject commands
+  ---
+  duration_ms: 1546.7232
+  type: 'test'
+  ...
+# Subtest: 672-hour bot simulations stay deterministic with finite, nonnegative resources
+ok 184 - 672-hour bot simulations stay deterministic with finite, nonnegative resources
+  ---
+  duration_ms: 32639.3459
+  type: 'test'
+  ...
+# Subtest: continental geography is deterministic, compact, and partitioned into connected provinces
+ok 185 - continental geography is deterministic, compact, and partitioned into connected provinces
+  ---
+  duration_ms: 26813.3493
+  type: 'test'
+  ...
+# Subtest: mountains remain unowned, are excluded from victory, and leave connected passes
+ok 186 - mountains remain unowned, are excluded from victory, and leave connected passes
+  ---
+  duration_ms: 15021.3568
+  type: 'test'
+  ...
+# Subtest: seeds change the broad mainland silhouette, not just its coastal detail
+ok 187 - seeds change the broad mainland silhouette, not just its coastal detail
+  ---
+  duration_ms: 9964.503
+  type: 'test'
+  ...
+# Subtest: more nations expand world and mainland area while preserving territory scale
+ok 188 - more nations expand world and mainland area while preserving territory scale
+  ---
+  duration_ms: 29000.7323
+  type: 'test'
+  ...
+# Subtest: twenty Earth-derived seeds produce connected terrain, merging drainage, and strategic bottlenecks
+ok 189 - twenty Earth-derived seeds produce connected terrain, merging drainage, and strategic bottlenecks
+  ---
+  duration_ms: 37644.3754
+  type: 'test'
+  ...
+# Subtest: local features stay inside their territories and settlement sizes vary
+ok 190 - local features stay inside their territories and settlement sizes vary
+  ---
+  duration_ms: 5122.1956
+  type: 'test'
+  ...
+# Subtest: expanded maps retain usable land at the new territory density
+ok 191 - expanded maps retain usable land at the new territory density
+  ---
+  duration_ms: 4103.0855
+  type: 'test'
+  ...
+# Subtest: new nations have connected starts separated by neutral expansion land
+ok 192 - new nations have connected starts separated by neutral expansion land
+  ---
+  duration_ms: 18371.477
+  type: 'test'
+  ...
+# Subtest: generated farmland reserves rural space before towns are placed
+ok 193 - generated farmland reserves rural space before towns are placed
+  ---
+  duration_ms: 1321.6817
+  type: 'test'
+  ...
+# Subtest: agricultural land stays a minority of passable map area across seeds
+ok 194 - agricultural land stays a minority of passable map area across seeds
+  ---
+  duration_ms: 8508.7675
+  type: 'test'
+  ...
+# Subtest: completed campaigns enforce city spacing and settlement budgets
+ok 195 - completed campaigns enforce city spacing and settlement budgets
+  ---
+  duration_ms: 21879.7251
+  type: 'test'
+  ...
+# Subtest: riflemen fire independently with small bounded tracers
+ok 196 - riflemen fire independently with small bounded tracers
+  ---
+  duration_ms: 38.7209
+  type: 'test'
+  ...
+# Subtest: burst and automatic profiles create denser fire than semi-auto
+ok 197 - burst and automatic profiles create denser fire than semi-auto
+  ---
+  duration_ms: 249.9486
+  type: 'test'
+  ...
+# Subtest: seeded shot timing varies across sequences and does not depend on sampled frames
+ok 198 - seeded shot timing varies across sequences and does not depend on sampled frames
+  ---
+  duration_ms: 47.7952
+  type: 'test'
+  ...
+# Subtest: approved infantry geometry and baked movement remain finite and articulated
+ok 199 - approved infantry geometry and baked movement remain finite and articulated
+  ---
+  duration_ms: 75.7581
+  type: 'test'
+  ...
+# Subtest: viewport padding includes edge formations, excludes offscreen units and zoom suppresses models
+ok 200 - viewport padding includes edge formations, excludes offscreen units and zoom suppresses models
+  ---
+  duration_ms: 0.3216
+  type: 'test'
+  ...
+# Subtest: offscreen member animation is omitted and re-entry uses current authoritative position
+ok 201 - offscreen member animation is omitted and re-entry uses current authoritative position
+  ---
+  duration_ms: 1.6582
+  type: 'test'
+  ...
+# Subtest: scenery footprint clears farmland and the complete road shoulder
+ok 202 - scenery footprint clears farmland and the complete road shoulder
+  ---
+  duration_ms: 1.9469
+  type: 'test'
+  ...
+# (node:9712) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: local routes go around a lake and concave coast without leaving the territory
+ok 203 - local routes go around a lake and concave coast without leaving the territory
+  ---
+  duration_ms: 4386.8602
+  type: 'test'
+  ...
+# Subtest: squad waypoints progress without teleporting, Hold stays exact, army orders supersede
+ok 204 - squad waypoints progress without teleporting, Hold stays exact, army orders supersede
+  ---
+  duration_ms: 7137.9093
+  type: 'test'
+  ...
+# Subtest: group commands validate atomically, reject hostile squads, and hide enemy routes
+ok 205 - group commands validate atomically, reject hostile squads, and hide enemy routes
+  ---
+  duration_ms: 7789.6862
+  type: 'test'
+  ...
+# Subtest: local orders survive reopen and API authorization preserves state on rejection
+ok 206 - local orders survive reopen and API authorization preserves state on rejection
+  ---
+  duration_ms: 9822.112
+  type: 'test'
+  ...
+# Subtest: group orders use the slowest live member, survive persistence and detach on a separate order
+ok 207 - group orders use the slowest live member, survive persistence and detach on a separate order
+  ---
+  duration_ms: 6143.0023
+  type: 'test'
+  ...
+# Subtest: group move orders assign stable lanes and keep vehicles beside infantry
+ok 208 - group move orders assign stable lanes and keep vehicles beside infantry
+  ---
+  duration_ms: 6599.0274
+  type: 'test'
+  ...
+# Subtest: explicit attacks prioritize a visible target, persist, and cancel on Hold or target loss
+ok 209 - explicit attacks prioritize a visible target, persist, and cancel on Hold or target loss
+  ---
+  duration_ms: 4782.0549
+  type: 'test'
+  ...
+# Subtest: display polygons tile exactly and every stroke follows the same edge as its fills
+ok 210 - display polygons tile exactly and every stroke follows the same edge as its fills
+  ---
+  duration_ms: 20019.693
+  type: 'test'
+  ...
+# Subtest: political overlays remain through detail zoom and clear by 400%
+ok 211 - political overlays remain through detail zoom and clear by 400%
+  ---
+  duration_ms: 1.6928
+  type: 'test'
+  ...
+# (node:28620) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: campaign uses the entire scale-test continent while retaining local city dimensions
+ok 212 - campaign uses the entire scale-test continent while retaining local city dimensions
+  ---
+  duration_ms: 2293.7564
+  type: 'test'
+  ...
+# Subtest: forest tiles are deterministic across eviction, share query samples, and reject whole-world allocation
+ok 213 - forest tiles are deterministic across eviction, share query samples, and reject whole-world allocation
+  ---
+  duration_ms: 760.0745
+  type: 'test'
+  ...
+# Subtest: shared city navigation, local cover, and continuous combat run at continental coordinates
+ok 214 - shared city navigation, local cover, and continuous combat run at continental coordinates
+  ---
+  duration_ms: 576.3263
+  type: 'test'
+  ...
+# Subtest: country road routing detours around a thin wall and refuses a disconnected water crossing
+ok 215 - country road routing detours around a thin wall and refuses a disconnected water crossing
+  ---
+  duration_ms: 3.3484
+  type: 'test'
+  ...
+# Subtest: old and full campaigns restore their own geography on the same server
+ok 216 - old and full campaigns restore their own geography on the same server
+  ---
+  duration_ms: 1978.3987
+  type: 'test'
+  ...
+# Subtest: military kit preserves infantry proportions and finite compact exportable geometry
+ok 217 - military kit preserves infantry proportions and finite compact exportable geometry
+  ---
+  duration_ms: 114.562
+  type: 'test'
+  ...
+# Subtest: town is deterministic, connected, street-facing and keeps building envelopes dry
+ok 218 - town is deterministic, connected, street-facing and keeps building envelopes dry
+  ---
+  duration_ms: 19.4943
+  type: 'test'
+  ...
+# Subtest: unbuildable terrain produces no town instead of invalid lots
+ok 219 - unbuildable terrain produces no town instead of invalid lots
+  ---
+  duration_ms: 12.8517
+  type: 'test'
+  ...
+# Subtest: patterns and settlement size affect density and roles, with an explicit regional entrance
+ok 220 - patterns and settlement size affect density and roles, with an explicit regional entrance
+  ---
+  duration_ms: 23.1659
+  type: 'test'
+  ...
+# (node:33040) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: ground detours around mountain footprints, rejects interior destinations; air flies across
+ok 221 - ground detours around mountain footprints, rejects interior destinations; air flies across
+  ---
+  duration_ms: 2972.623
+  type: 'test'
+  ...
+# Subtest: saved routes are rechecked before movement; airborne squads remain exempt
+ok 222 - saved routes are rechecked before movement; airborne squads remain exempt
+  ---
+  duration_ms: 15247.4228
+  type: 'test'
+  ...
+# Subtest: mountain geometry is saved idempotently and rejected API orders are atomic
+ok 223 - mountain geometry is saved idempotently and rejected API orders are atomic
+  ---
+  duration_ms: 9134.1635
+  type: 'test'
+  ...
+# Subtest: mountain footprints and ground detours survive a real database reopen
+ok 224 - mountain footprints and ground detours survive a real database reopen
+  ---
+  duration_ms: 6783.8394
+  type: 'test'
+  ...
+# Subtest: multiple firefights stage separated valid troops and resolve real remote combat
+ok 225 - multiple firefights stage separated valid troops and resolve real remote combat
+  ---
+  duration_ms: 83519.8507
+  type: 'test'
+  ...
+# Subtest: organic city budgets, determinism and clear frontages
+ok 226 - organic city budgets, determinism and clear frontages
+  ---
+  duration_ms: 110594.0092
+  type: 'test'
+  ...
+# Subtest: parks stay open and outskirts retain settlement space
+ok 227 - parks stay open and outskirts retain settlement space
+  ---
+  duration_ms: 2670.2456
+  type: 'test'
+  ...
+# Subtest: cursor zoom cannot carry the camera or pivot below the floor
+ok 228 - cursor zoom cannot carry the camera or pivot below the floor
+  ---
+  duration_ms: 1.3746
+  type: 'test'
+  ...
+# Subtest: low-angle zoom stops above near-plane clearance and normal views are unchanged
+ok 229 - low-angle zoom stops above near-plane clearance and normal views are unchanged
+  ---
+  duration_ms: 0.4698
+  type: 'test'
+  ...
+# Meridian corridor Windwick → Ironhaven farmlands → Ironhaven · Crossroads market 2.95h
+# Subtest: review road is deterministic, uses fixed width and joins local entrance sockets
+ok 230 - review road is deterministic, uses fixed width and joins local entrance sockets
+  ---
+  duration_ms: 10.6453
+  type: 'test'
+  ...
+# Subtest: no forced water crossings, and crop clearance includes road margins
+ok 231 - no forced water crossings, and crop clearance includes road margins
+  ---
+  duration_ms: 2.7564
+  type: 'test'
+  ...
+# Subtest: Meridian has a city farmland outpost review connection
+ok 232 - Meridian has a city farmland outpost review connection
+  ---
+  duration_ms: 3169.0042
+  type: 'test'
+  ...
+# Subtest: country scenery is deterministic, non-mutating and keeps compact local POIs
+ok 233 - country scenery is deterministic, non-mutating and keeps compact local POIs
+  ---
+  duration_ms: 5370.5863
+  type: 'test'
+  ...
+# Subtest: country scenery honors reserved footprints and seed variation
+ok 234 - country scenery honors reserved footprints and seed variation
+  ---
+  duration_ms: 7657.9843
+  type: 'test'
+  ...
+# Subtest: reference country separation matches an hour of unmodified infantry movement
+ok 235 - reference country separation matches an hour of unmodified infantry movement
+  ---
+  duration_ms: 0.9149
+  type: 'test'
+  ...
+# Subtest: route measurement sums bends, leaves input intact, and supports compact comparison
+ok 236 - route measurement sums bends, leaves input intact, and supports compact comparison
+  ---
+  duration_ms: 0.246
+  type: 'test'
+  ...
+# Subtest: anchor transform expands separation while local offsets stay local
+ok 237 - anchor transform expands separation while local offsets stay local
+  ---
+  duration_ms: 1.0122
+  type: 'test'
+  ...
+# Subtest: split waterfront parcels share one berth without duplicate piers
+ok 238 - split waterfront parcels share one berth without duplicate piers
+  ---
+  duration_ms: 1.1389
+  type: 'test'
+  ...
+# Subtest: port zoning requires an adjacent ocean frontage, never a river, lake or distant coastline
+ok 239 - port zoning requires an adjacent ocean frontage, never a river, lake or distant coastline
+  ---
+  duration_ms: 0.4141
+  type: 'test'
+  ...
+# Subtest: ordinary full cities and small river studies never acquire ocean port districts
+ok 240 - ordinary full cities and small river studies never acquire ocean port districts
+  ---
+  duration_ms: 82208.2796
+  type: 'test'
+  ...
+# Subtest: coastal city preserves land footprints, street access and all three port zones across seeds
+ok 241 - coastal city preserves land footprints, street access and all three port zones across seeds
+  ---
+  duration_ms: 222199.936
+  type: 'test'
+  ...
+# Subtest: coastal planning is deterministic and ocean remains outside the ground movement area
+ok 242 - coastal planning is deterministic and ocean remains outside the ground movement area
+  ---
+  duration_ms: 59603.3507
+  type: 'test'
+  ...
+# Subtest: curved ocean geometry batches with existing water and retains upward normals
+ok 243 - curved ocean geometry batches with existing water and retains upward normals
+  ---
+  duration_ms: 41.4788
+  type: 'test'
+  ...
+# Subtest: production requires control, construction and a connection; no retroactive output
+ok 244 - production requires control, construction and a connection; no retroactive output
+  ---
+  duration_ms: 1.4547
+  type: 'test'
+  ...
+# Subtest: construction costs are atomic and economy is deterministic across time chunks
+ok 245 - construction costs are atomic and economy is deterministic across time chunks
+  ---
+  duration_ms: 1.1722
+  type: 'test'
+  ...
+# Subtest: river splits parcels before fitting waterfront buildings and two crossings
+ok 246 - river splits parcels before fitting waterfront buildings and two crossings
+  ---
+  duration_ms: 1778.1457
+  type: 'test'
+  ...
+# Subtest: intersecting town routes form one shared junction and have no duplicate physical circuits
+ok 247 - intersecting town routes form one shared junction and have no duplicate physical circuits
+  ---
+  duration_ms: 17.7125
+  type: 'test'
+  ...
+# Subtest: partially overlapping road stretches are split and rendered once
+ok 248 - partially overlapping road stretches are split and rendered once
+  ---
+  duration_ms: 1.1937
+  type: 'test'
+  ...
+# (node:17388) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: two sessions share a persistent campaign but cannot command one another
+ok 249 - two sessions share a persistent campaign but cannot command one another
+  ---
+  duration_ms: 4134.2782
+  type: 'test'
+  ...
+# Subtest: restart pauses downtime and normal campaigns reject manual advancement
+ok 250 - restart pauses downtime and normal campaigns reject manual advancement
+  ---
+  duration_ms: 3099.6913
+  type: 'test'
+  ...
+# Subtest: front plans and reserves survive reopen; invalid sector commands roll back atomically
+ok 251 - front plans and reserves survive reopen; invalid sector commands roll back atomically
+  ---
+  duration_ms: 6949.7364
+  type: 'test'
+  ...
+# Subtest: settlement size grows development without enlarging models or paving empty parcels
+ok 252 - settlement size grows development without enlarging models or paving empty parcels
+  ---
+  duration_ms: 133737.5765
+  type: 'test'
+  ...
+# Subtest: settlement locations ignore political subdivisions and candidate order
+ok 253 - settlement locations ignore political subdivisions and candidate order
+  ---
+  duration_ms: 1697.9489
+  type: 'test'
+  ...
+# Subtest: global density and city limits hold across varied landscapes
+ok 254 - global density and city limits hold across varied landscapes
+  ---
+  duration_ms: 35523.3916
+  type: 'test'
+  ...
+# Subtest: a high-scoring corner cannot absorb the city network
+ok 255 - a high-scoring corner cannot absorb the city network
+  ---
+  duration_ms: 1626.3324
+  type: 'test'
+  ...
+# Subtest: scarce space is left sparse instead of relaxing separation to meet budgets
+ok 256 - scarce space is left sparse instead of relaxing separation to meet budgets
+  ---
+  duration_ms: 8.4317
+  type: 'test'
+  ...
+# Subtest: agricultural districts only receive a single rural settlement
+ok 257 - agricultural districts only receive a single rural settlement
+  ---
+  duration_ms: 45.9704
+  type: 'test'
+  ...
+# Subtest: expanding suitable land grows the network while keeping physical spacing
+ok 258 - expanding suitable land grows the network while keeping physical spacing
+  ---
+  duration_ms: 1724.5972
+  type: 'test'
+  ...
+# Subtest: every size pairing reserves four city widths beyond conservative artwork edges
+ok 259 - every size pairing reserves four city widths beyond conservative artwork edges
+  ---
+  duration_ms: 2.9869
+  type: 'test'
+  ...
+# Subtest: reserved settlements consume the existing global settlement budget
+ok 260 - reserved settlements consume the existing global settlement budget
+  ---
+  duration_ms: 1316.8741
+  type: 'test'
+  ...
+# Subtest: settlement reservation planning backtracks instead of violating spacing
+ok 261 - settlement reservation planning backtracks instead of violating spacing
+  ---
+  duration_ms: 1.6865
+  type: 'test'
+  ...
+# Subtest: unused spurs disappear while frontage and a country exit remain reachable
+ok 262 - unused spurs disappear while frontage and a country exit remain reachable
+  ---
+  duration_ms: 2.3005
+  type: 'test'
+  ...
+# Subtest: country entrance retains city width then widens smoothly at authored scale
+ok 263 - country entrance retains city width then widens smoothly at authored scale
+  ---
+  duration_ms: 0.4722
+  type: 'test'
+  ...
+# (node:21680) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: garrison command requires physical arrival, persists, and loses cover after moving or losing ownership
+ok 264 - garrison command requires physical arrival, persists, and loses cover after moving or losing ownership
+  ---
+  duration_ms: 1577.1696
+  type: 'test'
+  ...
+# Subtest: a ground squad captures a city only after uncontested physical arrival
+ok 265 - a ground squad captures a city only after uncontested physical arrival
+  ---
+  duration_ms: 5700.4087
+  type: 'test'
+  ...
+# Subtest: a hostile squad at the city blocks capture
+ok 266 - a hostile squad at the city blocks capture
+  ---
+  duration_ms: 8435.766
+  type: 'test'
+  ...
+# Subtest: settlement group validation is atomic and API requires ownership
+ok 267 - settlement group validation is atomic and API requires ownership
+  ---
+  duration_ms: 6676.8315
+  type: 'test'
+  ...
+# Subtest: the API accepts an authorized settlement capture order
+ok 268 - the API accepts an authorized settlement capture order
+  ---
+  duration_ms: 5788.4991
+  type: 'test'
+  ...
+# Subtest: render playback continues between snapshots without mutating authority or replaying absence
+ok 269 - render playback continues between snapshots without mutating authority or replaying absence
+  ---
+  duration_ms: 4.349
+  type: 'test'
+  ...
+# Subtest: battle playback does not rewind when snapshots arrive between movement batches
+ok 270 - battle playback does not rewind when snapshots arrive between movement batches
+  ---
+  duration_ms: 13.9846
+  type: 'test'
+  ...
+# Subtest: fractional render playback preserves a mixed group's shared pace
+ok 271 - fractional render playback preserves a mixed group's shared pace
+  ---
+  duration_ms: 1.2451
+  type: 'test'
+  ...
+# Subtest: rifles barely damage armor, armor weapons remain effective
+ok 272 - rifles barely damage armor, armor weapons remain effective
+  ---
+  duration_ms: 3.5686
+  type: 'test'
+  ...
+# Subtest: saved magazine and RNG state reproduce future damage exactly
+ok 273 - saved magazine and RNG state reproduce future damage exactly
+  ---
+  duration_ms: 1.476
+  type: 'test'
+  ...
+# Subtest: fixed volleys have stable elapsed-time accounting and actual reload pauses
+ok 274 - fixed volleys have stable elapsed-time accounting and actual reload pauses
+  ---
+  duration_ms: 0.1888
+  type: 'test'
+  ...
+# Subtest: buildings stop shots, partial cover lowers expected hits, movement invalidates cached LOS
+ok 275 - buildings stop shots, partial cover lowers expected hits, movement invalidates cached LOS
+  ---
+  duration_ms: 1.5765
+  type: 'test'
+  ...
+# Subtest: long sightlines traverse crossed spatial cells without missing corner obstacles
+ok 276 - long sightlines traverse crossed spatial cells without missing corner obstacles
+  ---
+  duration_ms: 0.3418
+  type: 'test'
+  ...
+# Subtest: target retention, ordered override, dead targets, and deterministic tie breaking
+ok 277 - target retention, ordered override, dead targets, and deterministic tie breaking
+  ---
+  duration_ms: 0.5277
+  type: 'test'
+  ...
+# Subtest: moving fire reduces hit damage at the same range
+ok 278 - moving fire reduces hit damage at the same range
+  ---
+  duration_ms: 1.8272
+  type: 'test'
+  ...
+# Subtest: semi-auto rifles use staggered aimed shots, breathing pauses and full reloads
+ok 279 - semi-auto rifles use staggered aimed shots, breathing pauses and full reloads
+  ---
+  duration_ms: 0.5319
+  type: 'test'
+  ...
+# Subtest: tactical profiles lose accuracy and damage through their maximum range
+ok 280 - tactical profiles lose accuracy and damage through their maximum range
+  ---
+  duration_ms: 1.8759
+  type: 'test'
+  ...
+# Subtest: LMGs suppress while rocket teams threaten armor
+ok 281 - LMGs suppress while rocket teams threaten armor
+  ---
+  duration_ms: 2.1474
+  type: 'test'
+  ...
+# Subtest: motion continues throughout three-second polling gaps and does not jump backwards on update
+ok 282 - motion continues throughout three-second polling gaps and does not jump backwards on update
+  ---
+  duration_ms: 12.2823
+  type: 'test'
+  ...
+# Subtest: stationary formations stay separated and still, expire cleanly, and respect relocation/reduced motion
+ok 283 - stationary formations stay separated and still, expire cleanly, and respect relocation/reduced motion
+  ---
+  duration_ms: 12.7949
+  type: 'test'
+  ...
+# Subtest: formation layout is stable when snapshot ordering changes
+ok 284 - formation layout is stable when snapshot ordering changes
+  ---
+  duration_ms: 1.0086
+  type: 'test'
+  ...
+# Subtest: soldiers follow a forward order slowly without lateral wandering
+ok 285 - soldiers follow a forward order slowly without lateral wandering
+  ---
+  duration_ms: 6.7771
+  type: 'test'
+  ...
+# Subtest: vehicle poses follow member positions, stay idle, and clean up on removal
+ok 286 - vehicle poses follow member positions, stay idle, and clean up on removal
+  ---
+  duration_ms: 7.1149
+  type: 'test'
+  ...
+# Subtest: returning after suspension snaps to authoritative positions instead of fast-forwarding
+ok 287 - returning after suspension snaps to authoritative positions instead of fast-forwarding
+  ---
+  duration_ms: 0.7071
+  type: 'test'
+  ...
+# Subtest: fresh foreground snapshot resets all interpolation even if frames kept running
+ok 288 - fresh foreground snapshot resets all interpolation even if frames kept running
+  ---
+  duration_ms: 0.3212
+  type: 'test'
+  ...
+# Subtest: squad selection outline expands to contain every member
+ok 289 - squad selection outline expands to contain every member
+  ---
+  duration_ms: 2.1837
+  type: 'test'
+  ...
+# (node:5928) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: each nation starts with two six-soldier squads and one two-vehicle squad
+ok 290 - each nation starts with two six-soldier squads and one two-vehicle squad
+  ---
+  duration_ms: 20347.9812
+  type: 'test'
+  ...
+# Subtest: fixed roster and orders persist; issuing an order to one squad does not order its peers
+ok 291 - fixed roster and orders persist; issuing an order to one squad does not order its peers
+  ---
+  duration_ms: 5397.9175
+  type: 'test'
+  ...
+# Subtest: unordered squads hold their exact positions across tactical updates and reload
+ok 292 - unordered squads hold their exact positions across tactical updates and reload
+  ---
+  duration_ms: 8402.1791
+  type: 'test'
+  ...
+# Subtest: curb outlines close around straight, T and angled junctions without internal seams
+ok 293 - curb outlines close around straight, T and angled junctions without internal seams
+  ---
+  duration_ms: 3.589
+  type: 'test'
+  ...
+# Subtest: curved road joins form a smooth strip without repeated square caps
+ok 294 - curved road joins form a smooth strip without repeated square caps
+  ---
+  duration_ms: 2.8965
+  type: 'test'
+  ...
+# Subtest: an angled road ending at a through-road does not project a cap beyond it
+ok 295 - an angled road ending at a through-road does not project a cap beyond it
+  ---
+  duration_ms: 0.3149
+  type: 'test'
+  ...
+# Subtest: shared tactical profiles distinguish effective and maximum ranges
+ok 296 - shared tactical profiles distinguish effective and maximum ranges
+  ---
+  duration_ms: 0.6463
+  type: 'test'
+  ...
+# Subtest: accuracy and damage fall continuously beyond effective range
+ok 297 - accuracy and damage fall continuously beyond effective range
+  ---
+  duration_ms: 0.14
+  type: 'test'
+  ...
+# Subtest: city and country identical member inputs produce identical poses, including moving aim and death
+ok 298 - city and country identical member inputs produce identical poses, including moving aim and death
+  ---
+  duration_ms: 20.9752
+  type: 'test'
+  ...
+# Subtest: individual soldier render motion advances between 50ms authority steps without mutating the snapshot
+ok 299 - individual soldier render motion advances between 50ms authority steps without mutating the snapshot
+  ---
+  duration_ms: 1.8825
+  type: 'test'
+  ...
+# Subtest: shared effects consume shots once, draw bounded flashes and impacts, and reset cleanly
+ok 300 - shared effects consume shots once, draw bounded flashes and impacts, and reset cleanly
+  ---
+  duration_ms: 2.9292
+  type: 'test'
+  ...
+# Subtest: batched country volleys replay in authoritative order instead of one robot line
+ok 301 - batched country volleys replay in authoritative order instead of one robot line
+  ---
+  duration_ms: 1.0107
+  type: 'test'
+  ...
+# Subtest: tank belts are independent per vehicle and recoil returns to rest
+ok 302 - tank belts are independent per vehicle and recoil returns to rest
+  ---
+  duration_ms: 0.9725
+  type: 'test'
+  ...
+# Subtest: country shell impact events survive serialization and arrive only at the authoritative impact time
+ok 303 - country shell impact events survive serialization and arrive only at the authoritative impact time
+  ---
+  duration_ms: 1.3813
+  type: 'test'
+  ...
+# Subtest: live tactical views must use the shared presentation owner; authoring uses shared effects and clips
+ok 304 - live tactical views must use the shared presentation owner; authoring uses shared effects and clips
+  ---
+  duration_ms: 1.2343
+  type: 'test'
+  ...
+# Subtest: paused combat retains cosmetic infantry breathing without advancing a death
+ok 305 - paused combat retains cosmetic infantry breathing without advancing a death
+  ---
+  duration_ms: 7.7971
+  type: 'test'
+  ...
+# Subtest: tank hit target encloses its projected model with additional padding
+ok 306 - tank hit target encloses its projected model with additional padding
+  ---
+  duration_ms: 3.2475
+  type: 'test'
+  ...
+# Subtest: whole squad shares a visible engagement while only out-of-range members reposition
+ok 307 - whole squad shares a visible engagement while only out-of-range members reposition
+  ---
+  duration_ms: 2.1071
+  type: 'test'
+  ...
+# Subtest: reserve squads support nearby fighting but never unseen or isolated distant targets
+ok 308 - reserve squads support nearby fighting but never unseen or isolated distant targets
+  ---
+  duration_ms: 0.5603
+  type: 'test'
+  ...
+# Subtest: Hold and explicit moving orders take priority; blocked movement stays blocked
+ok 309 - Hold and explicit moving orders take priority; blocked movement stays blocked
+  ---
+  duration_ms: 1.3633
+  type: 'test'
+  ...
+# Subtest: support is leashed, bounded and stable across save/reload
+ok 310 - support is leashed, bounded and stable across save/reload
+  ---
+  duration_ms: 2.1928
+  type: 'test'
+  ...
+# Subtest: expanded scenario has four mixed enemy pockets with unique IDs and complete healthy squads
+ok 311 - expanded scenario has four mixed enemy pockets with unique IDs and complete healthy squads
+  ---
+  duration_ms: 1.0216
+  type: 'test'
+  ...
+# Subtest: country authority persists shared squad support and resumes the same movement
+ok 312 - country authority persists shared squad support and resumes the same movement
+  ---
+  duration_ms: 4.4706
+  type: 'test'
+  ...
+# (node:8756) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: squads resolve deterministic ongoing exchanges with persistent identities and no predetermined winner
+ok 313 - squads resolve deterministic ongoing exchanges with persistent identities and no predetermined winner
+  ---
+  duration_ms: 1297.7959
+  type: 'test'
+  ...
+# Subtest: air support and arriving reinforcements alter an already active engagement
+ok 314 - air support and arriving reinforcements alter an already active engagement
+  ---
+  duration_ms: 2385.0849
+  type: 'test'
+  ...
+# Subtest: artillery suppresses enemies; a withdrawal command ends fire before the next campaign hour
+ok 315 - artillery suppresses enemies; a withdrawal command ends fire before the next campaign hour
+  ---
+  duration_ms: 5930.7932
+  type: 'test'
+  ...
+# Subtest: squad range and cover affect damage rather than merely the animation
+ok 316 - squad range and cover affect damage rather than merely the animation
+  ---
+  duration_ms: 15294.3483
+  type: 'test'
+  ...
+# Subtest: sub-hour combat persists, deduplicates updates and pauses across restart
+ok 317 - sub-hour combat persists, deduplicates updates and pauses across restart
+  ---
+  duration_ms: 4292.3734
+  type: 'test'
+  ...
+# Subtest: campaign completion ends engagements without resolving further losses
+ok 318 - campaign completion ends engagements without resolving further losses
+  ---
+  duration_ms: 4228.8382
+  type: 'test'
+  ...
+# Subtest: coincident squads spread deterministically on land and retain formation at rest
+ok 319 - coincident squads spread deterministically on land and retain formation at rest
+  ---
+  duration_ms: 2698.7629
+  type: 'test'
+  ...
+# Subtest: taking cover reduces live incoming damage and does not grant a distant cover bonus
+ok 320 - taking cover reduces live incoming damage and does not grant a distant cover bonus
+  ---
+  duration_ms: 3924.0358
+  type: 'test'
+  ...
+# Subtest: fixed combat steps preserve losses and firing RNG across split updates
+ok 321 - fixed combat steps preserve losses and firing RNG across split updates
+  ---
+  duration_ms: 3797.0544
+  type: 'test'
+  ...
+# Subtest: sub-step time is saved and shells resolve only when their due step arrives
+ok 322 - sub-step time is saved and shells resolve only when their due step arrives
+  ---
+  duration_ms: 2565.8344
+  type: 'test'
+  ...
+# Subtest: settlement farmland clearance follows sprite aspect instead of a circle
+ok 323 - settlement farmland clearance follows sprite aspect instead of a circle
+  ---
+  duration_ms: 0.9149
+  type: 'test'
+  ...
+# Subtest: terrain accents are stable, cosmetic, land-bound and include natural and settlement detail
+ok 324 - terrain accents are stable, cosmetic, land-bound and include natural and settlement detail
+  ---
+  duration_ms: 30991.2141
+  type: 'test'
+  ...
+# Subtest: utility poles stay on a roadside verge, including cross-region roads
+ok 325 - utility poles stay on a roadside verge, including cross-region roads
+  ---
+  duration_ms: 12980.2289
+  type: 'test'
+  ...
+# Subtest: agricultural regions cover broad land areas without requiring a town
+ok 326 - agricultural regions cover broad land areas without requiring a town
+  ---
+  duration_ms: 9362.6542
+  type: 'test'
+  ...
+# Subtest: terrain foundations clear the hill and preserve a dry river corridor
+ok 327 - terrain foundations clear the hill and preserve a dry river corridor
+  ---
+  duration_ms: 326.7866
+  type: 'test'
+  ...
+# (node:34196) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: accepted bridge orders move across the deck, and stale routes across water reroute before displacement
+ok 328 - accepted bridge orders move across the deck, and stale routes across water reroute before displacement
+  ---
+  duration_ms: 1782.5205
+  type: 'test'
+  ...
+# Subtest: open-water API rejection is atomic and bridge commands survive database reopen
+ok 329 - open-water API rejection is atomic and bridge commands survive database reopen
+  ---
+  duration_ms: 7737.7682
+  type: 'test'
+  ...
+# Subtest: physical cover reduces live incoming damage for troops that do not own the region
+ok 330 - physical cover reduces live incoming damage for troops that do not own the region
+  ---
+  duration_ms: 7578.7132
+  type: 'test'
+  ...
+# (node:26912) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Boreal 33:lake:3 41:mountain-pass:12 52:scrapyard:10 58:scrapyard:14 85:lake:3 86:mountain-pass:6
+# Ironfront 18:lake:3 27:lake:3 35:mountain-pass:16 43:mountain-pass:22 81:scrapyard:6 90:scrapyard:6
+# Meridian 43:mountain-pass:4 52:lake:3 59:mountain-pass:12 61:scrapyard:9 73:lake:3 77:scrapyard:6
+# Subtest: water blocks endpoints and swept movement, with only the physical bridge providing an exception
+ok 331 - water blocks endpoints and swept movement, with only the physical bridge providing an exception
+  ---
+  duration_ms: 1.9328
+  type: 'test'
+  ...
+# Subtest: routing detours around scrap and never tunnels through thin footprints
+ok 332 - routing detours around scrap and never tunnels through thin footprints
+  ---
+  duration_ms: 19.022
+  type: 'test'
+  ...
+# Subtest: cover is local, directional, and unavailable in the obstacle or to air units
+ok 333 - cover is local, directional, and unavailable in the obstacle or to air units
+  ---
+  duration_ms: 0.2535
+  type: 'test'
+  ...
+# Subtest: connectivity validator rejects sealed regions but accepts a usable bridge
+ok 334 - connectivity validator rejects sealed regions but accepts a usable bridge
+  ---
+  duration_ms: 27.1434
+  type: 'test'
+  ...
+# Subtest: seeded region layouts precede settlements and retain connected bridge approaches
+ok 335 - seeded region layouts precede settlements and retain connected bridge approaches
+  ---
+  duration_ms: 33189.5079
+  type: 'test'
+  ...
+# Subtest: saved physical layouts survive store serialization without regenerating old maps
+ok 336 - saved physical layouts survive store serialization without regenerating old maps
+  ---
+  duration_ms: 4950.3155
+  type: 'test'
+  ...
+# Subtest: an enclosed territory is opened without losing land, IDs, or connectivity
+ok 337 - an enclosed territory is opened without losing land, IDs, or connectivity
+  ---
+  duration_ms: 3.8183
+  type: 'test'
+  ...
+# Subtest: Three.js is the production campaign renderer and Pixi is legacy-only
+ok 338 - Three.js is the production campaign renderer and Pixi is legacy-only
+  ---
+  duration_ms: 3.4107
+  type: 'test'
+  ...
+# Subtest: timed placement preserves city scale, audits every candidate and never mutates the world
+ok 339 - timed placement preserves city scale, audits every candidate and never mutates the world
+  ---
+  duration_ms: 1836.7567
+  type: 'test'
+  ...
+# Subtest: shared infantry routes simplify guides, vary by identity and preserve exact endpoints
+ok 340 - shared infantry routes simplify guides, vary by identity and preserve exact endpoints
+  ---
+  duration_ms: 1.7321
+  type: 'test'
+  ...
+# Subtest: narrow corridors suppress deviations and long country routes have bounded sampling
+ok 341 - narrow corridors suppress deviations and long country routes have bounded sampling
+  ---
+  duration_ms: 0.4528
+  type: 'test'
+  ...
+# Subtest: tracks and fixed walkers pivot before advancing; wheels arc without sideways sliding
+ok 342 - tracks and fixed walkers pivot before advancing; wheels arc without sideways sliding
+  ---
+  duration_ms: 0.9618
+  type: 'test'
+  ...
+# Subtest: spider walkers strafe and aim separately; fixed walkers have no independent upper body
+ok 343 - spider walkers strafe and aim separately; fixed walkers have no independent upper body
+  ---
+  duration_ms: 0.1879
+  type: 'test'
+  ...
+# Subtest: all profiles settle after a reversal and remain still without an order
+ok 344 - all profiles settle after a reversal and remain still without an order
+  ---
+  duration_ms: 1.4049
+  type: 'test'
+  ...
+# Subtest: arrival corrections retain the last body and turret headings
+ok 345 - arrival corrections retain the last body and turret headings
+  ---
+  duration_ms: 0.2123
+  type: 'test'
+  ...
+# Subtest: vehicle rounding preserves endpoints and every obstacle-clear segment
+ok 346 - vehicle rounding preserves endpoints and every obstacle-clear segment
+  ---
+  duration_ms: 1.8711
+  type: 'test'
+  ...
+# Subtest: gentle tank steering continues moving and is independent of snapshot cadence
+ok 347 - gentle tank steering continues moving and is independent of snapshot cadence
+  ---
+  duration_ms: 2.4819
+  type: 'test'
+  ...
+# Subtest: Meridian relocates its failed zone and publishes only resource-vetted candidates without mutating input
+ok 348 - Meridian relocates its failed zone and publishes only resource-vetted candidates without mutating input
+  ---
+  duration_ms: 6097.5165
+  type: 'test'
+  ...
+# Subtest: five-seed access audit retains fuel and industry targets for every published candidate
+ok 349 - five-seed access audit retains fuel and industry targets for every published candidate
+  ---
+  duration_ms: 60725.7274
+  type: 'test'
+  ...
+# (node:29448) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: vision conceals distant military state and secrets without changing authoritative state
+ok 350 - vision conceals distant military state and secrets without changing authoritative state
+  ---
+  duration_ms: 1722.8156
+  type: 'test'
+  ...
+# Subtest: advancing scouts reveal neighboring regions and withdrawing removes live intelligence
+ok 351 - advancing scouts reveal neighboring regions and withdrawing removes live intelligence
+  ---
+  duration_ms: 6355.8495
+  type: 'test'
+  ...
+# Subtest: authenticated world API filters by session owner, including the host; saved state stays complete
+ok 352 - authenticated world API filters by session owner, including the host; saved state stays complete
+  ---
+  duration_ms: 7789.3617
+  type: 'test'
+  ...
+# Subtest: city river preserves generated source reach under uniform scale and rotation
+ok 353 - city river preserves generated source reach under uniform scale and rotation
+  ---
+  duration_ms: 10427.0154
+  type: 'test'
+  ...
+# Subtest: river smoothing rounds corners without moving endpoints or reversing the corridor
+ok 354 - river smoothing rounds corners without moving endpoints or reversing the corridor
+  ---
+  duration_ms: 14.8931
+  type: 'test'
+  ...
+1..354
+# tests 354
+# suites 0
+# pass 354
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 370186.5531

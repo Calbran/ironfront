@@ -1,0 +1,11 @@
+# Local squad support and mixed pockets
+
+User requested nearby squads support fighting outside their own weapon range, react together and operate while players are offline; also requested more varied enemy pockets. Implemented a shared game-core policy used by city/country adapters, with persistent country anchors and cooldowns, explicit-order priority, visible shared contacts, clear bounded local approaches and no long-range pathfinding. Scenario authority and renderer share a 15-group roster (four friendly, eleven enemy), with eight enemy infantry squads and three tanks. Three enemy squads carry AT specialists. Added explicit Restage encounter for active test scenarios.
+
+Focused checks passed 15/15. Full regression and browser staging results follow.
+
+Browser staged the expanded scenario successfully and the live trial advanced from the bridge objective to the outpost objective. Sector regeneration timed out during concurrent test load, then recovered. Concurrent weapon-range work modified the same checkout during validation; preserved the new tacticalFireRange owner and its adapter integration. A hot-reload API disconnect required restoring the local API. Initial full suite: 316/317 passed; tank support aiming correction passed the subsequent 10 affected checks. Final merged checks and paused scenario handoff follow.
+
+Final merged validation: turret/Hold regression passed; all 12 country encounter and shared support tests passed; typecheck and production build passed against the concurrent role-range changes. Full-suite failure was the corrected turret-support case (initial run 316/317). Browser successfully restaged the mixed roster, and live movement/combat reached the outpost stage. Restaged once more to fresh troops, paused at 1x. API restored in a persistent terminal after concurrent reload disconnects.
+
+Handoff limitation: API processes subsequently exited repeatedly without a captured application error during overlapping shared combat edits/reloads. The country scenario is saved fresh and paused (bridge stage, 600 seconds), but the live preview connection is not stable at handoff. Do not describe the dev server as verified healthy. Concurrent files include cityCombatRules/cityAwareness/squadFire and role-range docs; preserve those changes.

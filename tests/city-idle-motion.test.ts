@@ -1,16 +1,33 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import {cityIdleMotion} from '../apps/web/src/experiments/cityIdleMotion';
-test('idle motion stays subtle and soldiers have different timing',()=>{
-  for(let t=0;t<60;t+=.1){
-    const p=cityIdleMotion(t,1,0,false,false,'none');
-    assert.ok(Math.abs(p.breath)<=.006&&Math.abs(p.sway)<=.009);
+import test from "node:test";
+import assert from "node:assert/strict";
+import { cityIdleMotion } from "../apps/web/src/experiments/cityIdleMotion";
+test("idle motion stays subtle and soldiers have different timing", () => {
+  for (let t = 0; t < 60; t += 0.1) {
+    const p = cityIdleMotion(t, 1, 0, false, false, "none");
+    assert.ok(Math.abs(p.breath) <= 0.006 && Math.abs(p.sway) <= 0.009);
   }
-  assert.notDeepEqual(cityIdleMotion(3,1,0,false,false,'none'),cityIdleMotion(3,2,0,false,false,'none'));
+  assert.notDeepEqual(
+    cityIdleMotion(3, 1, 0, false, false, "none"),
+    cityIdleMotion(3, 2, 0, false, false, "none"),
+  );
 });
-test('running, aiming and cover take precedence over idle motion',()=>{
-  for(const [speed,moving,aiming,cover] of [[1,true,false,'none'],[0,false,true,'none'],[0,false,false,'partial'],[0,false,false,'full']] as const){
-    const p=cityIdleMotion(3,1,speed,moving,aiming,cover);
-    assert.equal(Math.abs(p.breath)+Math.abs(p.sway),0);
+test("movement suppresses idle while aimed and covered stances keep restrained breathing", () => {
+  assert.deepEqual(
+    Object.fromEntries(
+      Object.entries(cityIdleMotion(3, 1, 1, true, false, "none")).map(
+        ([k, v]) => [k, Math.abs(v)],
+      ),
+    ),
+    {
+      breath: 0,
+      sway: 0,
+    },
+  );
+  for (const cover of ["none", "partial", "full"]) {
+    const a = cityIdleMotion(3, 1, 0, false, true, cover);
+    const b = cityIdleMotion(4, 1, 0, false, true, cover);
+    assert.notEqual(a.breath, b.breath);
+    assert.ok(Math.abs(a.breath) <= 0.0033);
+    assert.equal(a.sway, 0);
   }
 });

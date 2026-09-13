@@ -14,6 +14,7 @@ export function generateNaturalCountryPOI(
   seed: number,
   size: CountryPOISize,
   occupancy = 0.8,
+  industrialComplex = false,
 ): CountryPOI {
   let state = seed >>> 0;
   const random = () => {
@@ -38,7 +39,9 @@ export function generateNaturalCountryPOI(
       "foundry",
       "coal-yard",
     ].includes(kind),
-    extent = [44, 115, 185][level];
+    extent = (industry && industrialComplex ? [44, 115, 360] : [44, 115, 185])[
+      level
+    ];
   const plan: CountryPOI = {
     kind,
     seed,
@@ -69,7 +72,9 @@ export function generateNaturalCountryPOI(
       ? 1
       : 2 + level
     : industry
-      ? 1
+      ? industrialComplex
+        ? 1 + level
+        : 1
       : 0;
   for (let branch = 0; branch < branches; branch++) {
     const junction = spine(0.22 + random() * 0.56),
@@ -101,7 +106,7 @@ export function generateNaturalCountryPOI(
     (village
       ? [18, 45, 85][level]
       : industry
-        ? [6, 12, 20][level]
+        ? (industrialComplex ? [6, 18, 90] : [6, 12, 20])[level]
         : [3, 5, 8][level]) * occupancy,
   );
   const density = (0.6 + random() * 0.4) * occupancy;

@@ -9,7 +9,7 @@ import {
   type Faction,
   type Command,
 } from "../../../packages/game-core/src/index";
-import { MapView } from "./experiments/LiveCampaignMap";
+import { MapView } from "./CampaignMap";
 type View = { world: World; owner: number; host: boolean };
 function Mark() {
   return (
@@ -33,7 +33,7 @@ function Mark() {
     </svg>
   );
 }
-export function App() {
+export function App({ archivedPixi = false }: { archivedPixi?: boolean } = {}) {
   const [token, setToken] = useState(
     () => localStorage.getItem("warfare-session") || "",
   );
@@ -311,6 +311,7 @@ export function App() {
             </div>
             {preview ? (
               <MapView
+                archivedPixi={archivedPixi}
                 preview
                 key={preview.id}
                 initialZoom={1}
@@ -532,6 +533,7 @@ export function App() {
           <main className="command-room">
             <section className="theater">
               <MapView
+                archivedPixi={archivedPixi}
                 world={w}
                 focus={battleFocus}
                 resyncKey={mapResync}
@@ -762,7 +764,9 @@ export function App() {
                 <span className="legend-garrison">
                   <i /> Neutral defenders
                 </span>
-                <span title="1: Hamlet · 2: Village · 3: Town · 4: City · 5: Metropolis">City pips: 1–5</span>
+                <span title="1: Hamlet · 2: Village · 3: Town · 4: City · 5: Metropolis">
+                  City pips: 1–5
+                </span>
                 <span>Scroll to zoom · Drag to pan</span>
               </div>
             </section>

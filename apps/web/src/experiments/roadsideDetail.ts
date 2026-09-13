@@ -1,10 +1,10 @@
-import { countryRoadWidthAt } from "../../../../packages/game-core/src/countryRoadNetwork";
+import {
+  countryRoadSurfaceHeight,
+  countryRoadWidthAt,
+} from "../../../../packages/game-core/src/countryRoadNetwork";
 import * as T from "three";
 import type { CountryRoadNetwork } from "../../../../packages/game-core/src/countryRoadNetwork";
-import {
-  terrainHeight,
-  type TerrainSurface,
-} from "../../../../packages/game-core/src/connectedTerrain";
+import type { TerrainSurface } from "../../../../packages/game-core/src/connectedTerrain";
 
 /** Stream roadside furniture in model-space tiles, with continuous distance along each road. */
 export function createRoadsideDetail(
@@ -77,25 +77,11 @@ export function createRoadsideDetail(
       r.path[i - 1].y +
       (r.path[i].y - r.path[i - 1].y) * t +
       (((b.x - a.x) / length) * offset) / network.scale;
-    const h = terrainHeight(surface, x, y);
-    const p = point(x, y, h);
-    // Match the actual raised crossing deck instead of painting through it.
-    for (const bridge of network.bridges) {
-      const dx = (x - bridge.x) * network.scale,
-        dz = (y - bridge.y) * network.scale,
-        c = Math.cos(bridge.angle),
-        s = Math.sin(bridge.angle);
-      if (
-        Math.abs(dx * c + dz * s) < bridge.length / 2 &&
-        Math.abs(-dx * s + dz * c) < bridge.width / 2
-      )
-        p.y = Math.max(
-          p.y,
-          point(bridge.x, bridge.y, terrainHeight(surface, bridge.x, bridge.y))
-            .y + 0.395,
-        );
-    }
-    return p;
+    return point(
+      x,
+      y,
+      countryRoadSurfaceHeight(network, surface, { x, y }),
+    );
   };
   function build(key: string, spans: Span[]) {
     const group = new T.Group(),

@@ -139,7 +139,9 @@ export function MapView({
   const [strategyView, setStrategyView] = useState(false);
   const strategyRef = useRef(false);
   const cameraRef = useRef<(next: number, reset?: boolean) => void>(() => {});
-  const focusRef = useRef<(region: number, terrain?: boolean) => void>(() => {});
+  const focusRef = useRef<(region: number, terrain?: boolean) => void>(
+    () => {},
+  );
   const [orderMenu, setOrderMenu] = useState<{
     region: number;
     feature: string;
@@ -241,13 +243,18 @@ export function MapView({
     mapDetailsWorker.postMessage({ world, cities: detailCities });
     const geometry = mapGeometry(world);
     const ringsByRegion = geometry.rings;
-    const portPlacements = new Map(world.regions.flatMap((r) =>
-      (r.features ?? []).flatMap((f) => {
-        const layout = cityLayouts.get(f.id);
-        const placement = layout?.archetype === "port" ? portPlacement(geometry, r.id, layout) : null;
-        return placement ? [[f.id, placement] as const] : [];
-      }),
-    ));
+    const portPlacements = new Map(
+      world.regions.flatMap((r) =>
+        (r.features ?? []).flatMap((f) => {
+          const layout = cityLayouts.get(f.id);
+          const placement =
+            layout?.archetype === "port"
+              ? portPlacement(geometry, r.id, layout)
+              : null;
+          return placement ? [[f.id, placement] as const] : [];
+        }),
+      ),
+    );
     let scenery: ReturnType<typeof biomeSceneryLayer> | undefined;
     let accents: ReturnType<typeof terrainAccentLayer> | undefined;
     let settlementTextures: Partial<Record<SettlementSize, Texture>> = {};
@@ -567,10 +574,15 @@ export function MapView({
           const marker = new Container();
           marker.position.set(f.x, f.y);
           const layout = cityLayouts.get(f.id) ?? generateCityLayout(w, r, f);
-          const harbor = detail && portTextures.length >= 8 ? portPlacements.get(f.id) : null;
+          const harbor =
+            detail && portTextures.length >= 8
+              ? portPlacements.get(f.id)
+              : null;
           if (harbor) {
             marker.position.set(harbor.x, harbor.y);
-            const approach = new Graphics().moveTo(f.x-harbor.x, f.y-harbor.y).lineTo(0, 0)
+            const approach = new Graphics()
+              .moveTo(f.x - harbor.x, f.y - harbor.y)
+              .lineTo(0, 0)
               .stroke({ color: "#756f57", width: 9 });
             marker.addChild(approach);
           }
@@ -1493,15 +1505,26 @@ export function MapView({
           let target = { x: r.x, y: r.y };
           if (terrain && r.terrainLayout) {
             const points = r.terrainLayout.obstacles.flatMap((o) => o.polygon);
-            const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
-            const minX = Math.min(...xs), maxX = Math.max(...xs);
-            const minY = Math.min(...ys), maxY = Math.max(...ys);
+            const xs = points.map((p) => p.x),
+              ys = points.map((p) => p.y);
+            const minX = Math.min(...xs),
+              maxX = Math.max(...xs);
+            const minY = Math.min(...ys),
+              maxY = Math.max(...ys);
             target = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
             const baseScale = scene.scale.x / zoomRef.current;
-            zoomRef.current = Math.min(32, Math.max(3, Math.min(
-              host.current.clientWidth * 0.75 / ((maxX - minX) * baseScale),
-              host.current.clientHeight * 0.65 / ((maxY - minY) * baseScale),
-            )));
+            zoomRef.current = Math.min(
+              32,
+              Math.max(
+                3,
+                Math.min(
+                  (host.current.clientWidth * 0.75) /
+                    ((maxX - minX) * baseScale),
+                  (host.current.clientHeight * 0.65) /
+                    ((maxY - minY) * baseScale),
+                ),
+              ),
+            );
           } else zoomRef.current = Math.max(zoomRef.current, 3);
           position();
           const tx = host.current.clientWidth / 2;
@@ -1662,15 +1685,22 @@ export function MapView({
       {preview && (
         <div className="terrain-tour">
           <label htmlFor="terrain-tour">Explore terrain</label>
-          <select id="terrain-tour" defaultValue="" onChange={(event) => {
-            if (event.target.value !== "") focusRef.current(Number(event.target.value), true);
-          }}>
+          <select
+            id="terrain-tour"
+            defaultValue=""
+            onChange={(event) => {
+              if (event.target.value !== "")
+                focusRef.current(Number(event.target.value), true);
+            }}
+          >
             <option value="">Choose a landmark</option>
-            {world.regions.filter((r) => r.terrainLayout).map((r) => (
-              <option key={r.id} value={r.id}>
-                {TERRAIN_THEME_NAMES[r.terrainLayout!.theme]} · {r.name}
-              </option>
-            ))}
+            {world.regions
+              .filter((r) => r.terrainLayout)
+              .map((r) => (
+                <option key={r.id} value={r.id}>
+                  {TERRAIN_THEME_NAMES[r.terrainLayout!.theme]} · {r.name}
+                </option>
+              ))}
           </select>
         </div>
       )}

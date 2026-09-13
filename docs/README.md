@@ -1,13 +1,17 @@
 # Documentation
 
+Current regional landscape and overview direction: [decision 057](05-decisions/057-regional-world-and-overview.md).
+
+Current production alpha: [persistent campaign integration](03-technical/campaign-alpha-integration.md), [decision 055](05-decisions/055-persistent-campaign-alpha.md), [full-scale map decision 056](05-decisions/056-full-scale-campaign.md), [full-map session](session-notes/2026-09-12-massive-campaign.md).
+
 The organization follows Crownfall, with a deliberately smaller starting scope.
 
 | Area        | Read                                                                                                                                                                                                                                                                                        |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Direction   | [Vision](01-design/vision.md), [game blueprint](01-design/game-blueprint.md), [theme and factions](01-design/thematic-direction.md)                                                                                                                                                         |
-| Interface   | [Built visual system](../DESIGN.md), [working style guide](06-art/style-guide.md)                                                                                                                                                                                                           |
+| Interface   | [Built visual system](../DESIGN.md), [working style guide](06-art/style-guide.md), [strategy map textures](06-art/strategy-map-textures.md)                                                                                                                                                  |
 | Scope       | [Proof and MVP](01-design/mvp.md)                                                                                                                                                                                                                                                           |
-| Rules       | [Campaign systems](02-systems/campaign-systems.md), [armies and fronts](02-systems/fronts-and-armies.md), [geography](02-systems/continental-geography.md)                                                                                                                                  |
+| Rules       | [Campaign systems](02-systems/campaign-systems.md), [armies and fronts](02-systems/fronts-and-armies.md), [combat roles and counters](02-systems/combat-role-guidelines.md), [geography](02-systems/continental-geography.md)                                                               |
 | Engineering | [Stack and architecture](03-technical/tech-stack.md), [hosting](03-technical/self-hosting.md)                                                                                                                                                                                               |
 | Delivery    | [Roadmap](04-roadmap/mvp-checklist.md)                                                                                                                                                                                                                                                      |
 | Decisions   | [001: direction](05-decisions/001-lightweight-land-conquest.md), [002: architecture](05-decisions/002-authoritative-browser-proof.md), [003: armies and fronts](05-decisions/003-armies-and-fronts.md), [004: Ironfront and terrain](05-decisions/004-ironfront-and-continental-terrain.md) |
@@ -113,14 +117,25 @@ City detail and block recipes: [037 — envelopes and detail levels](05-decision
 Military models: [047 — infantry-scaled kit](05-decisions/047-military-model-kit.md), [GLB asset catalog](../apps/web/public/art/military/README.md).
 
 Faction model proofs: [048 — signature units and engineers](05-decisions/048-faction-model-studies.md).
+
 - [048 — Varied city and asset library](05-decisions/048-varied-city-and-asset-library.md): angled blocks, civic variants, free camera and 19 shared low-poly models.
 - [049 — Urban civic frontages](05-decisions/049-urban-civic-frontages.md): fitted square surroundings, road bridge decks and steam utilities.
 
 - [050 — City tactical geometry inspection](05-decisions/050-city-tactical-geometry.md): prototype movement/obstacle queries, cover candidates and town-hall boundary.
-Current farmland density and settlement presentation: [027: smooth farmland and inhabited settlements](05-decisions/027-farmland-density-and-settlement-art.md).
+  Current farmland density and settlement presentation: [027: smooth farmland and inhabited settlements](05-decisions/027-farmland-density-and-settlement-art.md).
 
 Current harbor presentation: [028: eight-direction port-town artwork](05-decisions/028-national-coast-aligned-ports.md), [port art kit](06-art/port-kit-prompts.md).
 
 Physical themed regions and their movement/cover geometry: [030: physical region layouts](05-decisions/030-physical-region-layouts.md).
 
+Current tactical weapon scale and ranges: [051: tactical weapon ranges](05-decisions/051-tactical-weapon-ranges.md).
+
 - [Country set-piece library](02-systems/country-set-pieces.md): templates, farming, cover metadata and global preview integration.
+
+Mandatory development contract: [Shared-system standards and ownership map](03-technical/shared-system-standards.md).
+
+- [Armored forest movement](05-decisions/2026-09-12-armored-forest-movement.md): density slowdown, road recovery and campaign timing.
+
+- [053 — Three.js production renderer](05-decisions/053-threejs-production-renderer.md): `/` is the active campaign; Pixi is archived at `/legacy.html`.
+
+- [054 — One persistent battlefield](05-decisions/054-one-persistent-battlefield.md): battles emerge and resolve directly on the campaign map; the country slice is only a test harness.

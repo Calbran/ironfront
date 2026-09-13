@@ -14,6 +14,10 @@ import {
 } from "./battleAudioMath";
 import type { CitySoundCue } from "../../../../packages/game-core/src/cityHearing";
 import type { CityShot } from "../../../../packages/game-core/src/cityBattle";
+import {
+  tacticalShotBatchDelays,
+  tacticalShotDelay,
+} from "../experiments/battlePresentation";
 import "./cityBattleAudio.css";
 type Unit = {
   id: number;
@@ -38,10 +42,11 @@ type Voice = {
   loopKey?: string;
 };
 export function createCityBattleAudio(
-  root: T.Group,
+  root: T.Object3D,
   getCamera: () => T.Camera,
   canvas: HTMLCanvasElement,
   overlayRoot: HTMLElement = canvas.parentElement!,
+  surfaceHeight: (p: { x: number; z: number }) => number = () => 0,
 ) {
   const panel = document.createElement("div");
   panel.className = "city-audio";
@@ -151,6 +156,7 @@ export function createCityBattleAudio(
     id: number,
     strength = 1,
     loopKey?: string,
+    eventDelay = ((Math.abs(id) * 37) % 173) / 1000,
   ) {
     if (
       !enabled ||
@@ -215,10 +221,7 @@ export function createCityBattleAudio(
     if (loopKey) loops.set(loopKey, voice);
     source.onended = () => remove(voice);
     mix(voice);
-    source.start(
-      context.currentTime +
-        (loopKey ? 0 : m.delay + ((Math.abs(id) * 37) % 173) / 1000),
-    );
+    source.start(context.currentTime + (loopKey ? 0 : m.delay + eventDelay));
     return voice;
   }
   async function enable() {
@@ -330,6 +333,13 @@ export function createCityBattleAudio(
   for (const event of ["pointerdown", "pointerup", "keydown", "contextmenu"])
     panel.addEventListener(event, cancelEvent);
   return {
+    reset() {
+      cursor.reset();
+      clear();
+      steps.clear();
+      nextUpdate = 0;
+      wasRunning = false;
+    },
     update(
       time: number,
       running: boolean,
@@ -339,20 +349,27 @@ export function createCityBattleAudio(
     ) {
       listener();
       const events = cursor.take(
-        cues.length
-          ? cues
-          : shots.map((s) => ({
-              id: s.id,
-              kind: (s.impact
-                ? "impact"
-                : s.shell
-                  ? "cannon"
-                  : "rifle") as CitySoundCue["kind"],
-              x: s.impact ? s.tx : s.x,
-              z: s.impact ? s.tz : s.z,
-              time: 0,
-            })),
-      );
+          cues.length
+            ? cues
+            : shots.map((s) => ({
+                id: s.id,
+                kind: (s.impact
+                  ? "impact"
+                  : s.shell
+                    ? "cannon"
+                    : "rifle") as CitySoundCue["kind"],
+                x: s.impact ? s.tx : s.x,
+                z: s.impact ? s.tz : s.z,
+                time: 0,
+              })),
+        ),
+        exactShots = events
+          .map((event) => shots.find((shot) => shot.id === event.id))
+          .filter((shot): shot is CityShot => !!shot),
+        batchDelays = tacticalShotBatchDelays(exactShots),
+        delayById = new Map(
+          exactShots.map((shot, index) => [shot.id, batchDelays[index]]),
+        );
       if (!running && wasRunning) clear();
       wasRunning = running;
       // Consume events while muted/paused so enabling audio cannot replay a snapshot backlog.
@@ -367,11 +384,20 @@ export function createCityBattleAudio(
           event.kind,
           {
             x: exact ? (exact.impact ? exact.tx : exact.x) : event.x,
-            y: 1,
+            y:
+              surfaceHeight({
+                x: exact ? (exact.impact ? exact.tx : exact.x) : event.x,
+                z: exact ? (exact.impact ? exact.tz : exact.z) : event.z,
+              }) + 1,
             z: exact ? (exact.impact ? exact.tz : exact.z) : event.z,
           },
           event.id,
           event.kind === "rifle" ? 0.65 : 1,
+          undefined,
+          exact
+            ? (delayById.get(exact.id) ?? 0) +
+                (exact.impact ? 0 : tacticalShotDelay(exact.id, exact.from))
+            : undefined,
         );
       }
       if (time < nextUpdate) return;
@@ -394,7 +420,12 @@ export function createCityBattleAudio(
           previous !== undefined &&
           phase > previous
         )
-          play("step", { x: u.x, y: 0, z: u.z }, u.id + phase, 0.35);
+          play(
+            "step",
+            { x: u.x, y: surfaceHeight(u), z: u.z },
+            u.id + phase,
+            0.35,
+          );
       }
       const vehicles = alive
           .filter((u) => u.kind === "vehicle")
@@ -411,7 +442,7 @@ export function createCityBattleAudio(
           if (kind === "tracks" && (!u.moving || u.speed < 0.05)) continue;
           wanted.add(key);
           const strength = kind === "engine" ? (u.moving ? 0.45 : 0.17) : 0.32,
-            point = { x: u.x, y: 0.5, z: u.z },
+            point = { x: u.x, y: surfaceHeight(u) + 0.5, z: u.z },
             v = loops.get(key) ?? play(kind, point, u.id, strength, key);
           if (v) {
             v.point = point;

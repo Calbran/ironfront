@@ -78,7 +78,12 @@ export function resolveSettlementCaptures(w: World): SettlementCapture[] {
       squad.garrisonSite = { region: region.id, feature: site.id };
     }
     if (changed)
-      captures.push({ owner, region: region.id, feature: site.id, name: site.name });
+      captures.push({
+        owner,
+        region: region.id,
+        feature: site.id,
+        name: site.name,
+      });
   }
   return captures;
 }

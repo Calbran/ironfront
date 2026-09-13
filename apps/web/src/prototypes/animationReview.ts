@@ -1,3 +1,8 @@
+import { createTankTracks } from "./tankTracks";
+import { tacticalTankKick } from "../experiments/tacticalTankAnimation";
+import { createTacticalBattleEffects } from "../experiments/tacticalBattleEffects";
+import { createCityBattleAudio } from "../audio/cityBattleAudio";
+import type { CityShot } from "../../../../packages/game-core/src/cityBattle";
 import * as T from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createMilitaryModel } from "./militaryModels";
@@ -197,60 +202,12 @@ try {
       cover: "none",
     });
   }
-  // Instanced tread links circulate around a closed belt; phase follows signed hull travel.
-  const trackDummy = new T.Object3D();
-  function tracks(parent: T.Object3D, large: boolean) {
-    const half = large ? 3.45 : 2.38,
-      r = large ? 0.76 : 0.57,
-      cy = large ? 0.82 : 0.63,
-      x = large ? 1.8 : 1.28,
-      count = large ? 48 : 36;
-    const g = new T.BoxGeometry(
-      large ? 0.85 : 0.67,
-      0.085,
-      large ? 0.29 : 0.23,
-    );
-    resources.push(g);
-    const mesh = new T.InstancedMesh(g, metal, count * 2);
-    mesh.castShadow = true;
-    mesh.frustumCulled = false;
-    parent.add(mesh);
-    const length = 4 * half + 2 * Math.PI * r;
-    return (travel: number) => {
-      for (let side = 0; side < 2; side++)
-        for (let i = 0; i < count; i++) {
-          const s =
-            ((((i / count) * length + travel) % length) + length) % length;
-          let y: number, z: number, angle: number;
-          if (s < 2 * half) {
-            z = -half + s;
-            y = cy + r;
-            angle = 0;
-          } else if (s < 2 * half + Math.PI * r) {
-            const a = (s - 2 * half) / r;
-            z = half + r * Math.sin(a);
-            y = cy + r * Math.cos(a);
-            angle = a;
-          } else if (s < 4 * half + Math.PI * r) {
-            z = half - (s - 2 * half - Math.PI * r);
-            y = cy - r;
-            angle = Math.PI;
-          } else {
-            const a = (s - 4 * half - Math.PI * r) / r;
-            z = -half - r * Math.sin(a);
-            y = cy - r * Math.cos(a);
-            angle = Math.PI + a;
-          }
-          trackDummy.position.set(side === 0 ? -x : x, y, z);
-          trackDummy.rotation.set(angle, 0, 0);
-          trackDummy.updateMatrix();
-          mesh.setMatrixAt(side * count + i, trackDummy.matrix);
-        }
-      mesh.instanceMatrix.needsUpdate = true;
-    };
-  }
-  const tankTracks = tracks(tank.root, false),
-    landTracks = tracks(landship.root, true);
+  const tankBelt = createTankTracks(tank.root),
+    landBelt = createTankTracks(landship.root, true);
+  cleanup.push(
+    () => tankBelt.dispose(),
+    () => landBelt.dispose(),
+  );
   const fxGeo = new T.SphereGeometry(1, 7, 5);
   resources.push(fxGeo);
   const flashMat = new T.MeshBasicMaterial({ color: 0xffd378 }),
@@ -295,38 +252,59 @@ try {
       }
     };
   }
-  const soldierFX = cast.map((c) =>
-    effect(c.actor.muzzle, 0, 0, 0, c.role === "lmg" ? 0.17 : 0.095),
+  const reviewObjects = new Map<number, T.Group>(),
+    reviewSockets = new Map<number, T.Object3D>();
+  const reviewShots: CityShot[] = [];
+  const shotEdges = new Map<number, boolean>();
+  let reviewSequence = 0;
+  const feedback = createTacticalBattleEffects(
+    scene,
+    () => 0,
+    reviewObjects,
+    0,
+    (id) => reviewSockets.get(id),
   );
-  const rocket = box(
-    0.075,
-    0.075,
-    0.38,
-    0,
-    0,
-    0,
-    flashMat,
-    rocketGunner.muzzle,
+  const reviewAudio = createCityBattleAudio(
+    scene,
+    () => camera,
+    renderer.domElement,
+    stage,
   );
-  const trail = box(0.045, 0.045, 1.8, 0, 0, 0, smokeMat, rocketGunner.muzzle);
-  rocket.castShadow = false;
-  trail.castShadow = false;
-  const rocketFX = effect(rocketGunner.muzzle, 0, 0, 0, 0.25, true);
-  const tracers = cast.map((c) => {
-    if (c.role !== "lmg") return null;
-    const tracer = box(0.022, 0.022, 0.65, 0, 0, 0, flashMat, c.actor.muzzle);
-    tracer.castShadow = false;
-    tracer.receiveShadow = false;
-    return tracer;
-  });
+  cleanup.push(
+    () => feedback.dispose(),
+    () => reviewAudio.dispose(),
+  );
+  function fireReview(
+    id: number,
+    muzzle: T.Object3D,
+    firing: boolean,
+    shell = false,
+  ) {
+    reviewSockets.set(id, muzzle);
+    const last = shotEdges.get(id) ?? false;
+    shotEdges.set(id, firing);
+    if (!firing || last) return;
+    const p = muzzle.getWorldPosition(new T.Vector3()),
+      forward = muzzle.getWorldDirection(new T.Vector3());
+    reviewShots.push({
+      id: ++reviewSequence,
+      from: id,
+      to: -1,
+      x: p.x,
+      z: p.z,
+      tx: p.x + forward.x * 12,
+      tz: p.z + forward.z * 12,
+      shell,
+      impact: false,
+    });
+    if (reviewShots.length > 128) reviewShots.shift();
+  }
   const tankTurret = tank.root.getObjectByName("turret_yaw")!,
     landTurret = landship.root.getObjectByName("turret_yaw")!;
   const tankBarrel = tank.root.getObjectByName("barrel_recoil")!,
     landBarrel = landship.root.getObjectByName("barrel_recoil")!,
     artBarrel = artillery.root.getObjectByName("barrel_recoil")!;
-  const tankFX = effect(tankBarrel, 0, 0.29, 2.75, 0.48, true),
-    landFX = effect(landBarrel, 0, 0.3, 3.45, 0.58, true),
-    artFX = effect(artBarrel, 0, 1.83, 2.85, 0.4),
+  const artFX = effect(artBarrel, 0, 1.83, 2.85, 0.4),
     gunFX = effect(gunship.root, 0, 0.52, 3.03, 0.16);
   const labelTextures: T.Texture[] = [];
   const labels: T.Sprite[] = [];
@@ -405,7 +383,15 @@ try {
     play.textContent = running ? "Pause" : "Play";
     play.setAttribute("aria-pressed", String(running));
   }
+  let lastDrawTime = -1;
   function draw() {
+    if (time < lastDrawTime) {
+      feedback.reset();
+      reviewAudio.reset();
+      reviewShots.length = 0;
+      shotEdges.clear();
+    }
+    lastDrawTime = time;
     const p = soldierReview(time, clip);
     cast.forEach((c, i) => {
       const selectedClip = coverClip(
@@ -419,9 +405,6 @@ try {
         if (q.firing) q.crouch = Math.max(q.crouch, 0.03);
         q.recoil = automatic.recoil * 0.8;
         q.firing = automatic.firing;
-        const tracer = tracers[i]!;
-        tracer.visible = automatic.firing && automatic.age < 0.07;
-        tracer.position.z = 0.4 + automatic.age * 45;
       }
       if (c.role === "engineer") {
         q.firing = false;
@@ -440,18 +423,11 @@ try {
             q.reload = Math.min(1, (phase - 2.43) / 3.57);
           }
         }
-        rocket.visible = trail.visible = allowed && age >= 0 && age < 0.6;
-        rocket.position.z = 0.2 + Math.max(0, age) * 14;
-        trail.position.z = rocket.position.z - 0.9;
-        rocketFX(q.recoil * 2, time, allowed && age >= 0 ? age : Infinity);
       }
       c.actor.update(q);
       c.actor.root.position.set(c.x + q.x, 0, c.z + q.z);
       c.actor.root.rotation.y = q.yaw;
-      soldierFX[i](
-        c.role === "lmg" ? automatic.recoil : q.recoil,
-        q.firing ? time : 1,
-      );
+      fireReview(i + 100, c.actor.muzzle, q.firing, c.role === "antitank");
     });
     const a = tankReview(time),
       b = tankReview(time + 2),
@@ -466,15 +442,19 @@ try {
       0,
       -7 + b.travel - Math.cos(b.turret) * b.kick * 0.085,
     );
-    tankTracks(a.travel);
-    landTracks(b.travel);
+    tankBelt.update(a.travel, a.travel);
+    landBelt.update(b.travel, b.travel);
     tankTurret.rotation.y = a.turret;
     landTurret.rotation.y = b.turret;
-    tankBarrel.position.z = -a.recoil * 0.48;
-    landBarrel.position.z = -b.recoil * 0.6;
+    tankBarrel.position.z = tacticalTankKick(a.shotAge).barrel;
+    tank.root.rotation.x = tacticalTankKick(a.shotAge).hull;
+    landBarrel.position.z = tacticalTankKick(b.shotAge).barrel;
+    landship.root.rotation.x = tacticalTankKick(b.shotAge).hull;
     artBarrel.position.set(0, -g.recoil * 0.045, -g.recoil * 0.22);
-    tankFX(a.flash, time, a.shotAge);
-    landFX(b.flash, time, b.shotAge);
+    fireReview(1, tankBarrel, a.shotAge >= 0 && a.shotAge < 0.1, true);
+    fireReview(2, landBarrel, b.shotAge >= 0 && b.shotAge < 0.1, true);
+    feedback.update(time, running, reviewShots);
+    reviewAudio.update(time, running, [], reviewShots, []);
     artFX(g.recoil, g.firing ? time : 1);
     airship.animate(time);
     airship.root.position.set(

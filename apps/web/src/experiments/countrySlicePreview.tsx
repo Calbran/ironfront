@@ -1,3 +1,5 @@
+import { encounterFinished } from "../../../../packages/game-core/src/countryEncounter";
+import { countryTankTerrainSpeedFactor } from "../../../../packages/game-core/src/forestVehicleMovement";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import type {
@@ -20,6 +22,7 @@ function App() {
     [message, setMessage] = useState("Preparing the Meridian sector…"),
     [cover, setCover] = useState(false);
   const coverMode = useRef(false);
+  const finished = state ? encounterFinished(state) : false;
   const choose = (ids: number[], add = false, toggle = false) => {
     const next = add
       ? toggle
@@ -69,7 +72,13 @@ function App() {
       .then(async () => {
         const s = await request("/command", "POST", { action, ids, ...extra });
         apply(s);
-        setMessage("Order accepted");
+        if (action === "encounter" || action === "restage") {
+          choose([1], false);
+          view.current?.focusUnit(1);
+          setMessage(
+            "Fresh encounter ready: four enemy pockets. Give orders, then press Run.",
+          );
+        } else setMessage("Order accepted");
       })
       .catch((e) => setMessage(String(e)));
   }
@@ -162,7 +171,7 @@ function App() {
         <span>Meridian · Playable sector</span>
         <a href="/pacing-preview.html">Country study</a>
         <button
-          disabled={!state}
+          disabled={!state || finished}
           onClick={() => command("run", { running: !state?.running })}
         >
           {state?.running ? "Pause" : "Run"}
@@ -183,12 +192,12 @@ function App() {
           <select
             aria-label="Lighting"
             disabled={!state || !plan}
-            defaultValue="cycle"
-            onChange={(e) =>
-              view.current?.setLighting(
-                e.target.value as "cycle" | "day" | "night",
-              )
-            }
+            value={state?.lighting ?? "cycle"}
+            onChange={(e) => {
+              const lighting = e.target.value as "cycle" | "day" | "night";
+              view.current?.setLighting(lighting);
+              command("lighting", { lighting });
+            }}
           >
             <option value="cycle">Day/night · 20m</option>
             <option value="day">Day</option>
@@ -198,7 +207,18 @@ function App() {
       </header>
       <div className="slice-tools">
         <button onClick={() => view.current?.overview()}>Sector</button>
-        <button disabled={!state || !!state.encounter} onClick={() => command("encounter")}>Deploy encounter</button>
+        <button
+          disabled={!state}
+          onClick={() =>
+            command(state?.encounter && !finished ? "restage" : "encounter")
+          }
+        >
+          {finished
+            ? "Restart encounter"
+            : state?.encounter
+              ? "Restage encounter"
+              : "Deploy encounter"}
+        </button>
         {plan?.sites.map((s) => (
           <button
             key={s.id}
@@ -219,22 +239,33 @@ function App() {
       <div ref={host} className="slice-map" />
       <footer>
         <div className="slice-units">
-          {state?.units.filter(u=>!u.enemy).map((u) => (
-            <button
-              key={u.id}
-              disabled={u.health===0}
-              aria-pressed={ids.includes(u.id)}
-              onClick={(e) => choose([u.id], e.shiftKey, true)}
-              onDoubleClick={() => view.current?.focusUnit(u.id)}
-            >
-              {u.name}
-              <small>
-                {u.kind==="infantry" ? `${u.members?.filter(m=>m.health!==0).length??6}/6 · ` : ""}
-                {u.health===0 ? "Lost" : (u.suppression??0)>.5 ? "Suppressed · " : ""}
-                {u.path.length ? "Moving" : u.cover ? "In cover" : "Holding"}
-              </small>
-            </button>
-          ))}
+          {state?.units
+            .filter((u) => !u.enemy)
+            .map((u) => (
+              <button
+                key={u.id}
+                disabled={u.health === 0}
+                aria-pressed={ids.includes(u.id)}
+                onClick={(e) => choose([u.id], e.shiftKey, true)}
+                onDoubleClick={() => view.current?.focusUnit(u.id)}
+              >
+                {u.name}
+                <small>
+                  {u.kind === "infantry"
+                    ? `${u.members?.filter((m) => m.health !== 0).length ?? 6}/6 · `
+                    : ""}
+                  {u.health === 0
+                    ? "Lost"
+                    : (u.suppression ?? 0) > 0.5
+                      ? "Suppressed · "
+                      : ""}
+                  {u.path.length ? "Moving" : u.cover ? "In cover" : "Holding"}
+                  {u.kind === "tank" && plan
+                    ? ` · Terrain speed ${Math.round(countryTankTerrainSpeedFactor(plan, u) * 100)}%`
+                    : ""}
+                </small>
+              </button>
+            ))}
         </div>
         <div className="slice-orders">
           <button
@@ -261,9 +292,15 @@ function App() {
             Take cover
           </button>
         </div>
-        <p role="status">{message}</p>
+        <p role="status">
+          {finished
+            ? `Encounter ended in ${state!.encounter!.stage}. Restart encounter to command a fresh force.`
+            : message}
+        </p>
         <small>
-          {state?.encounter ? `Encounter: ${state.encounter.stage} · Hold objective 10s (${state.encounter.progress.toFixed(0)}/10) · ${Math.max(0,600-state.encounter.elapsed).toFixed(0)}s left` : "Movement review · Deploy encounter to fight for the bridge and outpost"}
+          {state?.encounter
+            ? `Encounter: ${state.encounter.stage} · Hold objective 10s (${state.encounter.progress.toFixed(0)}/10) · ${Math.max(0, 600 - state.encounter.elapsed).toFixed(0)}s left`
+            : "Movement review · Deploy encounter to fight for the bridge and outpost"}
           {plan?.sites.some((s) => s.poi?.source) && (
             <>
               {" "}

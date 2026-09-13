@@ -8,6 +8,10 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createMiniatureKit } from "./referenceAssets";
 import { countryPOIAssets } from "./countryPOIAssets";
 import {
+  generateCountrySettlement,
+  type SettlementRank,
+} from "../../../../packages/game-core/src/countrySettlement";
+import {
   generateCountryPOI,
   POI_CATALOG,
   type POIKind,
@@ -21,6 +25,12 @@ const host = document.querySelector<HTMLElement>("#viewport")!,
   caption = document.querySelector<HTMLElement>("#caption")!,
   stats = document.querySelector<HTMLElement>("#stats")!,
   probe = document.querySelector<HTMLElement>("#probe")!;
+document
+  .querySelector("#source")!
+  .insertAdjacentHTML(
+    "beforeend",
+    '<option value="campaign-town">Campaign town</option><option value="campaign-city">Campaign regional city</option><option value="campaign-metropolis">Campaign metropolis</option><option value="campaign-industry">Campaign industrial complex</option>',
+  );
 const renderer = new T.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.setClearColor(0x233c3b);
@@ -78,8 +88,15 @@ let generation = 0;
 async function show() {
   const request = ++generation,
     source = document.querySelector<HTMLSelectElement>("#source")!.value;
+  const campaignLayout = source.startsWith("campaign-");
+  for (const id of ["size", "density", "mosaic"])
+    (document.getElementById(id) as HTMLInputElement).disabled = campaignLayout;
+  if (campaignLayout)
+    (document.getElementById("mosaic") as HTMLInputElement).checked = false;
+  buttons.forEach((b) => (b.disabled = campaignLayout));
+  controls.maxDistance = campaignLayout ? 18000 : 6000;
   let sample: OSMSample | undefined;
-  if (source !== "generated") {
+  if (source !== "generated" && !campaignLayout) {
     try {
       if (!samples.has(source)) {
         stats.textContent = "Loading local map sample…";
@@ -112,13 +129,20 @@ async function show() {
       '.json" download>Source data</a>'
     : "";
   kinds.forEach((key, i) => {
-    const p = sample
-        ? generateOSMCountryPOI(sample, seed, size, density)
-        : generateCountryPOI(
-            key,
-            seed + i,
-            mosaic ? undefined : { size, density },
-          ),
+    const p = campaignLayout
+        ? source === "campaign-industry"
+          ? generateCountryPOI("foundry", seed, {
+              size: "district",
+              industrialComplex: true,
+            })
+          : generateCountrySettlement(seed, source.slice(9) as SettlementRank)
+        : sample
+          ? generateOSMCountryPOI(sample, seed, size, density)
+          : generateCountryPOI(
+              key,
+              seed + i,
+              mosaic ? undefined : { size, density },
+            ),
       asset = countryPOIAssets(p, kit);
     asset.group.position.set(
       mosaic ? ((i % 6) - 2.5) * 145 : 0,

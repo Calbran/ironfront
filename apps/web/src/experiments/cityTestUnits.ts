@@ -1,4 +1,8 @@
-import { createCityBattleAudio } from "../audio/cityBattleAudio";
+import { createTacticalPresentation } from "./tacticalPresentation";
+import {
+  tacticalPreviewColor,
+  tacticalPreviewPose,
+} from "./tacticalPreviewStyle";
 import { cityBuildTools } from "./cityBuildTools";
 import { cityAwarenessOverlay } from "./cityAwarenessOverlay";
 import {
@@ -12,6 +16,12 @@ import { createJeep } from "../prototypes/jeepModel";
 import { cityUnitMarkers } from "./cityUnitMarkers";
 import { cityIdleMotion } from "./cityIdleMotion";
 import { tacticalSelection } from "./tacticalSelection";
+import {
+  projectedObjectHitTarget,
+  TACTICAL_INFANTRY_HIT_RADIUS,
+  TACTICAL_TANK_HIT_PADDING,
+  TACTICAL_TANK_MIN_HIT_RADIUS,
+} from "./tacticalSelectionBounds";
 import { CITY_TRIAL_SANDBAGS } from "../../../../packages/game-core/src/cityTactics";
 import { createMilitaryModel } from "../prototypes/militaryModels";
 import { createTankTracks } from "../prototypes/tankTracks";
@@ -36,36 +46,11 @@ export function createCityTestUnits(
 ) {
   const jeep = createJeep();
   const tank = createMilitaryModel("tank", true);
-  const tracks = createTankTracks(tank.root);
-  const turret = tank.root.getObjectByName("turret_yaw")!,
-    barrel = tank.root.getObjectByName("barrel_recoil")!;
-  const corpseTimes = new Map<number, number>();
-  const aimTwist = new T.Matrix4();
-  const point = new T.Vector3(),
-    matrix = new T.Matrix4();
-  const run = Array.from({ length: 65 }, (_, i) => {
-    const phase = i / 64,
-      pose = rig.pose("run", phase);
-    let min = Infinity;
-    rig.parts.forEach((part, j) => {
-      if (part.key !== "boot") return;
-      matrix.fromArray(pose[j]);
-      const a = part.geometry.attributes.position;
-      for (let n = 0; n < a.count; n++) {
-        point.fromBufferAttribute(a, n).applyMatrix4(matrix);
-        min = Math.min(min, point.y);
-      }
-    });
-    const lift = runFlight(phase) - (Number.isFinite(min) ? min : 0);
-    pose.forEach((p) => (p[13] += lift));
-    return pose;
-  });
-  const aimed = tacticalPreviewPose(rig,"none");
-  const covered = {
-    partial: tacticalPreviewPose(rig,"partial"),
-    full: tacticalPreviewPose(rig,"full"),
-  };
-  const audio = createCityBattleAudio(root, getCamera, canvas, overlayRoot);
+  const aimed = tacticalPreviewPose(rig, "none"),
+    covered = {
+      partial: tacticalPreviewPose(rig, "partial"),
+      full: tacticalPreviewPose(rig, "full"),
+    };
   const trial = remoteCityBattle(tactics, {
       ...config,
       multipleBattles:
@@ -236,7 +221,9 @@ export function createCityTestUnits(
         proposed.z,
       );
       g.root.rotation.y = proposed.angle;
-      g.material.color.set(tacticalPreviewColor(proposed.valid,proposed.cover));
+      g.material.color.set(
+        tacticalPreviewColor(proposed.valid, proposed.cover),
+      );
       if (proposed.kind === "infantry") {
         const pose =
           proposed.cover === "none" ? aimed : covered[proposed.cover];
@@ -329,12 +316,28 @@ export function createCityTestUnits(
     overlayRoot,
   );
   const selectionControls = tacticalSelection(canvas, {
-    units: () =>
-      trial.units.map((unit) => ({
-        id: unit.id,
-        ...screen(unit, 0.5),
-        visible: unit.visible !== false,
-      })),
+    units: () => {
+      const viewport = canvas.getBoundingClientRect(),
+        camera = getCamera();
+      return trial.units.map((unit) => {
+        const object = objects.get(unit.id)!;
+        if (unit.kind === "vehicle" && object.visible)
+          return projectedObjectHitTarget(
+            unit.id,
+            object,
+            camera,
+            viewport,
+            unit.vehicleType === "tank" ? TACTICAL_TANK_MIN_HIT_RADIUS : 32,
+            unit.vehicleType === "tank" ? TACTICAL_TANK_HIT_PADDING : 12,
+          );
+        return {
+          id: unit.id,
+          ...screen(unit, 0.5),
+          radius: TACTICAL_INFANTRY_HIT_RADIUS,
+          visible: unit.visible !== false,
+        };
+      });
+    },
     box(ids, add) {
       trial.selectMany(ids, add);
       drawPath();
@@ -363,249 +366,28 @@ export function createCityTestUnits(
     focus,
     overlayRoot,
   );
-  const tracerGeometry = new T.BufferGeometry();
-  const tracerPositions = new Float32Array(128 * 6);
-  tracerGeometry.setAttribute(
-    "position",
-    new T.BufferAttribute(tracerPositions, 3),
+  const presentation = createTacticalPresentation(
+    root,
+    getCamera,
+    canvas,
+    rig,
+    (p) => tactics.surfaceHeight(p),
+    objects,
+    overlayRoot,
   );
-  const tracerMaterial = new T.LineBasicMaterial({ color: 0xffd48a });
-  const tracers = new T.LineSegments(tracerGeometry, tracerMaterial);
-  tracers.frustumCulled = false;
-  layer.add(tracers);
-  const flashGeometry = new T.SphereGeometry(1, 6, 4),
-    flashMaterial = new T.MeshBasicMaterial({ color: 0xffcb75 });
-  const riflePartIndex = rig.parts.findIndex((part) => part.key === "rifle"),
-    muzzlePoint = new T.Vector3();
-  const flashes = new T.InstancedMesh(flashGeometry, flashMaterial, 128),
-    flashPose = new T.Object3D();
-  flashes.frustumCulled = false;
-  layer.add(flashes);
-  const dustGeometry = new T.SphereGeometry(1, 7, 4),
-    dustMaterial = new T.MeshBasicMaterial({
-      color: 0x9c8b70,
-      transparent: true,
-      opacity: 0.28,
-      depthWrite: false,
-    });
-  const dust = new T.InstancedMesh(dustGeometry, dustMaterial, 768);
-  dust.frustumCulled = false;
-  layer.add(dust);
-  const shellGeometry = new T.SphereGeometry(1, 8, 5),
-    shellMaterial = new T.MeshBasicMaterial({ color: 0xbfb49b });
-  const shells = new T.InstancedMesh(shellGeometry, shellMaterial, 128);
-  shells.frustumCulled = false;
-  layer.add(shells);
-  const craterGeometry = new T.CircleGeometry(1, 13).rotateX(-Math.PI / 2),
-    rimGeometry = new T.RingGeometry(0.78, 1, 13).rotateX(-Math.PI / 2);
-  const craterMaterial = new T.MeshBasicMaterial({
-      color: 0x302b25,
-      transparent: true,
-      opacity: 0.72,
-      depthWrite: false,
-      polygonOffset: true,
-      polygonOffsetFactor: -1,
-    }),
-    rimMaterial = new T.MeshBasicMaterial({
-      color: 0x75644c,
-      transparent: true,
-      opacity: 0.65,
-      depthWrite: false,
-    });
-  const craters = new T.InstancedMesh(
-      craterGeometry,
-      craterMaterial,
-      CITY_CRATER_LIMIT,
-    ),
-    rims = new T.InstancedMesh(rimGeometry, rimMaterial, CITY_CRATER_LIMIT);
-  craters.frustumCulled = false;
-  rims.frustumCulled = false;
-  layer.add(craters, rims);
-  const scars: { x: number; z: number; born: number; size: number }[] = [];
-  const firedAt = new Map<number, number>();
-  let lastShot = 0;
-  const effects: {
-    shot: ReturnType<typeof trial.state>["shots"][number];
-    start: number;
-    until: number;
-    fired: boolean;
-  }[] = [];
   let guideSignature = "";
   let idleTime = 0;
   function update(dt: number) {
     idleTime += dt;
     trial.tick(dt);
     const audioState = trial.state();
-    audio.update(
+    presentation.update(
       idleTime,
       audioState.running,
       trial.units,
       audioState.shots,
       audioState.sounds,
     );
-    for (const shot of trial.state().shots)
-      if (shot.id > lastShot) {
-        lastShot = shot.id;
-        const start = idleTime + ((shot.id * 37) % 173) / 1000;
-        const duration = shot.impact
-          ? 1.1
-          : shot.shell
-            ? 0.7
-            : Math.max(
-                0.06,
-                Math.hypot(shot.tx - shot.x, shot.tz - shot.z) / 120,
-              );
-        effects.push({ shot, start, until: start + duration, fired: false });
-      }
-    for (let i = effects.length - 1; i >= 0; i--)
-      if (effects[i].until < idleTime) effects.splice(i, 1);
-    if (effects.length > 128) effects.splice(0, effects.length - 128);
-    let n = 0,
-      flashCount = 0,
-      dustCount = 0,
-      shellCount = 0;
-    for (const effect of effects) {
-      const { shot, start } = effect,
-        age = idleTime - start;
-      if (age < 0) continue;
-      if (!effect.fired) {
-        effect.fired = true;
-        if (!shot.impact) firedAt.set(shot.from, start);
-        else {
-          scars.push({
-            x: shot.tx,
-            z: shot.tz,
-            born: start,
-            size: 0.65 + (shot.id % 5) * 0.045,
-          });
-          if (scars.length > CITY_CRATER_LIMIT) scars.shift();
-        }
-      }
-      const dx = shot.tx - shot.x,
-        dz = shot.tz - shot.z,
-        length = Math.hypot(dx, dz) || 1;
-      const muzzleX = shot.x + (dx / length) * (shot.shell ? 1.65 : 0.48),
-        muzzleZ = shot.z + (dz / length) * (shot.shell ? 1.65 : 0.48);
-      if (!shot.impact && age < (shot.shell ? 0.09 : 0.085)) {
-        const x = shot.impact ? shot.tx : muzzleX,
-          z = shot.impact ? shot.tz : muzzleZ;
-        flashPose.position.set(
-          x,
-          tactics.surfaceHeight({ x, z }) +
-            (shot.impact ? 0.25 : shot.shell ? 1.24 : 0.65),
-          z,
-        );
-        if (!shot.shell && riflePartIndex >= 0) {
-          const gun = objects.get(shot.from)?.children[0]?.children[
-            riflePartIndex
-          ];
-          if (gun) {
-            gun.updateWorldMatrix(true, false);
-            muzzlePoint.set(0.65, 0.07, 0);
-            gun.localToWorld(muzzlePoint);
-            root.worldToLocal(muzzlePoint);
-            flashPose.position.copy(muzzlePoint);
-          }
-        }
-        const size = shot.impact
-          ? 0.55
-          : shot.shell
-            ? 0.48 * (1 - age / 0.1)
-            : 0.085 * (1 - age / 0.11);
-        flashPose.scale.set(
-          size,
-          shot.shell ? size * 0.65 : size,
-          shot.shell ? size * 1.7 : size * 2.4,
-        );
-        flashPose.rotation.y = Math.atan2(dx, dz);
-        flashPose.updateMatrix();
-        flashes.setMatrixAt(flashCount++, flashPose.matrix);
-      }
-      if ((shot.shell || shot.impact) && age < (shot.impact ? 1.1 : 0.65))
-        for (let k = 0; k < (shot.impact ? 6 : 2); k++) {
-          const x = shot.impact ? shot.tx : muzzleX,
-            z = shot.impact ? shot.tz : muzzleZ,
-            r = 0.2 + age * 2.8;
-          flashPose.position.set(
-            x +
-              (shot.impact
-                ? Math.cos((k * Math.PI) / 3) * age * 1.8
-                : (((k ? 1 : -1) * dz) / length) * age * 1.7),
-            tactics.surfaceHeight({ x, z }) +
-              0.12 +
-              age * (shot.impact ? 0.7 : 0.2),
-            z +
-              (shot.impact
-                ? Math.sin((k * Math.PI) / 3) * age * 1.8
-                : ((-(k ? 1 : -1) * dx) / length) * age * 1.7),
-          );
-          flashPose.rotation.set(0, 0, 0);
-          flashPose.scale.set(
-            r * (shot.impact ? 0.55 : 1),
-            0.1 + age * (shot.impact ? 0.65 : 0.3),
-            r * (shot.impact ? 0.55 : 0.7),
-          );
-          flashPose.updateMatrix();
-          dust.setMatrixAt(dustCount++, flashPose.matrix);
-        }
-      // Rifle fire is mostly muzzle/recoil feedback; only occasional rounds have a visible trail.
-      if (shot.impact || (!shot.shell && shot.id % 3 !== 0)) continue;
-      const distance = Math.hypot(shot.tx - shot.x, shot.tz - shot.z),
-        segment = tracerSegment(distance, age, shot.shell);
-      if (!segment) continue;
-      const y =
-          tactics.surfaceHeight({ x: shot.x, z: shot.z }) +
-          (shot.shell ? 1.24 : 0.65),
-        ty = tactics.surfaceHeight({ x: shot.tx, z: shot.tz }) + 0.5;
-      const at = (t: number) => [
-        shot.x + (shot.tx - shot.x) * t,
-        y + (ty - y) * t,
-        shot.z + (shot.tz - shot.z) * t,
-      ];
-      if (shot.shell) {
-        const t = segment.head,
-          position = at(t);
-        flashPose.position.set(position[0], position[1], position[2]);
-        flashPose.rotation.set(0, Math.atan2(dx, dz), 0);
-        flashPose.scale.set(0.1, 0.1, 0.25);
-        flashPose.updateMatrix();
-        shells.setMatrixAt(shellCount++, flashPose.matrix);
-      } else
-        tracerPositions.set(
-          [...at(segment.tail), ...at(segment.head)],
-          n++ * 6,
-        );
-    }
-    while (scars.length && idleTime - scars[0].born > CITY_CRATER_SECONDS)
-      scars.shift();
-    scars.forEach((scar, i) => {
-      const remaining = CITY_CRATER_SECONDS - (idleTime - scar.born),
-        fade = Math.min(1, remaining / 15);
-      flashPose.position.set(
-        scar.x,
-        tactics.surfaceHeight(scar) + 0.018,
-        scar.z,
-      );
-      flashPose.rotation.set(0, i * 2.4, 0);
-      flashPose.scale.set(scar.size * fade, 1, scar.size * 0.82 * fade);
-      flashPose.updateMatrix();
-      craters.setMatrixAt(i, flashPose.matrix);
-      flashPose.position.y += 0.012;
-      flashPose.scale.multiplyScalar(1.2);
-      flashPose.updateMatrix();
-      rims.setMatrixAt(i, flashPose.matrix);
-    });
-    craters.count = rims.count = scars.length;
-    craters.instanceMatrix.needsUpdate = true;
-    rims.instanceMatrix.needsUpdate = true;
-    shells.count = shellCount;
-    shells.instanceMatrix.needsUpdate = true;
-    dust.count = dustCount;
-    dust.instanceMatrix.needsUpdate = true;
-    flashes.count = flashCount;
-    flashes.instanceMatrix.needsUpdate = true;
-    tracerGeometry.setDrawRange(0, n * 2);
-    tracerGeometry.attributes.position.needsUpdate = true;
     if (previewRequest) previewAt(previewRequest.p, previewRequest.facing);
     const selected = trial.selectedIds();
     buildTools.sync(trial.state().sandbags, trial.state().message);
@@ -640,99 +422,6 @@ export function createCityTestUnits(
       rings.get(u.id)!.visible =
         !iconIds.has(u.id) && u.visible !== false && u.health > 0;
       if (u.visible === false) continue;
-      if (u.health <= 0 && u.kind === "infantry") {
-        if (!corpseTimes.has(u.id)) corpseTimes.set(u.id, idleTime);
-        const age = idleTime - corpseTimes.get(u.id)!,
-          variant = u.id % 3,
-          t = Math.min(1, age / (0.9 + variant * 0.22)),
-          fall = t * t * (3 - 2 * t);
-        const body = obj.children[0];
-        body.scale.setScalar(0.55);
-        body.position.set(
-          variant === 1 ? fall * 0.18 : 0,
-          0.16 * fall,
-          variant === 0 ? -0.12 * fall : 0.08 * fall,
-        );
-        body.rotation.set(
-          variant === 1 ? 0 : (((variant === 0 ? -1 : 1) * Math.PI) / 2) * fall,
-          0,
-          variant === 1 ? (Math.PI / 2) * fall : Math.sin(t * Math.PI) * 0.14,
-        );
-        body.children.forEach((part, i) =>
-          part.matrix.fromArray(
-            (variant === 2 ? covered.full : covered.partial)[i],
-          ),
-        );
-        continue;
-      }
-      obj.position.set(u.x, tactics.surfaceHeight(u), u.z);
-      obj.rotation.y = u.angle;
-      if (u.kind === "vehicle") {
-        if (u.vehicleType !== "jeep") {
-          tracks.update(u.leftTrack, u.rightTrack);
-          turret.rotation.y = (u.turretAngle ?? u.angle) - u.angle;
-          const age = idleTime - (firedAt.get(u.id) ?? -10);
-          barrel.position.z =
-            age < 0.4 ? -0.36 * Math.sin(Math.min(1, age / 0.4) * Math.PI) : 0;
-          obj.children[0].rotation.x =
-            age < 0.45 ? -0.045 * Math.sin((age / 0.45) * Math.PI) : 0;
-        }
-        rings.get(u.id)!.material = selected.includes(u.id)
-          ? selectedRing
-          : u.friendly
-            ? idleRing
-            : enemyRing;
-        continue;
-      }
-      const phase = (u.distance / CITY_RUN_STRIDE) * Math.PI * 2;
-      const amount = Math.min(1, u.speed / 0.6);
-      const body = obj.children[0];
-      const idleMotion = cityIdleMotion(
-        idleTime,
-        u.id,
-        u.speed,
-        u.moving,
-        u.facing !== undefined,
-        u.cover,
-      );
-      body.position.y = 0.035 * (1 - Math.cos(phase * 2)) * 0.5 * amount;
-      body.rotation.z = 0.025 * Math.sin(phase) * amount;
-      // Stretch from the planted feet rather than translating the whole soldier.
-      body.scale.y = 0.55 * (1 + idleMotion.breath);
-      body.rotation.z += idleMotion.sway;
-      body.position.z =
-        -Math.max(0, 0.1 - (idleTime - (firedAt.get(u.id) ?? -10))) * 0.3;
-      const frame = ((u.distance / CITY_RUN_STRIDE) % 1) * 64,
-        first = Math.floor(frame),
-        fraction = frame - first;
-      const blend = u.moving ? 1 : Math.min(1, u.speed / 0.6);
-      obj.children[0].children.forEach((part, i) => {
-        const a = run[first][i],
-          b = run[first + 1][i],
-          idle =
-            u.cover === "none"
-              ? u.facing === undefined
-                ? rig.walk[0][i]
-                : aimed[i]
-              : covered[u.cover][i];
-        const upper = !["hips", "thigh", "shin", "boot"].includes(
-          rig.parts[i].key,
-        );
-        const movingFire = u.moving && u.firing && upper;
-        for (let j = 0; j < 16; j++)
-          part.matrix.elements[j] = movingFire
-            ? aimed[i][j]
-            : (a[j] + (b[j] - a[j]) * fraction) * blend + idle[j] * (1 - blend);
-        if (movingFire && u.aimAngle !== undefined) {
-          aimTwist.makeRotationY(
-            Math.atan2(
-              Math.sin(u.aimAngle - u.angle),
-              Math.cos(u.aimAngle - u.angle),
-            ),
-          );
-          part.matrix.premultiply(aimTwist);
-        }
-      });
       rings.get(u.id)!.material = selected.includes(u.id)
         ? selectedRing
         : u.friendly
@@ -791,26 +480,9 @@ export function createCityTestUnits(
     },
     dispose: () => {
       battleSites.remove();
-      audio.dispose();
+      presentation.dispose();
       trial.dispose();
       buildTools.dispose();
-      shells.dispose();
-      shellGeometry.dispose();
-      shellMaterial.dispose();
-      craters.dispose();
-      rims.dispose();
-      craterGeometry.dispose();
-      rimGeometry.dispose();
-      craterMaterial.dispose();
-      rimMaterial.dispose();
-      dust.dispose();
-      dustGeometry.dispose();
-      dustMaterial.dispose();
-      flashes.dispose();
-      flashGeometry.dispose();
-      flashMaterial.dispose();
-      tracerGeometry.dispose();
-      tracerMaterial.dispose();
       enemyRing.dispose();
       enemyBody.dispose();
       markers.dispose();
@@ -822,7 +494,6 @@ export function createCityTestUnits(
       idleRing.dispose();
       selectedRing.dispose();
       bodyMaterial.dispose();
-      tracks.dispose();
       for (const g of ghosts.values()) {
         g.root.traverse((o) => {
           if (o instanceof T.InstancedMesh) o.dispose();
@@ -839,4 +510,3 @@ export function createCityTestUnits(
     },
   };
 }
-import {tacticalPreviewColor,tacticalPreviewPose} from "./tacticalPreviewStyle";

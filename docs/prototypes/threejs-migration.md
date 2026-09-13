@@ -1,6 +1,6 @@
 # Three.js miniature-world experiment
 
-Status: opt-in development renderer and standalone studies included in the repository. Pixi remains the default; full production renderer migration is not complete. Later live/city work is tracked in PROJECT_STATE.md and the consolidated roadmap.
+Status: historical experiment, promoted to the production renderer on 2026-09-12. The original limitations below describe the experiment at that time; current live/city work is tracked in PROJECT_STATE.md and the consolidated roadmap. Pixi is retired to `/legacy.html`.
 
 Branch: `codex/threejs-miniatures`. Baseline commit `9c476dc` snapshots the current infantry and jeep work from the original checkout without modifying those files there. The experimental worktree is `/private/tmp/ironfront-threejs-experiment`.
 

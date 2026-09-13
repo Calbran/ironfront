@@ -19,11 +19,15 @@ float cloudField(vec2 world) {
 
 export function countryAtmosphere(scene: T.Scene) {
   const uniforms = {
-    cloudTime: { value: 0 }, cloudDay: { value: 1 },
+    cloudTime: { value: 0 },
+    cloudDay: { value: 1 },
     cloudSun: { value: new T.Vector3(0, 1, 0) },
   };
   const skyMaterial = new T.ShaderMaterial({
-    uniforms, side: T.BackSide, depthWrite: false, fog: false,
+    uniforms,
+    side: T.BackSide,
+    depthWrite: false,
+    fog: false,
     vertexShader: `varying vec3 skyRay;
       void main(){skyRay=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
     fragmentShader: `${field}
@@ -59,28 +63,47 @@ export function countryAtmosphere(scene: T.Scene) {
     shadeGround(shader: T.WebGLProgramParametersWithUniforms) {
       Object.assign(shader.uniforms, uniforms);
       shader.vertexShader = shader.vertexShader
-        .replace("#include <common>", "#include <common>\nvarying vec3 cloudWorld;")
-        .replace("#include <begin_vertex>", "#include <begin_vertex>\ncloudWorld=(modelMatrix*vec4(position,1.)).xyz;");
+        .replace(
+          "#include <common>",
+          "#include <common>\nvarying vec3 cloudWorld;",
+        )
+        .replace(
+          "#include <begin_vertex>",
+          "#include <begin_vertex>\ncloudWorld=(modelMatrix*vec4(position,1.)).xyz;",
+        );
       shader.fragmentShader = shader.fragmentShader
-        .replace("#include <common>", `#include <common>\nvarying vec3 cloudWorld;\n${field}`)
-        .replace("#include <color_fragment>", `#include <color_fragment>
+        .replace(
+          "#include <common>",
+          `#include <common>\nvarying vec3 cloudWorld;\n${field}`,
+        )
+        .replace(
+          "#include <color_fragment>",
+          `#include <color_fragment>
           // Soldier-scale soil flecks and worn patches; no repeating bitmap.
           float closeDetail=1.-smoothstep(65.,220.,distance(cameraPosition,cloudWorld));
-          float grainFade=1.-smoothstep(.3,.9,length(fwidth(cloudWorld.xz*12.)));
-          float soil=cloudNoise(cloudWorld.xz*.7)*.65+cloudNoise(cloudWorld.xz*2.3)*.35;
-          float grit=cloudNoise(cloudWorld.xz*12.);
-          vec2 stoneCell=floor(cloudWorld.xz*3.);
-          vec2 stoneLocal=fract(cloudWorld.xz*3.)-vec2(cloudHash(stoneCell),cloudHash(stoneCell+23.));
-          float pebble=(1.-smoothstep(.06,.17,length(stoneLocal)))*step(.82,cloudHash(stoneCell+49.));
-          vec3 detailed=diffuseColor.rgb*(.78+soil*.34+(grit-.5)*.20*grainFade);
-          vec3 stoneTone=mix(vec3(.105,.10,.075),vec3(.28,.27,.21),smoothstep(-.06,.08,stoneLocal.y));
-          detailed=mix(detailed,stoneTone,pebble*grainFade*.75);
-          diffuseColor.rgb=mix(diffuseColor.rgb,detailed,closeDetail);
-        `)
-        .replace("#include <opaque_fragment>", `
+          // Skip soldier-scale procedural work outside its visible range. This
+          // uniform branch removes three noise fields from strategic terrain.
+          if(closeDetail>.001) {
+            float grainFade=1.-smoothstep(.3,.9,length(fwidth(cloudWorld.xz*12.)));
+            float soil=cloudNoise(cloudWorld.xz*.7)*.65+cloudNoise(cloudWorld.xz*2.3)*.35;
+            float grit=cloudNoise(cloudWorld.xz*12.);
+            vec2 stoneCell=floor(cloudWorld.xz*3.);
+            vec2 stoneLocal=fract(cloudWorld.xz*3.)-vec2(cloudHash(stoneCell),cloudHash(stoneCell+23.));
+            float pebble=(1.-smoothstep(.06,.17,length(stoneLocal)))*step(.82,cloudHash(stoneCell+49.));
+            vec3 detailed=diffuseColor.rgb*(.78+soil*.34+(grit-.5)*.20*grainFade);
+            vec3 stoneTone=mix(vec3(.105,.10,.075),vec3(.28,.27,.21),smoothstep(-.06,.08,stoneLocal.y));
+            detailed=mix(detailed,stoneTone,pebble*grainFade*.75);
+            diffuseColor.rgb=mix(diffuseColor.rgb,detailed,closeDetail);
+          }
+        `,
+        )
+        .replace(
+          "#include <opaque_fragment>",
+          `
           vec2 projectedCloud=cloudWorld.xz+cloudSun.xz*(420.-cloudWorld.y)/max(.25,cloudSun.y);
           outgoingLight*=1.-cloudField(projectedCloud)*.23*cloudDay;
-          #include <opaque_fragment>`);
+          #include <opaque_fragment>`,
+        );
     },
     update(camera: T.Camera, sun: T.Vector3, daylight: number) {
       sky.position.copy(camera.position);
@@ -89,6 +112,10 @@ export function countryAtmosphere(scene: T.Scene) {
       // Absolute phase prevents catch-up animation on tab resume.
       uniforms.cloudTime.value = (Date.now() / 1000) % 100000;
     },
-    dispose() { sky.removeFromParent(); geometry.dispose(); skyMaterial.dispose(); },
+    dispose() {
+      sky.removeFromParent();
+      geometry.dispose();
+      skyMaterial.dispose();
+    },
   };
 }

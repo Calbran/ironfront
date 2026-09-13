@@ -1,6 +1,6 @@
 # Ironfront
 
-Ironfront is moving to the full 3D city and commanded tactical battle direction. The default page opens the full city with a staged, paused skirmish.
+Ironfront is a Three.js strategy game built around one continuous, persistent battlefield. The default page opens the first Meridian campaign alpha; the city and country-sector pages are shared-system development harnesses.
 
 ## Start here
 
@@ -19,7 +19,9 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 for the full-city skirmish. The previous campaign remains at http://localhost:5173/legacy.html. To use that archived campaign, create a campaign, select a faction, and share its invite code with another browser. Empty seats act as simple automated opponents until claimed. Each campaign can run at a test pace (one simulated hour every 10 seconds) or normal pace (one hour per real hour). The host can advance one hour in test campaigns.
+Open http://localhost:5173 and choose **Establish command**. New campaigns use version 3 of the full Meridian continent: 411,840 × 274,560 model units (approximately 750 × 500 km including sea), with 488 settlements/POIs, two metropolises, regional cities, satellite towns, industrial complexes, polygonal farmland and broad woodland. Buildings, soldiers and weapons keep their physical scale. Earlier campaigns show **Explore the new world**, which creates an independent command and retains the previous key under **Session**. Use **Places** to search cities, villages, facilities and natural landmarks; labels and route detail adapt to zoom. Additional scenic locations do not automatically create income/capture objectives. Select squads and right-click to move; right-drag sets facing, Shift queues orders, and Hold position stops autonomous repositioning. Double-click a unit card to focus it. Northfield stages opposing patrols at a farm. Enable **Sound** to hear the battlefield. **Whole map**, the minimap and **Territory** remain available for travel.
+
+The server keeps simulating while the browser is closed. The browser restores the same alpha session automatically; copy its private key under **Session** for recovery. One commander controls Meridian against Crown forces in this first pass. Existing proof saves remain at http://localhost:5173/legacy.html. Alpha saves and generated geography use separate SQLite tables in the same database; existing worlds are not converted or erased.
 
 ```sh
 npm test
@@ -30,23 +32,26 @@ npm start
 
 Production serves the built browser application and API together at http://localhost:3000. Local state is in `data/warfare.sqlite`; preserve that directory. See [hosting](docs/03-technical/self-hosting.md).
 
-This is an early persistent multiplayer proof, not the complete game. Authentication uses private bearer session keys, not recoverable accounts. Treat invite codes as playtest invitations and save your session key before changing devices.
+The current alpha integrates combat, vision, tactical feedback, land occupation, supplies and physical sandbags. Multiplayer joining, reinforcements, the wider economy and other emplacements are still pending. See the [integration record](docs/03-technical/campaign-alpha-integration.md) for the supported systems and remaining gaps. Balance and scale limits are provisional.
 
 ## Miniature city and Three.js development
 
-`/country-slice.html` opens the persisted playable Meridian sector. It shares the city battle controls: left-drag selects, right-click moves, right-drag chooses destination facing, middle-drag orbits, WASD pans and Q/E rotates; Shift adds selections or queues orders. Use Run to start. It includes city/hamlet/outpost geometry, a river bridge and ground/air routing; combat and ownership are not connected yet.
+`/country-slice.html` opens the isolated playable Meridian test sector. It shares tactical controls and presentation for development, but it is not a campaign destination or game mode. Campaign combat happens continuously on `/`; proven country-slice systems must be integrated directly into that persistent world.
 
-The full-city Three.js view is now the default entry. The previous Pixi campaign remains at `/legacy.html`. The repository also includes these development studies:
+The Three.js campaign is the default entry. The previous Pixi renderer remains archived at `/legacy.html`. The repository also includes these development studies:
 
 - `/military-preview.html`: ten infantry-scaled military models with GLB export.
 - `/city-diorama.html`: dense district city (160 buildings by default); select 28 for the crafted neighborhood.
 - `/reference-preview.html`: crafted summer/winter art reference.
 - `/three-preview.html`: generated-world comparison and performance tools.
-- `?renderer=three` on the campaign application: opt-in live Three.js adapter; interaction parity is still incomplete.
 
 Run `npm run dev` and open the desired entry on the Vite URL printed in the terminal. The preview pages are included in the production build, but their presence does not enable experimental gameplay. See the [miniature city roadmap](docs/04-roadmap/miniature-city-development.md) for current scope, ordered next work and validation criteria, and the [city study](docs/prototypes/large-city-diorama.md) for stage-specific measurements.
 
-## Browser verification
+## Archived proof reference
+
+The instructions below document the preceding abstract campaign proof, available through the archive. They are not the current alpha UI or acceptance suite. The new alpha is covered by `tests/campaign-battlefield.test.ts` and the integration record.
+
+### Browser verification
 
 With the production server running, install Playwright Chromium (`npx playwright install chromium`) and run `npm run test:browser`. Set `CHROMIUM_PATH` to reuse an installed compatible Chromium. The smoke flow creates disposable campaigns in the active local database and saves screenshots under `.impeccable/review/`. Use a separate `DB_PATH` when running it against a database you want to keep clean.
 

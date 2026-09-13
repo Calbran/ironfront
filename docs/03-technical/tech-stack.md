@@ -2,7 +2,7 @@
 
 ## Target and first slice
 
-React/TypeScript/Vite for controls; PixiJS for the map; d3-delaunay for region geometry; Node.js/Fastify for trusted HTTP commands; a pure TypeScript rules module. PostgreSQL with Drizzle remains the intended hosted database. The executable first proof uses built-in SQLite with a synchronous single-process transactional store. Docker is not installed in the development environment; the proof must be runnable without it.
+React/TypeScript/Vite for controls; Three.js for the campaign, country and tactical world; d3-delaunay for region geometry; Node.js/Fastify for trusted HTTP commands; a pure TypeScript rules module. PixiJS is retained only by the archived `/legacy.html` renderer. PostgreSQL with Drizzle remains the intended hosted database. The executable first proof uses built-in SQLite with a synchronous single-process transactional store. Docker is not installed in the development environment; the proof must be runnable without it.
 
 ## Repository
 

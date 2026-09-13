@@ -1,0 +1,3 @@
+# Armored forest movement
+
+User accepted traversable forests with substantial tank slowdown rather than individual tree collision. Implemented a shared density/road/site speed policy for authoritative and projected country movement plus campaign local/regional movement. Focused movement regression passed 31 checks. The full suite passed 330 of 333 checks; two pre-existing city-vision expectations failed, plus the first version of the new forest test, which was corrected and passed on rerun. Typecheck and production build pass. Browser verification loaded the country slice with no console errors and showed the Landship terrain-speed readout.

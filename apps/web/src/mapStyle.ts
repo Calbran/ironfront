@@ -9,9 +9,7 @@ export function politicalOverlayAlpha(zoom: number): number {
   if (zoom >= POLITICAL_OVERLAY_END_ZOOM) return 0;
   return (
     0.24 *
-    (1 -
-      (zoom - STRATEGY_ZOOM) /
-        (POLITICAL_OVERLAY_END_ZOOM - STRATEGY_ZOOM))
+    (1 - (zoom - STRATEGY_ZOOM) / (POLITICAL_OVERLAY_END_ZOOM - STRATEGY_ZOOM))
   );
 }
 

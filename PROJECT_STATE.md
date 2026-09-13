@@ -1,5 +1,105 @@
 # Project State
 
+## Regional landscape and readable campaign — 2026-09-13
+
+New campaign geography version 3 retains the fixed Meridian reference continent and physical asset scale while introducing 488 places, a five-level settlement hierarchy, two metropolises, multiple cities and twelve satellite settlements. Large places contain connected street blocks, dense centers, industrial quarters and lower-density edges. Their anchors reserve dry inland footprints; expanded industry and rural sites reserve terrain-cell clearance. Additional scenic neighborhoods and POIs do not automatically generate income or create capture objectives.
+
+Farmland uses adjoining irregular polygons, coherent crop districts and route-led orientation, excludes steep ground, waterways, developments and road corridors, and shares polygon containment with woodland placement and vehicle movement. Version 3 terrain doubles lattice resolution to 1024 intervals, adds subdued lowland relief and grades rural settlement pads through the shared terrain planner. Older versions keep their saved geometry and generation dispatch.
+
+The shared country/campaign overview fades terrain hatching before strategic distance, reduces survey-texture contrast, prioritizes labels by settlement rank and screen space, groups nearby disclosed force markers, and shows emplacement markers. Major roads persist at overview; local and settlement streets appear at regional scale. Production adds a searchable Places panel including terrain landmarks. Metropolis detail is culled around the camera, with instanced developed plots and shared urban ground surfaces. Fine terrain indices follow the camera while retaining a coarse exterior. The POI gallery exposes the same ranked settlement and industrial-complex planners.
+
+Validation and remaining limits are recorded in the regional-world session note. Size, density, vegetation, label distances and player-count suitability remain provisional. This is still the fixed reference world, not a multiplayer population-sizing implementation or a new railway/economy system.
+
+## Strategic survey-map art — 2026-09-13
+
+The production Three.js campaign now becomes an illustrated military survey map at continental distance. Five generated 1024 px WebP materials cover plains, forests, highlands, mountains and ocean. The terrain shader blends the four land materials from the existing authoritative forest and relief fields, so the new look follows the actual map instead of painting a separate decorative biome layer. The ocean repeats a subdued engraved-wave material across the campaign extent. Close and tactical views retain the physical miniature terrain.
+
+Generated sources, final prompts and the asset-processing contract are recorded in [the strategy map texture guide](docs/06-art/strategy-map-textures.md). The retired Pixi renderer remains unchanged.
+
+Validation: focused active-map/campaign tests passed (16/16), plus typecheck, production build and isolated desktop/mobile browser checks. The browser regression confirmed strategic LOD, loaded textures, no page errors and no horizontal overflow at 1440 × 900 and 390 × 900.
+
+## Strategic campaign rendering performance — 2026-09-13
+
+The shared Three.js campaign scene batches distant settlement silhouettes into one instanced draw, uses a two-cell terrain LOD only beyond the regional camera range, and avoids recomputing labels or POI residency while the camera is still. Strategic terrain caps its internal pixel ratio at 1 and skips invisible close-ground shader work; tactical terrain, city assets, mountain materials and cross-hatching retain their detailed paths. Clickable settlement labels forward wheel input into the same cursor-anchored zoom controller as the canvas.
+
+The reproducible full-campaign browser sample improved from 30.3 ms median / 36.4 ms p95 and 394 draw calls at overview to 6.1 ms / 6.2 ms and 15 draw calls. Close-city rendering remained 6.1 ms / 6.2 ms. These are four-second local headless-Chrome samples with the 64-individual integration roster, not a sustained-load ceiling.
+
+## Campaign mountain materials — 2026-09-12
+
+Mountain terrain now has a shared procedural material driven by the authoritative `mountainWeight` lattice. Foothill vegetation gives way to exposed warm or cool stone, slope-weighted scree and subtle elevation strata. The shader adapts its sampling scale with campaign zoom and adds no meshes or draw calls.
+
+## Campaign cross-hatching — 2026-09-12
+
+The production campaign now retains the country scene's illustrative, sun-directed terrain cross-hatching at full-continent zoom. The earlier 2,800–5,500 model-unit fade always disabled the ink from the massive campaign camera. Campaign rendering now cross-fades world-anchored hatch spacing across power-of-two scales based on camera distance; tactical zoom keeps the existing fine pattern, while the country test keeps its prior overview fade. The effect remains terrain-only and does not affect simulation.
+
+## Full scale-test continent — 2026-09-12
+
+New commands at `/` now use the actual Meridian geography and physical separation from the scale study: 411,840 × 274,560 model units, approximately 750 × 500 km including sea. There are 382 settlements/POIs, 1,937 crop parcels and 675 road sections. One detailed headquarters city uses the shared city plan; other settlements use seeded town/POI generators, with unscaled meshes and physical cover. The initial 64 individuals remain a bounded integration roster on the persistent world. Camera changes never stop combat.
+
+Forests stream in shared deterministic 160-unit tiles (25 resident renderer tiles; 128 cached CPU tiles), country orders can use a road graph, and cover queries use a local obstacle index. Campaign geography/save version 2 is separate from the previous small-map version 1. Existing commands are preserved and can start the continent through the visible toolbar action.
+
+This promotes the full geography, not a complete populated campaign economy. Recruitment, broad strategic AI, multiplayer and production-scale scheduling remain pending. Terrain uses a coarse global lattice with reserved settlement pads; coast navigation, detailed cities beyond headquarters, and more natural regional farmland need further work. Forty places currently lack a safe generated road connection.
+
+Validation: 354/354 full-suite tests, 13 focused checks after the shared animation correction, typecheck, build, and full-map browser move/build/reload/visibility/compact-layout checks passed. The actual 5173 frontend creates the full geography successfully.
+
+See [full-map validation and limits](docs/session-notes/2026-09-12-massive-campaign.md) and [decision 056](docs/05-decisions/056-full-scale-campaign.md). The bounded-alpha record below is historical.
+
+## Persistent campaign alpha — 2026-09-12
+
+The production `/` now opens the Meridian campaign alpha, using the same Three.js country scene and tactical presentation as the country test. This replaces the older abstract campaign UI at the main entry; existing proof saves and the Pixi recovery UI remain untouched at `/legacy.html`.
+
+Shipped first pass: one 6,000 × 3,600 model-unit world (approximately 10.9 × 6.5 km), one detailed city and ten other places, connected roads/bridges, woodland and farms, two factions, 14 groups containing 64 individual soldiers/vehicles, persistent orders and casualties, continuous server combat, reactive squad support, filtered enemy vision and coarse distant hearing, common animation/effects/audio, territorial occupation, supplies and physical sandbags. There is no encounter-launch action, scenario deadline, battle-result import or simulation pause when the camera leaves a fight. The server advances all saved alpha worlds on a 250 ms timer; bounded catch-up retains its backlog across restarts.
+
+This is a bounded campaign region and integration alpha, not the complete continental game. One commander controls Meridian against existing Crown forces. Multiplayer joining, recruitment/reinforcements, broad opponent strategy, the old economy/supply network, wire/trench/warehouse/artillery gameplay, a final campaign victory policy, and continent-scale simulation scheduling remain unintegrated. Their absence is explicit in the UI/integration record. Sandbags cost 10 supplies; territorial capture takes 30 uncontested seconds and generates 5 supplies per owned place per minute. These are provisional alpha rules.
+
+Validation: 349/349 tests, typecheck, build and browser move/build/reload checks passed. The country test and city diorama also passed browser smoke checks. See [session results](docs/session-notes/2026-09-12-persistent-campaign-alpha.md).
+
+See [decision 055](docs/05-decisions/055-persistent-campaign-alpha.md) and the [alpha integration record](docs/03-technical/campaign-alpha-integration.md). Older production descriptions below are historical.
+
+## Three.js production campaign — 2026-09-12
+
+Three.js is now the only active renderer direction for the campaign, country and tactical game. `/` opens one authoritative, living battlefield with a Three.js lobby preview and live map. Battles emerge wherever opposing units meet and remain part of the same persistent campaign simulation; there is no launch-battle flow or detached encounter result. `/country-slice.html` is an isolated development harness only. `/legacy.html` explicitly loads the retired Pixi renderer for historical comparison and saved-data recovery; it receives no new feature or parity work. Older entries below that describe Pixi as the default are historical and superseded by this decision.
+
+## Staggered infantry fire — 2026-09-12
+
+Tactical rifle and LMG fire is now approximately 10% slower: each soldier skips one of every ten otherwise-ready firing opportunities using a save-stable phase derived from its ID. This breaks up synchronized squad volleys while retaining deterministic restart behavior. The shared city/country presentation adds a stable per-soldier phase plus small per-shot variation below 200 ms and uses the same delay for muzzle flashes, tracers, recoil and audible reports. Country snapshots retain their authoritative shot times, so several 250 ms volleys received together replay in order within a bounded 650 ms window instead of appearing as one robotic firing line. Tank and anti-tank reload cadence is unchanged.
+
+## Universal tactical tracers — 2026-09-12
+
+Every authorized tactical projectile now receives a short moving tracer in city battles, country encounters and animation review. Rifle and machine-gun rounds use a 0.65-unit streak; tank shells retain their visible projectile and add a 2.2-unit trail. Both originate from the live muzzle socket when available, travel with the projectile, and expire at impact instead of drawing a muzzle-to-target beam. Visibility filtering still controls which shot events reach the player.
+
+## Shared physical bridge surface — 2026-09-12
+
+Country bridge decks, approach ramps, road ribbons, roadside props, ground-unit height, path overlays and navigation grade checks now consume one game-core bridge surface. Decks clear the water, use thicker physical slabs and meet their banks through bounded ramps. Ground navigation remains restricted to the bridge width; no general river-crossing exemption was added. Focused bridge/sector tests, typecheck, production build and a live landship crossing passed; full-suite results are recorded in the session note.
+
+## Elevated airship reconnaissance — 2026-09-12
+
+The country scout airship now flies 45 model units above local terrain, raised from 25, and observation evaluates terrain sight from that same altitude. Ground-level buildings and individual tree crowns no longer block an air observer; target-side forest density still shortens detection, fixed night still reduces the nominal 1,000-unit range to 450, and terrain high enough to cross the elevated sightline still masks contacts.
+
+## Country group movement pace — 2026-09-12
+
+Country-slice group orders now persist a shared movement identity across expanded infantry members, tanks and airships. Authority recomputes the group's pace every 50 ms from its slowest active member: soldiers wait while a grouped tank pivots, and the complete group inherits infantry firing penalties or tank terrain penalties. Fractional render projection uses the same cap between snapshots. Giving a unit a separate order detaches it immediately; completed or dead members no longer constrain the remaining group.
+
+## Authoritative night reconnaissance — 2026-09-12
+
+The country Light mode is now persisted authority rather than a client-only presentation switch. Cycle, Day and Night use one shared daylight calculation for sky lighting, selected-unit vision rings, enemy response filtering and encounter target acquisition. Fixed night scales nominal sight to 45%: infantry 81 model units (147 m), tanks 225 (409 m) and scout airships 450 (818 m), before forest concealment and line-of-sight checks. An enemy group is disclosed when any living member is detected by any living friendly observer; its collision-avoiding screen badge may be offset beyond the actual member position. Baseline daytime ranges remain unchanged and the 45% night factor is provisional balance.
+
+## Country reconnaissance and forest concealment — 2026-09-11
+
+Country encounters now return enemy groups only while at least one living friendly unit has authoritative vision. Open-ground sight is 180 model units for infantry, 500 for tanks and 1,000 for scout airships. Forest around an observer shortens ground sight by up to 35%; forest around a target shortens detection further, with moving units retaining a little more exposure than stationary units. Airships ignore observer-side forest obstruction and provide long reconnaissance vision, but have no weapon range. Selected friendly units show terrain-draped cyan vision and amber firing rings using the same shared weapon ranges as combat. The country visibility model is separate from city visibility and remains provisional balance.
+
+## Extended tactical unit visibility — 2026-09-11
+
+City and country tactical unit geometry now remains visible beneath fully opaque map badges until one world unit projects to 1.25 pixels, extending the ground-model cutoff from roughly 214 to 515 camera units at the standard perspective. Marker timing is unchanged, so tactical identification remains available throughout the overlap. Airships retain ten times the model distance. This is shared presentation tuning for the small tactical rosters, not campaign-scale unit rendering.
+
+## Tactical weapon ranges — 2026-09-11
+
+At the established 0.55 model-units-per-metre tactical scale, shared rifle, LMG, early rocket-launcher and tank profiles now own effective/maximum range, distance falloff, moving accuracy, soft/armor effectiveness, suppression, magazine and reload values. Effective/maximum ranges are 200/300 m for rifles, 300/500 m for LMGs, 69/100 m for rockets and 400/900 m for tanks. City and country combat adapters consume the same profiles. Buildings, terrain, vegetation and server-authorized vision still govern acquisition. Selected country units show cyan vision, strong amber effective range and faint amber maximum range. LMG profile support is authoritative but no persisted live roster fields an LMG team yet. See decision 051 and the range session note.
+
+## Shared tactical presentation — 2026-09-11
+
+City battle and country slice now use one presentation owner for infantry running/aiming/reloading/deaths, tank tracks/turret/recoil, muzzle flashes, short tracers, shells, dust/craters and camera-relative sound. Country rendering smooths individual soldiers and fractional movement steps, and uses authoritative impact events. Animation review shares run clips, rifle/armor effects, audio and tank animation primitives. Full/partial cover quality is retained for country poses. See docs/03-technical/shared-system-standards.md for required owner/consumer audits and the explicit preview/legacy inventory. Regression and browser results are recorded in docs/session-notes/2026-09-11-shared-tactical-presentation.md.
+
 ## Country squads, shared tactics and river banks — 2026-09-11
 
 Validation: 303 tests passed, plus typecheck/build and browser checks.
@@ -30,7 +130,7 @@ Daytime sun/fill are brighter while night intensities remain unchanged. The coun
 
 ## Country relief, lighting cycle and shared infantry routes — 2026-09-11
 
-The country slice now adds deterministic gentle rolling elevation (up to nine additional model units), easing to settlement reservations and river approaches. Rendering, road generation and authoritative movement consume the same heights; geometry version 8 safely migrates prior routes. Non-repeating value noise replaces periodic surface bands. At distance, ground colors/grain simplify and a coarse terrain mesh uses approximately 1/16 the ground triangles. Lighting is less washed out, with near-camera terrain/object shadows and atmospheric haze. The Light selector offers a synchronized wall-clock 20-minute visual day/night cycle plus fixed Day/Night review modes; it does not change simulation pace or visibility rules.
+The country slice now adds deterministic gentle rolling elevation (up to nine additional model units), easing to settlement reservations and river approaches. Rendering, road generation and authoritative movement consume the same heights; geometry version 8 safely migrates prior routes. Non-repeating value noise replaces periodic surface bands. At distance, ground colors/grain simplify and a coarse terrain mesh uses approximately 1/16 the ground triangles. Lighting is less washed out, with near-camera terrain/object shadows and atmospheric haze. The Light selector offers a synchronized wall-clock 20-minute day/night cycle plus fixed Day/Night modes. As of 2026-09-12, this saved mode also controls country visibility authority; it still does not change simulation pace.
 
 City battle and sector infantry now share one deterministic route-variation helper: simplify grid stair-steps, then apply small collision-checked personal deviations. Sector guide lines are stored separately from actual footsteps, with exact destination/cover endpoints preserved. Long routes use bounded sampling; saved movement remains authoritative. Existing routes are cleared only by the geometry migration, not by client rendering.
 
@@ -376,7 +476,7 @@ Roadmap stage 1 now has corner-shop facades wrapping exposed block ends, rear-ba
 
 ## Current entry points and next work
 
-Pixi remains the default campaign renderer. The Three.js renderer is opt-in; city/reference/world studies are development previews, not a completed gameplay migration. `/city-diorama.html` defaults to the 160-building district city; choose 28 for the earlier crafted neighborhood. The Ancoats street-seed study remains in source but is no longer the default layout. [Development roadmap](docs/04-roadmap/miniature-city-development.md) gives the ordered remaining work, acceptance criteria, performance limits and code/test entry points. Historical sections below record earlier stages and are not alternate current defaults.
+`/` is the production Three.js campaign and continuous battlefield. `/country-slice.html` is an isolated tactical test harness, while `/city-diorama.html` remains the detailed city development surface and defaults to the 160-building district city. `/legacy.html` is the archived Pixi renderer. The Ancoats street-seed study remains in source but is no longer the default layout. [Development roadmap](docs/04-roadmap/miniature-city-development.md) gives the ordered remaining work, acceptance criteria, performance limits and code/test entry points. Historical sections below record earlier stages and are not alternate current defaults.
 
 ## Dense district city — development study
 
@@ -398,9 +498,9 @@ The earlier large-city study used a local Ancoats/Manchester OpenStreetMap stree
 
 The preview now attempts terrain-aware planning across settlements, with riverside, farming and industrial patterns, size-dependent density and recorded regional-road entrances. Unsafe or undersized plans retain labeled legacy layouts. The art tour selects one sculpted example, with connected streets, street-facing lots and distinct civic/home/shop/workshop models. Fields and vegetation follow completed footprints. The worker records stage times, caches river presentation paths and avoids repeated global river checks in legacy town repair. Pure planner invariants and repeat-seed generation audits are included. Continuous-slope planning and eliminating legacy fallbacks remain future work. See [generator audit](docs/prototypes/town-generation-audit.md).
 
-## Live campaign adapter and generated landscape — development study
+## Live campaign adapter and generated landscape — historical development study
 
-The regular game can opt into Three.js with `?renderer=three`; Pixi remains the default. Existing server snapshots drive live squad models and existing commands handle selection, movement and attacks. Full Pixi interaction parity remains unfinished. See [live integration and soak methodology](docs/prototypes/live-campaign-performance.md).
+This adapter was promoted into the production Three.js campaign on 2026-09-12. Existing server snapshots drive live squad models and existing commands handle selection, movement and attacks. Missing campaign presentation is now Three.js production backlog; Pixi parity is no longer a goal. See [live integration and soak methodology](docs/prototypes/live-campaign-performance.md).
 
 The generated preview now offers **Visit refined region**: one actual river-adjacent settlement region with sculpted ground, wear, grain, bank rocks, vegetation, field furrows, fences and bridge decks. River bends now use continuous rounded strips; ground height, color and texture fade into the surrounding region material. Preview road strips stop at riverbanks, with raised bridges retained. Preview buildings overlapping riverbanks now relocate to nearby dry lots with model-footprint clearance. It is a bounded art study, not a continent-wide or live terrain replacement. See [landscape notes](docs/prototypes/generated-landscape.md).
 
@@ -981,3 +1081,11 @@ Follow-up: road proximity no longer changes navigation cost; all traversable gro
 ## Dense forests and continuous woodland LOD
 
 Accepted: broad, dense low-poly forests at the existing tree scale, with roads and rivers cutting through them. Generation now uses broad irregular woodland fields and spaced, jittered trunks rather than isolated eight-tree clusters. Infrastructure footprints remain clear; forests continue on both sides. Nearby trees use instancing and spatial culling. Beyond the detailed area, occupied patches use low-poly canopy geometry, selected per tile rather than a global zoom switch, so woods remain visible at shallow angles. Forest ground shading follows the same density field. Density and LOD distances remain provisional visual tuning. No new trunk collision rules were introduced.
+
+Country presentation follow-up: corrected snapshot rewind by including pending encounter movement time in render projection; covered by repeated-snapshot infantry/tank regression.
+
+Shared soldier idle follow-up: breathing and relaxed weight shifts now remain available in both playable scenes while waiting for orders; aimed/covered stances retain reduced breathing.
+
+Country slice now supports restarting completed encounters; verified restored troops and live movement, left paused at normal pace.
+
+Armored forest movement: country tanks now slow from 72% in sparse woods to 35% in dense woodland, retain 90% speed on roads and full speed in developed clearings. Campaign armor squads move at 40% local speed in forest regions, and mobile armies take four hours through forests instead of the two-hour plains rate. Individual trees remain non-colliding.

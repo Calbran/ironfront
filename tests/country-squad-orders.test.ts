@@ -36,3 +36,20 @@ test("open squad orders form a stable loose group with depth and independent spa
  const again=createSliceState(0);ensureSliceSquads(again);commandSlice(plan,nav,again,[1],"move",{x:30,z:30},false,0);
  assert.deepEqual(again.units[0].members!.map(m=>m.path.at(-1)),ends);
 });
+
+test("group orders use the slowest member and a separate order detaches its unit",()=>{
+ const s=createSliceState(0);ensureSliceSquads(s);
+ commandSlice(plan,nav,s,[1,3],"move",{x:30,z:30});
+ const squad=s.units[0].members!,tank=s.units[2],group=tank.moveGroup;
+ assert.ok(group);assert.ok(squad.every(m=>m.moveGroup===group));
+ for(const u of [...squad,tank]){u.angle=Math.PI/2;u.path=[{x:u.x+100,z:u.z}];u.distance=0;}
+ tank.angle=0;s.running=true;advanceSlice(s,100);
+ assert.ok(squad.every(m=>m.distance===0),"the group waits while its tank turns");
+ for(const u of [...squad,tank])u.angle=Math.PI/2;
+ const before=[...squad,tank].map(u=>u.distance);advanceSlice(s,1100);
+ const travelled=[...squad,tank].map((u,i)=>u.distance-before[i]);
+ assert.ok(Math.max(...travelled)-Math.min(...travelled)<1e-8);
+ commandSlice(plan,nav,s,[3],"move",{x:60,z:30});
+ assert.equal(tank.moveGroup,undefined);
+ assert.ok(squad.every(m=>m.moveGroup===group));
+});

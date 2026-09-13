@@ -107,8 +107,16 @@ function formationPoints(
   return result;
 }
 
-export function blockedByRegion(r: Region, a: LocalPoint, b=a, layer:MovementLayer="ground") {
-  return blockedByMountains(r.mountainObstacles,a,b,layer) || blockedByTerrainLayout(r.terrainLayout,a,b,layer);
+export function blockedByRegion(
+  r: Region,
+  a: LocalPoint,
+  b = a,
+  layer: MovementLayer = "ground",
+) {
+  return (
+    blockedByMountains(r.mountainObstacles, a, b, layer) ||
+    blockedByTerrainLayout(r.terrainLayout, a, b, layer)
+  );
 }
 
 export function onLocalLand(
@@ -410,6 +418,7 @@ export function localSpeed(w: World, s: Squad): number {
   return (
     Math.max(20, Math.min(100, Math.sqrt(w.regions[s.region].area) * 0.22)) *
     (s.kind === "motorized" ? 0.9 : 0.6) *
+    (s.kind === "armor" && w.regions[s.region].terrain === "forest" ? 0.4 : 1) *
     (1 - s.suppression * 0.6)
   );
 }
@@ -441,12 +450,7 @@ export function stepLocal(
   while (order.path.length && distance > 0) {
     let next = order.path[0];
     if (
-      blockedByRegion(
-        w.regions[s.region],
-        s,
-        next,
-        s.movementLayer,
-      ) ||
+      blockedByRegion(w.regions[s.region], s, next, s.movementLayer) ||
       blockedByRegion(
         w.regions[next.region ?? s.region],
         s,

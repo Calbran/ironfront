@@ -1,4 +1,7 @@
-import { TERRAIN_THEME_NAMES, terrainCover } from "../../../packages/game-core/src/terrainLayout";
+import {
+  TERRAIN_THEME_NAMES,
+  terrainCover,
+} from "../../../packages/game-core/src/terrainLayout";
 import { generateCityLayout } from "../../../packages/game-core/src/cityLayout";
 import { SelectedUnitInfo } from "./SelectedUnitInfo";
 import { useEffect, useRef, useState } from "react";
@@ -183,13 +186,17 @@ export function CommandDock({
               </small>
             </>
           ) : unit ? (
-            <SelectedUnitInfo squad={unit} picking={picking} terrainCover={terrainCover(w.regions[unit.region], unit)} />
+            <SelectedUnitInfo
+              squad={unit}
+              picking={picking}
+              terrainCover={terrainCover(w.regions[unit.region], unit)}
+            />
           ) : (
             <>
               <strong>{r ? r.name : "No selection"}</strong>
               <span>
                 {r
-                  ? `${r.terrainLayout ? TERRAIN_THEME_NAMES[r.terrainLayout.theme] : r.purpose ?? r.terrain} · ${r.owner === null ? "Neutral" : w.nations[r.owner].name}`
+                  ? `${r.terrainLayout ? TERRAIN_THEME_NAMES[r.terrainLayout.theme] : (r.purpose ?? r.terrain)} · ${r.owner === null ? "Neutral" : w.nations[r.owner].name}`
                   : "Select a squad or territory on the map"}
               </span>
             </>
@@ -325,11 +332,22 @@ export function CommandDock({
             (current === 0 ? (
               <>
                 <p>
-                  {r.terrainLayout ? TERRAIN_THEME_NAMES[r.terrainLayout.theme] : r.purpose ?? r.terrain} ·{" "}
-                  {r.owner === null ? "Neutral" : w.nations[r.owner].name}
+                  {r.terrainLayout
+                    ? TERRAIN_THEME_NAMES[r.terrainLayout.theme]
+                    : (r.purpose ?? r.terrain)}{" "}
+                  · {r.owner === null ? "Neutral" : w.nations[r.owner].name}
                 </p>
                 <p>
-                  {r.terrainLayout && <><span>{r.terrainLayout.theme === "lake" ? "Water blocks ground movement. Use the bridge or follow the shore. Rocks beside the approaches provide cover." : "Solid heaps and ridges block movement. Use the open lanes; edges provide cover against fire from the other side."}</span><br /></>}
+                  {r.terrainLayout && (
+                    <>
+                      <span>
+                        {r.terrainLayout.theme === "lake"
+                          ? "Water blocks ground movement. Use the bridge or follow the shore. Rocks beside the approaches provide cover."
+                          : "Solid heaps and ridges block movement. Use the open lanes; edges provide cover against fire from the other side."}
+                      </span>
+                      <br />
+                    </>
+                  )}
                   Garrison:{" "}
                   {r.garrison < 0 ? "Unknown" : Math.round(r.garrison)}
                 </p>

@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createCityBattle} from '../packages/game-core/src/cityBattle';
 import {cityShellImpact} from '../packages/game-core/src/cityBallistics';
+import {CITY_TANK_FIRE_RANGE} from '../packages/game-core/src/cityCombatRules';
 import type {createCityTactics} from '../packages/game-core/src/cityTactics';
 test('shell misses land off target deterministically',()=>{
  const p=cityShellImpact(0,0,false,42);assert.deepEqual(p,cityShellImpact(0,0,false,42));
@@ -20,4 +21,14 @@ test('a landed city tank shell kills full-health exposed infantry after flight',
   if(impact){direct=true;assert.equal(enemy.health,0);}
  }
  assert(direct,'close stationary target should be hit'); assert.equal(b.state().shots.filter(s=>s.shell&&!s.impact).length,1,'close stationary target dies to the first shell');
+});
+test('a city tank acquires a clear target at the calibrated 400 metre range',()=>{
+ const tactics={obstacles:[],walkable:()=>true,segmentClear:()=>true,coverAt:()=>({level:'none',damageScale:1,normal:{x:0,z:1}})} as unknown as ReturnType<typeof createCityTactics>;
+ const b=createCityBattle(tactics);b.trial.units.splice(0,b.trial.units.length,...b.trial.units.filter(u=>u.id===4||u.id===101));
+ const tank=b.trial.units.find(u=>u.id===4)!,enemy=b.trial.units.find(u=>u.id===101)!;
+ Object.assign(tank,{x:0,z:0,angle:0,turretAngle:0});Object.assign(enemy,{x:0,z:CITY_TANK_FIRE_RANGE-1,stance:'hold'});
+ b.command([],'run');for(let i=0;i<10;i++)b.tick(.05);
+ assert.equal(tank.firing,true);assert.equal(b.state().units.some(u=>u.id===enemy.id),true,'target at tank range is also visible to the player');
+ Object.assign(enemy,{z:CITY_TANK_FIRE_RANGE+1});for(let i=0;i<10;i++)b.tick(.05);
+ assert.equal(tank.firing,false);
 });

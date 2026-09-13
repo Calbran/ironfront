@@ -1,5 +1,13 @@
 # Country set-piece library
 
+## Campaign regional layouts — 2026-09-13
+
+Accepted: countryside developments need varied physical sizes, substantial industry, multiple large cities and metropolises, and readable regional land use. Version-3 production campaigns compose ranked settlements from `countrySettlement`, existing country templates with an explicit industrial-complex option, and regional farmland polygons. The shared POI gallery exposes campaign town, regional city, metropolis and industrial-complex sources; incompatible size/density/collection controls are disabled for these ranked plans.
+
+Ranked places add connected, warped street blocks, finished residential/commercial stock, taller central buildings, industrial quarters, developed block surfaces and a less-dense edge. Building footprints retain kit dimensions and face their street. The headquarters preserves its existing detailed core inside a reserved central opening. Country/campaign rendering streams a bounded neighborhood of large plans; the gallery renders full plans. `countryDevelopedGeometry` supplies the same urban surfaces to both.
+
+The industrial-complex option grows a district to a 360-unit half-extent with more branching service lanes and buildings. Omitting that option retains the earlier deterministic plans, including version-2 campaign regeneration. Placement reserves coastline/terrain-cell clearance instead of forcing a quota. These are provisional visual scales and content counts, not calibrated settlement populations, production rules or multiplayer balance.
+
 ## Shipped first pass
 
 The country POI gallery at /country-poi.html provides 24 deterministic templates. The same miniature building kit used by the city supplies architecture; new props use brick/stone walls, timber crates, iron boilers, brass fuel pumps and cover barricades. Each generated plan contains buildings, oriented obstacle rectangles, fields, props, trees, roads and road-entry points. Export downloads the selected plan as JSON.

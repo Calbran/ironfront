@@ -7,6 +7,7 @@ import {
   FireVisibility,
 } from "../packages/game-core/src/squadFire.ts";
 import type { Squad } from "../packages/game-core/src/tactics.ts";
+import type { TacticalWeaponRole } from "../packages/game-core/src/cityCombatRules.ts";
 function unit(
   id: string,
   owner = 0,
@@ -90,6 +91,28 @@ test("buildings stop shots, partial cover lowers expected hits, movement invalid
   assert.ok(partial < open * 0.65 && partial > open * 0.35);
   assert.equal(fireVolley(a, b, 10, 100, 0, 1).damage, 0);
 });
+test("long sightlines traverse crossed spatial cells without missing corner obstacles", () => {
+  const a = unit("a");
+  a.y = -150;
+  const b = unit("b", 1, 220);
+  b.y = 150;
+  const sight = new FireVisibility(
+    [{
+      id: "corner-wall",
+      exposure: 0,
+      polygon: [
+        { x: 95, y: -8 },
+        { x: 105, y: -8 },
+        { x: 105, y: 8 },
+        { x: 95, y: 8 },
+      ],
+    }],
+    24,
+  );
+  assert.equal(sight.exposure(a, b), 0);
+  b.y = 80;
+  assert.equal(sight.exposure(a, b), 1);
+});
 test("target retention, ordered override, dead targets, and deterministic tie breaking", () => {
   const a = unit("a"),
     b = unit("b", 1, 10),
@@ -115,4 +138,62 @@ test('moving fire reduces hit damage at the same range',()=>{
  let still=0,mobile=0;
  for(let i=0;i<1000;i++){still+=fireVolley(standing,target,10,100,1,1).damage;mobile+=fireVolley(moving,target,10,100,1,1).damage;}
  assert(mobile<still*.75);assert(mobile>0);
+});
+test("semi-auto rifles use staggered aimed shots, breathing pauses and full reloads", () => {
+  const target = unit("cadence-target", 1, 10), firstShots: number[] = [];
+  for (let member = 0; member < 6; member++) {
+    const shooter = unit(`cadence-${member}`), fired: number[] = [];
+    for (let step = 0; step < 80; step++) {
+      const result = fireVolley(shooter, target, 10, 100, 1, 1, "rifle");
+      if (result.fired) fired.push(step);
+    }
+    assert(fired.length >= 6 && fired.length <= 10);
+    const gaps = fired.slice(1).map((step, i) => step - fired[i]);
+    assert(Math.min(...gaps) >= 6, "aimed shots remain at least 1.5 seconds apart");
+    assert(Math.max(...gaps) >= 10, "short strings include a longer breathing pause");
+    firstShots.push(fired[0]);
+  }
+  assert.ok(new Set(firstShots).size > 1);
+});
+
+test("tactical profiles lose accuracy and damage through their maximum range", () => {
+  const total = (distance: number) => {
+    const shooter = unit("profile-shooter"),
+      target = unit("profile-target", 1, distance);
+    let damage = 0;
+    for (let i = 0; i < 1200; i++)
+      damage += fireVolley(shooter, target, distance, 165, 1, 1, "rifle").damage;
+    return damage;
+  };
+  const close = total(55),
+    effective = total(110),
+    distant = total(160);
+  assert(close > effective);
+  assert(effective > distant * 2);
+  assert.equal(total(166), 0);
+});
+
+test("LMGs suppress while rocket teams threaten armor", () => {
+  const totals = (
+    role: TacticalWeaponRole,
+    targetKind: Squad["kind"] = "infantry",
+  ) => {
+    const shooter = unit(`profile-${role}`),
+      target = unit(`target-${targetKind}`, 1, 20, targetKind);
+    let damage = 0,
+      suppression = 0;
+    for (let i = 0; i < 800; i++) {
+      const volley = fireVolley(shooter, target, 20, 500, 1, 1, role);
+      damage += volley.damage;
+      suppression += volley.suppression;
+    }
+    return { damage, suppression };
+  };
+  const rifle = totals("rifle"),
+    lmg = totals("lmg"),
+    rifleArmor = totals("rifle", "armor"),
+    rocketArmor = totals("antiTank", "armor");
+  assert(lmg.suppression > rifle.suppression * 2);
+  assert(rocketArmor.damage > rifleArmor.damage * 40);
+  assert(rifle.damage > rifleArmor.damage * 100);
 });
